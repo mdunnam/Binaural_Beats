@@ -999,9 +999,158 @@ Next:
 - https://zenmix.io/binaural-beat-generator
 - https://brain.fm/
 - https://endel.io/
+- https://mynoise.net/NoiseMachines/windSeaRainNoiseGenerator.php (myNoise inspiration)
 - https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
 - https://tonejs.github.io/
 - https://meyda.js.org/
 - https://essentia.upf.edu/essentiajs.html
 - https://stability.ai/stable-audio (future AI music)
 - https://replicate.com/meta/musicgen (future AI music)
+
+---
+
+## Build Log — Completed Features
+
+### Phase 1 (Complete)
+- Binaural core: carrier, beat freq, LFO (rate/depth/waveform/target), phase offset
+- Session timer, fade in/out
+- Presets (localStorage)
+- Solfeggio + brainwave quick-select buttons
+- LFO waveform selector, LFO target selector, amGain + dcOffset nodes
+- Segmented control UI
+
+### Phase 2 (Complete)
+- White/pink/brown noise layers
+- LPF/HPF BiquadFilter with resonance (binaural bus only)
+- SVG automation ramp lanes (volume/filter/beat freq)
+- Pad synth underlay (4-osc chord, ConvolverNode reverb, breathing LFO)
+- WAV export (OfflineAudioContext + 16-bit PCM)
+- Session journal (post-session modal + localStorage)
+- Modular architecture: audioGraph.ts, padSynth.ts, noiseGen.ts, wavExport.ts
+
+### AI Guided Meditation (Complete)
+- `src/ai/meditationThemes.ts` — 10 keyword-mapped themes (abundance/528Hz, anxiety/396Hz, sleep/174Hz, etc.)
+- `src/ai/meditationComposer.ts` — GPT-4o-mini script generation + OpenAI TTS (shimmer voice, tts-1-hd, 0.75x speed)
+- `src/engine/voiceBus.ts` — dedicated Web Audio voice node, 1.5s convolution reverb, 70/30 dry/wet, starts at +10s
+- `src/components/AiMeditationPanel.tsx` — modal with idle/generating/error states + SimCity-style animated progress
+- `src/components/ApiKeySettings.tsx` — local OpenAI key (binaural-openai-key localStorage)
+- `src/components/WaveformPlayer.tsx` — Canvas waveform, 800-point PCM, play/pause/scrub, MM:SS, ResizeObserver
+- `src/ai/savedSessions.ts` — IndexedDB save/replay (no localStorage quota issues)
+- Session options: duration (5–60 min), 6 voice choices (F/M), intensity (Gentle/Balanced/Deep), soundscape override
+- Saved sessions panel: ▼ Preview (WaveformPlayer inline) + ▶ Launch Session
+- Independent volume controls: Output / Binaural (15% default) / Background / Voice (80% default)
+- Voice Reverb live slider (dry/wet crossfade)
+
+### Music Content Strategy — Path C (Documented)
+- Phase 1: Licensed tracks (Artlist/Epidemic Sound), 20–40 at launch, monthly drops
+- Phase 2: Generative pad engine (drone/pad/pluck/bell/bass), scene presets, infinite variation
+- Phase 3: AI music generation (Stable Audio, MusicGen, self-hosted AudioCraft)
+- Separate music bus — never summed with binaural signal
+
+### Backdrop Mode (Documented)
+- Persistent binaural layer under any other audio (Spotify, podcasts, YouTube)
+- PWA first (Wake Lock API, Page Visibility API)
+- iOS: mixWithOthers AudioSession flag (Capacitor)
+- Android: audio focus management
+- 6 backdrop profiles
+
+### Tabbed UI + Mobile (Complete)
+- 5 tabs: 🎵 Tones / 🌊 Sound / ⏱ Session / ✨ AI / 📓 Journal
+- TabNav: horizontal pills desktop, fixed bottom bar mobile
+- Mobile: 44px tap targets, 16px inputs (iOS zoom prevention), bottom padding, full-width start button
+
+### Layered Soundscape Mixer (Complete)
+- `src/engine/soundscapeMixer.ts` — 8 named layers (Rain/Thunder/Wind/Waves/Fire/Forest/Space/Cave)
+- Each layer: noise source + BiquadFilter (bandpass/lowpass/highpass tuned per sound) + gain
+- `src/components/SoundscapeMixer.tsx` — scene presets + per-layer sliders
+- 7 scene presets: Thunderstorm, Ocean, Forest Rain, Fireplace, Deep Space, Cave Drip, Custom
+- Live gain updates via `updateLayerGain` during session
+- Replaces old single noise type selector
+
+---
+
+## myNoise-Inspired Feature Backlog
+
+Inspired by https://mynoise.net — the gold standard for layered ambient sound.
+
+### 🎚 Layered Soundscape Mixer (BUILT — see above)
+The core myNoise concept. Multiple simultaneous layers each with independent gain.
+
+### 🌊 Animate! — LFO-Driven Layer Animation
+myNoise's "Animate!" button slowly drifts layer levels over time.
+Implementation: apply slow random LFO (0.01–0.05 Hz sine + slight random walk) to each active layer's gain node. Makes the soundscape feel alive — rain intensity rises and falls, thunder rumbles unpredictably.
+- LFO rate per layer: `0.01–0.05 Hz` (very slow drift)
+- Random walk component: add small noise offset each cycle
+- "Animate" toggle per scene — on/off
+
+### 🎧 Calibration EQ
+myNoise lets users adjust output to their hearing/headphones.
+Our version: 5-band graphic EQ on master output.
+- Bands: 60 Hz / 250 Hz / 1 kHz / 4 kHz / 12 kHz
+- ±12 dB per band
+- Implemented as 5 BiquadFilter nodes in series on master bus
+- "Flat" preset resets all to 0 dB
+- Saved per-device to localStorage
+
+### 🔔 Tinnitus Masking Mode
+Pre-built layered combinations optimised for tinnitus relief.
+- Notched noise: band-reject filter around tinnitus frequency (user-configured)
+- Pink + brown blend at specific ratios
+- Dedicated preset in soundscape scenes
+- "Tinnitus Frequency" input (Hz)
+
+### 📻 Scene Crossfade
+Blend smoothly from one soundscape scene to another over 30 seconds.
+- "Morph to →" button on scene select
+- Crossfade via exponential gain ramps on each layer simultaneously
+- Great UX — no jarring cuts between scenes
+
+### 🎵 Isochronic Tones (Planned, no headphones needed)
+- AM-modulated carrier, adjustable pulse width/depth
+- Visible pulse on waveform display
+- Speaker-friendly (works without headphones)
+- Replaces or supplements binaural mode for non-headphone users
+
+### 🧠 Stage Sequencer / Brainwave Journey Engine (Core Differentiator)
+- Scheduled frequency ramps across states: Beta→Alpha→Theta→Delta
+- Pre-built journeys: Deep Sleep Descent, Morning Activation, Creative Flow, etc.
+- User-buildable: drag-and-drop timeline of stages
+- Each stage: duration, target freq, beat, LFO settings, soundscape mix
+
+### 👁 Visual Resonance Interface
+- Canvas Lissajous figure driven by actual L/R oscillator values
+- WebGL mandala expanding to WebGL sacred geometry
+- Frequency-reactive — shape changes with beat and carrier
+- Colour palette shifts with brainwave state
+
+### 💨 Breath Synchronisation Guide
+- Visual breathing guide overlay (expand/hold/release)
+- Pre-set patterns: 4-7-8, box breathing, coherent (5s/5s), Wim Hof
+- Synced to session stage (slower breathing pattern in delta stages)
+
+### 🌅 Goal-Based Onboarding (Moongate Parity Tier 1)
+- First screen: intent picker (Sleep / Relax / Focus / Meditate / Explore)
+- No Hz values shown — intent maps to frequency automatically
+- Simplified UI mode for new users, Pro mode toggle for power users
+
+### 🔄 Daily State Tracking
+- Pre-session mood check (1–5 scale + emoji)
+- Post-session mood check
+- Sleep quality log
+- Streak tracking (consecutive days)
+- Trends view in Journal tab
+
+### 🎙 Voice Commands
+- "Start sleep session" / "Stop" / "Deeper"
+- Web Speech API — no extra dependency
+- Hands-free during meditation
+
+### 🔊 Binaural + Isochronic Hybrid
+- Run binaural beats simultaneously with isochronic pulses
+- Different target frequencies (e.g. binaural for theta, isochronic pulse for alpha entrainment check)
+- Independent buses, mixed at master
+
+### 🛜 Offline PWA (In Progress)
+- Service Worker caching all assets
+- Works with zero network after first load
+- Backdrop mode requires PWA install for full background audio
