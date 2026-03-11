@@ -388,7 +388,159 @@ Implementation path:
 1. **First: template system** — map keywords to pre-built journey templates + randomized variation. No AI needed. Ships fast.
 2. **Later: LLM integration** — send prompt to GPT-4/Claude with a structured JSON schema for session parameters. Parse response into session config.
 
-#### 5b — Song Overlay (Phase 3 holdover)
+---
+
+#### 5f — AI Guided Meditation (Flagship AI Feature)
+
+**One prompt. Full experience.**
+
+User types (or speaks):
+> "Meditate on abundance"
+> "Help me release anxiety about my job"
+> "Deep sleep, I need to clear my head"
+> "Activate my creativity for a design session"
+
+The system responds with a **complete, orchestrated session**:
+
+1. **Selects the correct solfeggio carrier** — abundance → 528 Hz (transformation), anxiety release → 396 Hz (liberation), sleep → 174 Hz (foundation), creativity → 852 Hz (intuition)
+2. **Sets the brainwave target** — abundance/creativity → alpha/theta, anxiety → alpha, sleep → delta/theta
+3. **Builds a stage sequence** — dynamic transition journey tuned to the intent
+4. **Selects soundscape** — abundance → warm pad + gentle rain, anxiety → ocean + soft drone, sleep → deep brown noise + pad
+5. **Generates a guided voice meditation** — a full narrated script tailored to the user's intent, spoken over the audio in a calm voice
+6. **Starts the session** — everything plays together immediately
+
+The voice is the centrepiece. The frequencies are the invisible support structure underneath it.
+
+### Voice Generation Architecture
+
+**TTS Provider options (in order of recommendation):**
+
+| Provider | Voice Quality | Cost | Latency | Notes |
+|----------|--------------|------|---------|-------|
+| **ElevenLabs** | Best in class | ~$0.30/1k chars | Low | Most natural, emotion-aware, custom voice cloning |
+| **OpenAI TTS** (tts-1-hd) | Excellent | ~$0.03/1k chars | Low | Great value, 6 voices, very natural |
+| **Google Cloud TTS** (WaveNet) | Very good | ~$0.016/1k chars | Low | Reliable, many languages |
+| **Azure Cognitive TTS** (Neural) | Very good | ~$0.016/1k chars | Low | Strong neural voices |
+| **Web Speech API** | Poor | Free | Instant | Prototype only — robotic, not suitable for meditation |
+
+**Recommended:** OpenAI TTS for launch (cost-effective, high quality), ElevenLabs for premium tier (custom voice, more natural breathing/pausing).
+
+### Script Generation Architecture
+
+**Step 1: Session config generation (LLM)**
+```
+User prompt: "Meditate on abundance"
+→ GPT-4 / Claude returns structured JSON:
+{
+  "carrier": 528,
+  "beat": 7.83,
+  "brainwaveTarget": "theta",
+  "stages": [...],
+  "soundscape": "warm-pad-rain",
+  "meditationTheme": "abundance",
+  "meditationDuration": 15,
+  "scriptTone": "warm, gentle, affirming",
+  "breathingPattern": "slow-4-4"
+}
+```
+
+**Step 2: Script generation (LLM)**
+```
+System prompt: You are a meditation guide. Write a 15-minute guided meditation 
+on the theme of abundance. The listener is in a theta brainwave state. 
+Use warm, gentle, affirming language. Include:
+- Opening grounding (2 min)
+- Core theme visualisation (10 min)  
+- Integration and closing (3 min)
+Include [PAUSE 10s], [PAUSE 5s] markers for timing.
+Tone: {scriptTone}
+```
+
+**Step 3: TTS rendering**
+- Script split into chunks at pause markers
+- Each chunk sent to TTS API
+- Audio chunks assembled with silence gaps at pause markers
+- Final audio: single WAV/MP3 file or streaming chunks
+
+**Step 4: Session assembly**
+- Voice audio loaded into a dedicated `VoiceNode` in the audio graph
+- Voice bus: separate gain, subtle reverb (small room IR), gentle EQ (HPF 100Hz, presence boost 2–4kHz)
+- Voice mixed over binaural + soundscape at ~70% gain
+- Binaural engine running underneath throughout
+- Voice fades in after fade-in envelope completes (~10 sec into session)
+
+### Voice Bus Architecture
+```
+[TTS Voice Audio]
+    └──► [Voice Gain ~70%] ──► [Voice Reverb (small room)] ──► [Voice EQ] ──► [Voice Bus]
+                                                                                     │
+[Binaural Bus] ──────────────────────────────────────────────────────────────────────┤
+[Pad Synth] ─────────────────────────────────────────────────────────────────────────┤
+[Soundscape] ────────────────────────────────────────────────────────────────────────┤
+                                                                                     ▼
+                                                                              [Master Gain] ──► Output
+```
+
+### Meditation Themes (Pre-mapped)
+Ship with a library of pre-mapped themes so the LLM has structured guidance:
+
+| Theme | Carrier | Beat | Brainwave | Soundscape | Script Tone |
+|-------|---------|------|-----------|------------|-------------|
+| Abundance | 528 Hz | 7.83 Hz | Theta | Warm pad + rain | Affirming, expansive |
+| Anxiety release | 396 Hz | 10 Hz | Alpha | Ocean waves | Calming, grounding |
+| Deep sleep | 174 Hz | 2 Hz | Delta | Brown noise + pad | Slow, hypnotic |
+| Creativity | 852 Hz | 10 Hz | Alpha/Theta | Crystal + pad | Inspiring, open |
+| Self-love | 639 Hz | 7 Hz | Theta | Soft rain | Warm, nurturing |
+| Clarity / focus | 741 Hz | 14 Hz | Alpha/Beta | Light noise | Clear, direct |
+| Healing | 285 Hz | 4 Hz | Theta | Forest + pad | Gentle, restorative |
+| Spiritual connection | 963 Hz | 7 Hz | Theta | Space + drone | Mystical, reverent |
+| Lucid dreaming | 432 Hz | 4 Hz | Theta/Delta | Deep pad | Dreamlike, hypnagogic |
+| Energy activation | 417 Hz | 18 Hz | Beta | Uplifting pad | Energising, purposeful |
+
+### UX Flow
+
+```
+Home screen
+  └──► "AI Meditation" button (prominent, premium feature)
+         └──► Text field: "What do you want to meditate on?"
+                └──► Optional: voice input (Web Speech API)
+                       └──► [Generate] button
+                              └──► Loading screen: "Preparing your session..."
+                                     ├──► LLM generates session config + script
+                                     ├──► TTS renders voice audio
+                                     └──► Session starts automatically
+                                            ├──► Voice guides meditation
+                                            ├──► Binaural engine runs underneath
+                                            └──► Post-session: journal prompt + save as preset
+```
+
+### Pre-generated Sessions (Hybrid approach)
+For speed and cost control, pre-generate a library of AI meditation sessions for common themes:
+- Render once, store as audio files
+- Available immediately, no generation latency
+- Custom/unique prompts go through live generation (premium only)
+- Hybrid: 20 pre-generated sessions free, unlimited live generation for Pro
+
+### Voice Customisation (Premium)
+- Choose from multiple voice personas (calm male, warm female, gender-neutral, etc.)
+- ElevenLabs voice cloning — upload your own voice or choose from premium library
+- Adjust speaking pace (slow / medium / slightly faster)
+- Background music volume relative to voice
+
+### Privacy Considerations
+- User meditation prompts are sent to LLM API — disclose clearly in privacy policy
+- Option to use on-device LLM (future — llama.cpp / Ollama) for fully private generation
+- Generated scripts stored locally only unless user opts into cloud sync
+- No meditation content is used to train models (confirm per provider TOS)
+
+### Cost Model
+| Tier | AI Meditation Access | Cost per session (approx.) |
+|------|---------------------|---------------------------|
+| Free | 3 pre-generated sessions only | $0 |
+| Pro | Unlimited pre-generated + 10 live/month | ~$0.05–0.15 per live session |
+| Premium | Unlimited live + ElevenLabs voice | ~$0.30–0.50 per live session |
+
+Live generation cost (per 15-min session): LLM (~$0.02) + TTS (~$0.10) + storage = ~$0.12–0.15. Priced well within Pro margin.
 Import a song file and overlay binaural on a dedicated bus:
 - Song file import (MP3/WAV/FLAC via FileReader API)
 - Song on its own bus (dedicated gain + EQ)
