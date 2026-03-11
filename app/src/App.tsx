@@ -10,7 +10,7 @@ import {
   createPadSynth, stopPadSynth,
   updatePadVolume, updatePadReverbMix, updatePadBreatheRate, updatePadWaveform, updatePadRoot,
 } from './engine/padSynth'
-import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus } from './engine/voiceBus'
+import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, setVoiceReverb } from './engine/voiceBus'
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
@@ -113,6 +113,7 @@ function App() {
   const [volume, setVolume] = useState(0.2)
   const [binauralVolume, setBinauralVolume] = useState(0.15)
   const [voiceVolume, setVoiceVolume] = useState(0.8)
+  const [voiceReverb, setVoiceReverb] = useState(0.3)
 
   // Session
   const [sessionMinutes, setSessionMinutes] = useState(10)
@@ -596,6 +597,13 @@ function App() {
     if (!vb) return
     setVoiceVolume_bus(vb, voiceVolume)
   }, [voiceVolume])
+
+  // Voice reverb — live update dry/wet mix
+  useEffect(() => {
+    const vb = voiceBusRef.current
+    if (!vb) return
+    setVoiceReverb(vb, voiceReverb)
+  }, [voiceReverb])
 
   useEffect(() => {
     const graph = graphRef.current

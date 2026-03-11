@@ -89,3 +89,11 @@ export function stopVoiceBus(bus: VoiceBus, fadeSeconds = 1): void {
 export function setVoiceVolume(bus: VoiceBus, volume: number): void {
   bus.gainNode.gain.setTargetAtTime(Math.max(0.0001, volume), bus.context.currentTime, 0.05)
 }
+
+export function setVoiceReverb(bus: VoiceBus, wetAmount: number): void {
+  // wetAmount: 0 = dry only, 1 = fully wet. Crossfade dry/wet.
+  const wet = Math.max(0, Math.min(1, wetAmount))
+  const dry = 1 - wet * 0.6  // keep some dry always so voice stays present
+  bus.dryGain.gain.setTargetAtTime(dry, bus.context.currentTime, 0.05)
+  bus.wetGain.gain.setTargetAtTime(wet * 0.6, bus.context.currentTime, 0.05)
+}
