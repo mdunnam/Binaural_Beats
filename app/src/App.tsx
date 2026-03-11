@@ -10,7 +10,7 @@ import {
   createPadSynth, stopPadSynth,
   updatePadVolume, updatePadReverbMix, updatePadBreatheRate, updatePadWaveform, updatePadRoot,
 } from './engine/padSynth'
-import { createVoiceBus, stopVoiceBus } from './engine/voiceBus'
+import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus } from './engine/voiceBus'
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
@@ -111,6 +111,8 @@ function App() {
 
   const [phaseOffset, setPhaseOffset] = useState(0)
   const [volume, setVolume] = useState(0.2)
+  const [binauralVolume, setBinauralVolume] = useState(1.0)
+  const [voiceVolume, setVoiceVolume] = useState(0.75)
 
   // Session
   const [sessionMinutes, setSessionMinutes] = useState(10)
@@ -345,7 +347,7 @@ function App() {
     if (pendingAiSessionRef.current) {
       const aiConfig = pendingAiSessionRef.current
       pendingAiSessionRef.current = null
-      createVoiceBus(graph.context, aiConfig.audioBlob, graph.masterGain, 0.75).then((bus) => {
+      createVoiceBus(graph.context, aiConfig.audioBlob, graph.masterGain, voiceVolume).then((bus) => {
         voiceBusRef.current = bus
       }).catch((err) => {
         console.error('Voice bus failed:', err)
@@ -574,6 +576,21 @@ function App() {
     if (!graph) return
     graph.masterGain.gain.setTargetAtTime(Math.max(0.0001, volume), graph.context.currentTime, 0.05)
   }, [volume])
+
+  // Binaural bus volume — automationGain sits between filter and masterGain; use leftGain+rightGain as the binaural sub-volume
+  useEffect(() => {
+    const graph = graphRef.current
+    if (!graph) return
+    graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), graph.context.currentTime, 0.05)
+    graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), graph.context.currentTime, 0.05)
+  }, [binauralVolume])
+
+  // Voice volume — live update the voice bus output gain
+  useEffect(() => {
+    const vb = voiceBusRef.current
+    if (!vb) return
+    setVoiceVolume_bus(vb, voiceVolume)
+  }, [voiceVolume])
 
   useEffect(() => {
     const graph = graphRef.current
@@ -844,6 +861,14 @@ function App() {
           </label>
           <label>Output Volume ({Math.round(volume * 100)}%)
             <input type="range" min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
+          </label>
+          <label>Binaural Volume ({Math.round(binauralVolume * 100)}%)
+            <small className="control-hint">Independent level for the binaural tones</small>
+            <input type="range" min={0} max={1} step={0.01} value={binauralVolume} onChange={(e) => setBinauralVolume(Number(e.target.value))} />
+          </label>
+          <label>Voice Volume ({Math.round(voiceVolume * 100)}%)
+            <small className="control-hint">AI meditation voice level (active when AI session is running)</small>
+            <input type="range" min={0} max={1} step={0.01} value={voiceVolume} onChange={(e) => setVoiceVolume(Number(e.target.value))} />
           </label>
 
           {/* ── Noise ── */}
