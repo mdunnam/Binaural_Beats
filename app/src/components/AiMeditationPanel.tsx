@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { generateMeditation, VOICE_OPTIONS, DEFAULT_FEMALE_VOICE, DEFAULT_MALE_VOICE } from '../ai/meditationComposer'
 import type { TtsVoice, VoiceGender } from '../ai/meditationComposer'
-import { saveSession, listSessions, deleteSession, sessionBlobFromDataUrl } from '../ai/savedSessions'
+import { saveSession, listSessions, deleteSession, getSessionBlob, migrateFromLocalStorage } from '../ai/savedSessions'
 import type { SavedSession } from '../ai/savedSessions'
 import type { NoiseType } from '../types'
 
@@ -148,11 +148,15 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
   const progress = useAnimatedProgress(step)
   const isGenerating = step === 'writing' || step === 'rendering' || step === 'starting'
 
-  const refreshSaved = () => setSavedList(listSessions())
+  const refreshSaved = () => { void listSessions().then(setSavedList) }
+
+  useEffect(() => {
+    void migrateFromLocalStorage().then(() => refreshSaved())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleShowSaved = () => {
-    refreshSaved()
-    setShowSaved(true)
+    void listSessions().then((list) => { setSavedList(list); setShowSaved(true) })
   }
 
   // When gender changes, reset voice to that gender's default
@@ -196,7 +200,8 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
   }
 
   const handlePlaySaved = async (session: SavedSession) => {
-    const blob = await sessionBlobFromDataUrl(session.audioDataUrl)
+    const blob = await getSessionBlob(session.id)
+    if (!blob) { alert('Audio not found for this session.'); return }
     const config: AiMeditationConfig = {
       carrier: session.carrier,
       beat: session.beat,
@@ -213,8 +218,7 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
   }
 
   const handleDeleteSaved = (id: string) => {
-    deleteSession(id)
-    refreshSaved()
+    void deleteSession(id).then(() => refreshSaved())
   }
 
   const stepStatus = (s: 'writing' | 'rendering' | 'starting') => {
@@ -232,7 +236,7 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
     onClose()
   }
 
-  const savedCount = listSessions().length
+  const savedCount = savedList.length
 
   return (
     <div className="ai-panel" onClick={handleBackdropClick}>

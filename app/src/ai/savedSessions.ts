@@ -15,28 +15,84 @@ export type SavedSession = {
   noiseVolume: number
   padEnabled: boolean
   script: string
-  audioDataUrl: string
+  // audio is stored separately in IDB object store 'audio' keyed by id
 }
 
-const STORAGE_KEY = 'binaural-ai-sessions-v1'
+// ---------------------------------------------------------------------------
+// IndexedDB setup
+// ---------------------------------------------------------------------------
+const DB_NAME = 'binaural-sessions'
+const DB_VERSION = 1
+const META_STORE = 'sessions'
+const AUDIO_STORE = 'audio'
 
-function blobToDataUrl(blob: Blob): Promise<string> {
+function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
+    const req = indexedDB.open(DB_NAME, DB_VERSION)
+    req.onupgradeneeded = (e) => {
+      const db = (e.target as IDBOpenDBRequest).result
+      if (!db.objectStoreNames.contains(META_STORE)) {
+        const store = db.createObjectStore(META_STORE, { keyPath: 'id' })
+        store.createIndex('savedAt', 'savedAt')
+      }
+      if (!db.objectStoreNames.contains(AUDIO_STORE)) {
+        db.createObjectStore(AUDIO_STORE) // keyed manually by session id
+      }
+    }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
   })
 }
 
+function idbPut(db: IDBDatabase, storeName: string, value: unknown, key?: IDBValidKey): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite')
+    const req = key !== undefined
+      ? tx.objectStore(storeName).put(value, key)
+      : tx.objectStore(storeName).put(value)
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function idbGetAll<T>(db: IDBDatabase, storeName: string): Promise<T[]> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly')
+    const req = tx.objectStore(storeName).getAll()
+    req.onsuccess = () => resolve(req.result as T[])
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function idbGet<T>(db: IDBDatabase, storeName: string, key: IDBValidKey): Promise<T | undefined> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly')
+    const req = tx.objectStore(storeName).get(key)
+    req.onsuccess = () => resolve(req.result as T | undefined)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function idbDelete(db: IDBDatabase, storeName: string, key: IDBValidKey): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite')
+    const req = tx.objectStore(storeName).delete(key)
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error)
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 export async function saveSession(
   prompt: string,
   options: { voice: string; intensity: string; soundscape: string; durationMinutes: number },
   result: GeneratedMeditation,
 ): Promise<SavedSession> {
-  const audioDataUrl = await blobToDataUrl(result.audioBlob)
+  const db = await openDb()
 
-  const session: SavedSession = {
+  const meta: SavedSession = {
     id: crypto.randomUUID(),
     savedAt: Date.now(),
     prompt,
@@ -51,31 +107,54 @@ export async function saveSession(
     noiseVolume: result.config.noiseVolume,
     padEnabled: result.config.padEnabled,
     script: result.script,
-    audioDataUrl,
   }
 
-  const existing = listSessions()
-  existing.push(session)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
-  return session
+  await idbPut(db, META_STORE, meta)
+  await idbPut(db, AUDIO_STORE, result.audioBlob, meta.id)
+  db.close()
+  return meta
 }
 
-export function listSessions(): SavedSession[] {
+export async function listSessions(): Promise<SavedSession[]> {
+  const db = await openDb()
+  const all = await idbGetAll<SavedSession>(db, META_STORE)
+  db.close()
+  return all.sort((a, b) => b.savedAt - a.savedAt)
+}
+
+export async function deleteSession(id: string): Promise<void> {
+  const db = await openDb()
+  await idbDelete(db, META_STORE, id)
+  await idbDelete(db, AUDIO_STORE, id)
+  db.close()
+}
+
+export async function getSessionBlob(id: string): Promise<Blob | undefined> {
+  const db = await openDb()
+  const blob = await idbGet<Blob>(db, AUDIO_STORE, id)
+  db.close()
+  return blob
+}
+
+// Migrate any old base64 sessions from localStorage (one-time)
+export async function migrateFromLocalStorage(): Promise<void> {
+  const LEGACY_KEY = 'binaural-ai-sessions-v1'
+  const raw = localStorage.getItem(LEGACY_KEY)
+  if (!raw) return
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    return JSON.parse(raw) as SavedSession[]
+    type LegacySession = SavedSession & { audioDataUrl?: string }
+    const legacy = JSON.parse(raw) as LegacySession[]
+    const db = await openDb()
+    for (const s of legacy) {
+      if (!s.id || !s.audioDataUrl) continue
+      const { audioDataUrl, ...meta } = s
+      await idbPut(db, META_STORE, meta)
+      const blob = await fetch(audioDataUrl).then((r) => r.blob())
+      await idbPut(db, AUDIO_STORE, blob, s.id)
+    }
+    db.close()
+    localStorage.removeItem(LEGACY_KEY)
   } catch {
-    return []
+    // silently skip bad legacy data
   }
-}
-
-export function deleteSession(id: string): void {
-  const sessions = listSessions().filter((s) => s.id !== id)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions))
-}
-
-export async function sessionBlobFromDataUrl(dataUrl: string): Promise<Blob> {
-  const res = await fetch(dataUrl)
-  return res.blob()
 }
