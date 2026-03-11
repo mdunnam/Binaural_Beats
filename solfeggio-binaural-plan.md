@@ -687,6 +687,84 @@ type MusicTrack = {
 
 ---
 
+## Backdrop Mode
+
+**The app stays on underneath everything. Always.**
+
+Most meditation and binaural apps pause or duck when the user opens Spotify, YouTube, a podcast, or takes a call. Backdrop Mode inverts this — the binaural and ambient layers are designed to run *persistently in the background*, mixing with whatever else the user is listening to.
+
+The user sets it, forgets it, and it just works. They put on their focus playlist, their ambient music, their podcast — and the binaural engine is underneath all of it, quietly doing its job.
+
+### What It Is
+- A persistent low-level binaural + ambient layer that continues playing regardless of what other audio is active
+- The user's other audio (Spotify, Apple Music, YouTube, podcasts, video calls) plays on top
+- The app's audio ducks to a preset backdrop volume (default: ~20–30%) so it never fights the foreground audio
+- Binaural frequencies remain audible through the mix at low volume — the effect persists even at low gain
+
+### Why It Works
+- Binaural beat perception works at surprisingly low volumes — the brain still follows the beat frequency even when it's subtle
+- Most users who want focus benefits are also listening to music — this removes the "choose one" friction entirely
+- It reframes the app from "thing you do instead of music" to "thing you add to everything"
+- Huge retention driver — it becomes part of the user's daily routine without requiring dedicated listening time
+
+### How It Works Technically
+
+**Web / PWA (primary platform):**
+- Web Audio API `AudioContext` with `{ latencyHint: 'playback' }` for background-optimized behavior
+- **Wake Lock API** — `navigator.wakeLock.request('screen')` prevents device sleep during active backdrop sessions
+- **Page Visibility API** — detect when app is backgrounded; keep audio context running, suspend only UI updates
+- Audio context must be resumed on user gesture before backgrounding (browser autoplay policy)
+- PWA installed to home screen gets better background audio treatment than browser tab on iOS/Android
+- Service Worker keeps the app alive in background
+
+**iOS specific (PWA / future native):**
+- iOS interrupts Web Audio on phone calls and some system events — implement `AudioContext.onstatechange` handler to auto-resume
+- AVAudioSession category must be set to `playback` with `mixWithOthers` flag (native app only)
+- `mixWithOthers` is the key: tells iOS to mix with Spotify/Apple Music instead of ducking them
+- Safari PWA has limited background audio support — native app wrapper (Capacitor or React Native) recommended for reliable iOS backdrop
+
+**Android:**
+- Chrome PWA has better background audio support than iOS
+- Web Audio continues running when screen is off on most Android devices
+- Request `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` so other apps keep playing alongside
+
+**Desktop (browser):**
+- Works natively — browser audio mixes with system audio by default
+- No special handling needed beyond keeping the tab alive
+
+### User Controls
+- **Backdrop toggle** — one tap to enable/disable, prominent in the UI
+- **Backdrop volume** — dedicated gain separate from main session volume (default 25%)
+- **Backdrop profile** — choose what runs: binaural only / binaural + noise / binaural + pad / full session
+- **Auto-backdrop** — option to always start new sessions in backdrop mode
+- **Persistent OS notification** — shows while backdrop is active, keeps process alive on mobile, has a quick stop button
+
+### Backdrop Profiles (Pre-built)
+| Profile | What plays | Use case |
+|---------|-----------|----------|
+| Pure Binaural | Binaural tones only | Works under any music |
+| Binaural + Rain | Binaural + brown noise | Podcast / work listening |
+| Binaural + Pad | Binaural + breathing pad | Ambient / instrumental music |
+| Deep Focus | Binaural (Beta) + light noise | Work sessions with music |
+| Sleep Under | Binaural (Theta/Delta) only | Sleep with ASMR / white noise apps |
+| Meditation Under | Binaural (Theta) + pad | Meditation music apps |
+
+### Limitations + Mitigations
+| Issue | Mitigation |
+|-------|-----------|
+| iOS Safari kills background audio after ~30 sec | Recommend PWA install; native app in roadmap; document clearly |
+| Phone call interrupts audio context | `AudioContext.onstatechange` auto-resume handler |
+| User confusion about what's playing | Persistent status indicator in notification + in-app badge |
+| Binaural effect weakened at low backdrop volume | Minimum backdrop volume floor (15%); educate user that low volume still works |
+| Battery drain from persistent audio | Efficient oscillator-only profile by default; battery warning |
+
+### Implementation Phases
+- **Phase 1 (PWA):** Page Visibility API + Wake Lock + auto-resume handler. Works on desktop and Android. Document iOS limitation.
+- **Phase 2 (Native wrapper):** Capacitor shell around the PWA. Enables proper iOS `mixWithOthers` audio session. Unlocks App Store distribution.
+- **Phase 3 (Native app):** Full React Native or Swift/Kotlin port if needed for HRV/EEG hardware integration.
+
+---
+
 Three tiers of parity, in order of impact:
 
 ### Tier 1 — Must-Have MVP Parity
