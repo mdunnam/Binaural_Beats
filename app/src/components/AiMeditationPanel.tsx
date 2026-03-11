@@ -20,7 +20,6 @@ export type AiMeditationConfig = {
 
 interface AiMeditationPanelProps {
   onSessionReady: (config: AiMeditationConfig) => void
-  onClose: () => void
   apiKey: string
   onOpenSettings: () => void
 }
@@ -132,7 +131,7 @@ function formatDate(ts: number): string {
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSettings }: AiMeditationPanelProps) {
+export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: AiMeditationPanelProps) {
   const [prompt, setPrompt] = useState('')
   const [duration, setDuration] = useState(15)
   const [gender, setGender] = useState<VoiceGender>('female')
@@ -196,7 +195,6 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
       onSessionReady(config)
       // Save session
       await saveSession(prompt, { voice, intensity, soundscape, durationMinutes: duration }, result)
-      onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
       setStep('error')
@@ -218,7 +216,6 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
       script: session.script,
     }
     onSessionReady(config)
-    onClose()
   }
 
   const handleDeleteSaved = (id: string) => {
@@ -247,35 +244,23 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
     return 'pending'
   }
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target !== e.currentTarget) return
-    if (isGenerating) return
-    onClose()
-  }
-
   const savedCount = savedList.length
 
   return (
-    <div className="ai-panel" onClick={handleBackdropClick}>
-      <div className="ai-panel-card">
+    <div className="ai-panel-inline">
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>✨ AI Guided Meditation</h2>
-          {!isGenerating && (
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              {step === 'idle' && !showSaved && (
-                <button
-                  className="soft-button"
-                  style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem', position: 'relative' }}
-                  onClick={handleShowSaved}
-                >
-                  📚 Saved
-                  {savedCount > 0 && <span className="ai-saved-count-badge">{savedCount}</span>}
-                </button>
-              )}
-              <button className="soft-button" style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem' }} onClick={onClose} aria-label="Close">✕</button>
-            </div>
+          {!isGenerating && step === 'idle' && !showSaved && (
+            <button
+              className="soft-button"
+              style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem', position: 'relative' }}
+              onClick={handleShowSaved}
+            >
+              📚 Saved
+              {savedCount > 0 && <span className="ai-saved-count-badge">{savedCount}</span>}
+            </button>
           )}
         </div>
 
@@ -439,7 +424,6 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
               <button className="ai-generate-btn" onClick={() => void handleGenerate()} disabled={!prompt.trim()}>
                 Generate &amp; Start Session
               </button>
-              <button className="soft-button" onClick={onClose}>Cancel</button>
             </div>
           </>
         )}
@@ -474,12 +458,10 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
             <p className="ai-error">{error}</p>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
               <button className="ai-generate-btn" onClick={() => setStep('idle')}>Try Again</button>
-              <button className="soft-button" onClick={onClose}>Cancel</button>
             </div>
           </div>
         )}
 
-      </div>
     </div>
   )
 }

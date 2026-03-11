@@ -647,6 +647,13 @@ input[type='range'] {
 }
 
 /* ── AI Meditation ── */
+.ai-panel-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.25rem 0;
+}
+
 .ai-panel,
 .settings-panel {
   position: fixed;

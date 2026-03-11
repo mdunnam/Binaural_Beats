@@ -181,7 +181,6 @@ function App() {
 
   // AI Meditation
   const [aiApiKey, setAiApiKey] = useState<string>('')
-  const [showAiPanel, setShowAiPanel] = useState(false)
   const [showApiSettings, setShowApiSettings] = useState(false)
 
   const graphRef = useRef<AudioGraph | null>(null)
@@ -1044,15 +1043,11 @@ function App() {
 
           {/* ──────────────── AI TAB ──────────────── */}
           {activeTab === 'ai' && (
-            <div className="ai-tab-content">
-              <p className="ai-tab-desc">Generate a complete guided meditation from a single prompt — the AI selects the right frequencies, soundscape, and narrates the entire session.</p>
-              <button className="ai-generate-btn" style={{ width: '100%', marginBottom: '0.75rem' }} onClick={() => setShowAiPanel(true)}>
-                ✨ Generate AI Meditation
-              </button>
-              <button className="soft-button" style={{ width: '100%' }} onClick={() => setShowApiSettings(true)}>
-                ⚙ OpenAI API Key Settings
-              </button>
-            </div>
+            <AiMeditationPanel
+              onSessionReady={handleAiSessionReady}
+              apiKey={aiApiKey}
+              onOpenSettings={() => setShowApiSettings(true)}
+            />
           )}
 
           {/* ──────────────── JOURNAL TAB ──────────────── */}
@@ -1078,16 +1073,6 @@ function App() {
           entry={pendingJournalEntry}
           onSave={saveJournalEntry}
           onCancel={() => { setShowJournalModal(false); setPendingJournalEntry(null) }}
-        />
-      )}
-
-      {/* ── AI Meditation Panel ── */}
-      {showAiPanel && (
-        <AiMeditationPanel
-          onSessionReady={handleAiSessionReady}
-          onClose={() => setShowAiPanel(false)}
-          apiKey={aiApiKey}
-          onOpenSettings={() => { setShowAiPanel(false); setShowApiSettings(true) }}
         />
       )}
 
