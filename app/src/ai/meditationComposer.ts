@@ -37,6 +37,8 @@ export type GeneratedMeditation = {
 export type MeditationOptions = {
   durationMinutes?: number
   voice?: TtsVoice
+  intensity?: 'gentle' | 'balanced' | 'deep'
+  soundscape?: 'auto' | 'rain' | 'ocean' | 'forest' | 'space' | 'silence'
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +127,8 @@ export async function generateMeditation(
   const theme = matchTheme(prompt)
   const durationMinutes = options.durationMinutes ?? theme.sessionMinutes
   const voice: TtsVoice = options.voice ?? 'shimmer'
+  const intensity = options.intensity ?? 'balanced'
+  const soundscape = options.soundscape ?? 'auto'
 
   const config: MeditationSessionConfig = {
     carrier: theme.carrier,
@@ -139,10 +143,17 @@ export async function generateMeditation(
   }
 
   // Step 1 — generate script
+  const intensityInstruction =
+    intensity === 'gentle'
+      ? 'Use soft, light guidance. Don\'t push too deep. Keep it accessible and comfortable. Short visualisations, gentle affirmations.'
+      : intensity === 'deep'
+      ? "Go deep. Use rich, immersive hypnotic language. Long extended visualisations. Invite the listener to surrender completely. Use repetition and deepening phrases like 'deeper still', 'even deeper now'. This is for experienced practitioners."
+      : ''
+
   const systemPrompt = `You are a deeply experienced meditation guide with a slow, intimate, hypnotic voice. Write a guided meditation script based on the user's intent.
 Rules:
 - Duration: ${durationMinutes} minutes when read at a very slow, deeply relaxed pace with long pauses
-- Tone: ${config.scriptTone}
+- Tone: ${config.scriptTone}${intensityInstruction ? `\n- ${intensityInstruction}` : ''}
 - Use long, flowing sentences. Short sentences should be rare and used only for emphasis.
 - Include generous [PAUSE 5s] and [PAUSE 10s] markers — more pauses than you think you need
 - Leave space for the listener to breathe and sink deeper between phrases
@@ -197,6 +208,19 @@ Rules:
 
   const audioBlob = await concatenateAudioBlobs(audioBlobs)
   const audioUrl = URL.createObjectURL(audioBlob)
+
+  // Apply soundscape override
+  const SOUNDSCAPE_MAP: Record<string, { noiseType: string; noiseVolume: number }> = {
+    auto:    { noiseType: theme.noiseType,  noiseVolume: theme.noiseVolume },
+    rain:    { noiseType: 'pink',           noiseVolume: 0.15 },
+    ocean:   { noiseType: 'brown',          noiseVolume: 0.18 },
+    forest:  { noiseType: 'pink',           noiseVolume: 0.1  },
+    space:   { noiseType: 'none',           noiseVolume: 0    },
+    silence: { noiseType: 'none',           noiseVolume: 0    },
+  }
+  const soundscapeConfig = SOUNDSCAPE_MAP[soundscape] ?? SOUNDSCAPE_MAP['auto']
+  config.noiseType = soundscapeConfig.noiseType
+  config.noiseVolume = soundscapeConfig.noiseVolume
 
   return { config, script, audioUrl, audioBlob }
 }

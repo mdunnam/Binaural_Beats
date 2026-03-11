@@ -802,3 +802,92 @@ input[type='range'] {
   color: #7a8f87;
   text-align: center;
 }
+
+/* ── Intensity row ─────────────────────────────────────────────────── */
+.ai-intensity-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Soundscape row ─────────────────────────────────────────────────── */
+.ai-soundscape-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ai-soundscape-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #b0ccc4;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #2a4a3e;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ai-soundscape-btn:hover { background: #e8f3ef; }
+
+.ai-soundscape-btn--active {
+  background: #e0f2eb;
+  border-color: #3e8f72;
+  font-weight: 600;
+}
+
+/* ── Saved sessions list ────────────────────────────────────────────── */
+.ai-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.ai-saved-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid #c8ddd7;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  background: #f8fdfb;
+}
+
+.ai-saved-meta {
+  font-size: 0.75rem;
+  color: #7a8f87;
+  margin-top: 0.1rem;
+}
+
+.ai-saved-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* ── Saved count badge ──────────────────────────────────────────────── */
+.ai-saved-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #3e8f72;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { generateMeditation, VOICE_OPTIONS, DEFAULT_FEMALE_VOICE, DEFAULT_MALE_VOICE } from '../ai/meditationComposer'
 import type { TtsVoice, VoiceGender } from '../ai/meditationComposer'
+import { saveSession, listSessions, deleteSession, sessionBlobFromDataUrl } from '../ai/savedSessions'
+import type { SavedSession } from '../ai/savedSessions'
 import type { NoiseType } from '../types'
 
 export type AiMeditationConfig = {
@@ -23,6 +25,8 @@ interface AiMeditationPanelProps {
 }
 
 type Step = 'idle' | 'writing' | 'rendering' | 'starting' | 'error'
+type Intensity = 'gentle' | 'balanced' | 'deep'
+type Soundscape = 'auto' | 'rain' | 'ocean' | 'forest' | 'space' | 'silence'
 
 const DURATION_OPTIONS = [
   { value: 5,  label: '5 min',  cost: '~$0.03' },
@@ -32,6 +36,15 @@ const DURATION_OPTIONS = [
   { value: 30, label: '30 min', cost: '~$0.18' },
   { value: 45, label: '45 min', cost: '~$0.27' },
   { value: 60, label: '60 min', cost: '~$0.36' },
+]
+
+const SOUNDSCAPE_OPTIONS: { value: Soundscape; icon: string; label: string }[] = [
+  { value: 'rain',    icon: '🌧',  label: 'Rain'    },
+  { value: 'ocean',   icon: '🌊',  label: 'Ocean'   },
+  { value: 'forest',  icon: '🌲',  label: 'Forest'  },
+  { value: 'space',   icon: '🌌',  label: 'Space'   },
+  { value: 'silence', icon: '◯',   label: 'Silence' },
+  { value: 'auto',    icon: '✨',  label: 'Auto'    },
 ]
 
 // ---------------------------------------------------------------------------
@@ -111,6 +124,10 @@ function useAnimatedProgress(step: Step): number {
   return progress
 }
 
+function formatDate(ts: number): string {
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -119,13 +136,24 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
   const [duration, setDuration] = useState(15)
   const [gender, setGender] = useState<VoiceGender>('female')
   const [voice, setVoice] = useState<TtsVoice>(DEFAULT_FEMALE_VOICE)
+  const [intensity, setIntensity] = useState<Intensity>('balanced')
+  const [soundscape, setSoundscape] = useState<Soundscape>('auto')
   const [step, setStep] = useState<Step>('idle')
   const [error, setError] = useState('')
+  const [showSaved, setShowSaved] = useState(false)
+  const [savedList, setSavedList] = useState<SavedSession[]>([])
 
   const activeLoadingStep = (step === 'writing' || step === 'rendering' || step === 'starting') ? step : null
   const rotatingMessage = useRotatingMessage(activeLoadingStep)
   const progress = useAnimatedProgress(step)
   const isGenerating = step === 'writing' || step === 'rendering' || step === 'starting'
+
+  const refreshSaved = () => setSavedList(listSessions())
+
+  const handleShowSaved = () => {
+    refreshSaved()
+    setShowSaved(true)
+  }
 
   // When gender changes, reset voice to that gender's default
   const handleGenderChange = (g: VoiceGender) => {
@@ -141,12 +169,12 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
     setError('')
     setStep('writing')
     try {
-      const result = await generateMeditation(prompt, apiKey, { durationMinutes: duration, voice })
+      const result = await generateMeditation(prompt, apiKey, { durationMinutes: duration, voice, intensity, soundscape })
       setStep('rendering')
       await new Promise((r) => setTimeout(r, 400))
       setStep('starting')
       await new Promise((r) => setTimeout(r, 400))
-      onSessionReady({
+      const config: AiMeditationConfig = {
         carrier: result.config.carrier,
         beat: result.config.beat,
         noiseType: result.config.noiseType as NoiseType,
@@ -156,12 +184,37 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
         audioBlob: result.audioBlob,
         theme: result.config.theme,
         script: result.script,
-      })
+      }
+      onSessionReady(config)
+      // Save session
+      await saveSession(prompt, { voice, intensity, soundscape, durationMinutes: duration }, result)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
       setStep('error')
     }
+  }
+
+  const handlePlaySaved = async (session: SavedSession) => {
+    const blob = await sessionBlobFromDataUrl(session.audioDataUrl)
+    const config: AiMeditationConfig = {
+      carrier: session.carrier,
+      beat: session.beat,
+      noiseType: session.noiseType as NoiseType,
+      noiseVolume: session.noiseVolume,
+      padEnabled: session.padEnabled,
+      sessionMinutes: session.durationMinutes,
+      audioBlob: blob,
+      theme: session.theme,
+      script: session.script,
+    }
+    onSessionReady(config)
+    onClose()
+  }
+
+  const handleDeleteSaved = (id: string) => {
+    deleteSession(id)
+    refreshSaved()
   }
 
   const stepStatus = (s: 'writing' | 'rendering' | 'starting') => {
@@ -179,6 +232,8 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
     onClose()
   }
 
+  const savedCount = listSessions().length
+
   return (
     <div className="ai-panel" onClick={handleBackdropClick}>
       <div className="ai-panel-card">
@@ -187,7 +242,19 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>✨ AI Guided Meditation</h2>
           {!isGenerating && (
-            <button className="soft-button" style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem' }} onClick={onClose} aria-label="Close">✕</button>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {step === 'idle' && !showSaved && (
+                <button
+                  className="soft-button"
+                  style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem', position: 'relative' }}
+                  onClick={handleShowSaved}
+                >
+                  📚 Saved
+                  {savedCount > 0 && <span className="ai-saved-count-badge">{savedCount}</span>}
+                </button>
+              )}
+              <button className="soft-button" style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem' }} onClick={onClose} aria-label="Close">✕</button>
+            </div>
           )}
         </div>
 
@@ -199,8 +266,41 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
           </div>
         )}
 
+        {/* Saved sessions view */}
+        {apiKey && step === 'idle' && showSaved && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>📚 Saved Meditations</h3>
+              <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => setShowSaved(false)}>← Back</button>
+            </div>
+            {savedList.length === 0 ? (
+              <p style={{ opacity: 0.6, textAlign: 'center', padding: '1rem 0' }}>No saved sessions yet.</p>
+            ) : (
+              <div className="ai-saved-list">
+                {savedList.slice().reverse().map((session) => (
+                  <div key={session.id} className="ai-saved-card">
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>"{session.prompt}"</div>
+                      <div className="ai-saved-meta">
+                        {session.theme} · {session.durationMinutes} min
+                      </div>
+                      <div className="ai-saved-meta">
+                        {session.voice} · {session.intensity.charAt(0).toUpperCase() + session.intensity.slice(1)} · {session.soundscape.charAt(0).toUpperCase() + session.soundscape.slice(1)} &nbsp;·&nbsp; {formatDate(session.savedAt)}
+                      </div>
+                    </div>
+                    <div className="ai-saved-actions">
+                      <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => void handlePlaySaved(session)}>▶ Play</button>
+                      <button className="soft-button" style={{ fontSize: '0.85rem', color: '#e55' }} onClick={() => handleDeleteSaved(session.id)}>🗑</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Idle form */}
-        {apiKey && step === 'idle' && (
+        {apiKey && step === 'idle' && !showSaved && (
           <>
             {/* Prompt */}
             <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600 }}>
@@ -214,6 +314,38 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
                 onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) void handleGenerate() }}
               />
             </label>
+
+            {/* Intensity */}
+            <div className="ai-intensity-row">
+              <span className="ai-option-label">Intensity</span>
+              <div className="ai-segmented">
+                {(['gentle', 'balanced', 'deep'] as Intensity[]).map((lvl) => (
+                  <button
+                    key={lvl}
+                    className={`ai-seg-btn${intensity === lvl ? ' ai-seg-btn--active' : ''}`}
+                    onClick={() => setIntensity(lvl)}
+                  >
+                    {lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Soundscape */}
+            <div className="ai-soundscape-row">
+              <span className="ai-option-label">Background</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {SOUNDSCAPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`ai-soundscape-btn${soundscape === opt.value ? ' ai-soundscape-btn--active' : ''}`}
+                    onClick={() => setSoundscape(opt.value)}
+                  >
+                    <span>{opt.icon}</span> {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Duration + Voice row */}
             <div className="ai-options-row">
