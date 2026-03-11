@@ -222,36 +222,39 @@ function App() {
   // ---------------------------------------------------------------------------
   const scheduleAutomation = (graph: AudioGraph, lanes: AutomationLanes, totalSec: number, startTime: number): void => {
     const ctx = graph.context
+    const now = ctx.currentTime
 
     // Volume lane → automationGain
     if (lanes.volume.length > 0) {
       const sorted = [...lanes.volume].sort((a, b) => a.time - b.time)
-      graph.automationGain.gain.cancelScheduledValues(startTime)
+      graph.automationGain.gain.cancelScheduledValues(now)
+      graph.automationGain.gain.setValueAtTime(graph.automationGain.gain.value, now)
       sorted.forEach((pt) => {
         const t = startTime + pt.time * totalSec
-        graph.automationGain.gain.linearRampToValueAtTime(pt.value, t)
+        if (t > now) graph.automationGain.gain.linearRampToValueAtTime(pt.value, t)
       })
     }
 
     // Filter cutoff lane
     if (lanes.filterCutoff.length > 0) {
       const sorted = [...lanes.filterCutoff].sort((a, b) => a.time - b.time)
-      graph.filterNode.frequency.cancelScheduledValues(startTime)
+      graph.filterNode.frequency.cancelScheduledValues(now)
+      graph.filterNode.frequency.setValueAtTime(graph.filterNode.frequency.value, now)
       sorted.forEach((pt) => {
         const t = startTime + pt.time * totalSec
-        graph.filterNode.frequency.linearRampToValueAtTime(pt.value, t)
+        if (t > now) graph.filterNode.frequency.linearRampToValueAtTime(pt.value, t)
       })
     }
 
-    // Beat frequency lane → rightOsc frequency offset
+    // Beat frequency lane → rightOsc frequency
     if (lanes.beatFrequency.length > 0) {
       const sorted = [...lanes.beatFrequency].sort((a, b) => a.time - b.time)
-      // We'll modulate rightOsc frequency: leftFreq + beatValue
       const lf = graph.leftOsc.frequency.value
-      graph.rightOsc.frequency.cancelScheduledValues(startTime)
+      graph.rightOsc.frequency.cancelScheduledValues(now)
+      graph.rightOsc.frequency.setValueAtTime(graph.rightOsc.frequency.value, now)
       sorted.forEach((pt) => {
         const t = startTime + pt.time * totalSec
-        graph.rightOsc.frequency.linearRampToValueAtTime(lf + pt.value, t)
+        if (t > now) graph.rightOsc.frequency.linearRampToValueAtTime(lf + pt.value, t)
       })
     }
   }
@@ -467,6 +470,9 @@ function App() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
+    // Cancel any pre-scheduled automation ramps so manual slider wins
+    graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+    graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.leftOsc.frequency.setValueAtTime(leftFrequency, graph.context.currentTime)
     graph.rightOsc.frequency.setValueAtTime(rightFrequency, graph.context.currentTime)
   }, [leftFrequency, rightFrequency])
@@ -478,7 +484,15 @@ function App() {
     graph.lfoDepth.gain.setValueAtTime(scaledLfoDepth(wobbleDepth, graph.lfoTarget), graph.context.currentTime)
   }, [wobbleRate, wobbleDepth])
 
-  useEffect(() => { const graph = graphRef.current; if (!graph) return; graph.lfo.type = wobbleWaveform }, [wobbleWaveform])
+  useEffect(() => {
+    const graph = graphRef.current
+    if (!graph) return
+    // OscillatorNode.type is a live writable property — works on running oscillators
+    graph.lfo.type = wobbleWaveform
+    // Re-apply depth so the new waveform takes immediate effect at full depth
+    graph.lfoDepth.gain.cancelScheduledValues(graph.context.currentTime)
+    graph.lfoDepth.gain.setValueAtTime(scaledLfoDepth(wobbleDepth, graph.lfoTarget), graph.context.currentTime)
+  }, [wobbleWaveform, wobbleDepth])
 
   useEffect(() => {
     const graph = graphRef.current
@@ -511,17 +525,37 @@ function App() {
     graph.noiseGain.gain.setTargetAtTime(noiseType !== 'none' ? Math.max(0.0001, noiseVolume) : 0, graph.context.currentTime, 0.05)
   }, [noiseVolume, noiseType])
 
-  // Filter live updates
+  // Filter type live update
   useEffect(() => {
     const graph = graphRef.current; if (!graph) return
     if (filterType === 'off') {
       graph.filterNode.type = 'allpass'
     } else {
       graph.filterNode.type = filterType === 'lowpass' ? 'lowpass' : 'highpass'
-      graph.filterNode.frequency.setValueAtTime(filterFrequency, graph.context.currentTime)
-      graph.filterNode.Q.setValueAtTime(filterQ, graph.context.currentTime)
     }
-  }, [filterType, filterFrequency, filterQ])
+  }, [filterType])
+
+  // Filter frequency live update — always apply so automation and slider both work
+  useEffect(() => {
+    const graph = graphRef.current; if (!graph) return
+    graph.filterNode.frequency.cancelScheduledValues(graph.context.currentTime)
+    graph.filterNode.frequency.setValueAtTime(filterFrequency, graph.context.currentTime)
+  }, [filterFrequency])
+
+  // Filter Q live update
+  useEffect(() => {
+    const graph = graphRef.current; if (!graph) return
+    graph.filterNode.Q.cancelScheduledValues(graph.context.currentTime)
+    graph.filterNode.Q.setValueAtTime(filterQ, graph.context.currentTime)
+  }, [filterQ])
+
+  // Re-schedule automation lanes in real-time when points are edited during a session
+  useEffect(() => {
+    const graph = graphRef.current
+    if (!graph || !isRunning) return
+    const totalSec = sessionMinutes * 60
+    scheduleAutomation(graph, automationLanes, totalSec, sessionStartTimeRef.current)
+  }, [automationLanes, isRunning]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pad synth live updates
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadVolume(pad, padVolume) }, [padVolume])
