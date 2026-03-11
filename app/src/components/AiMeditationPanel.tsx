@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { generateMeditation } from '../ai/meditationComposer'
+import { generateMeditation, VOICE_OPTIONS, DEFAULT_FEMALE_VOICE, DEFAULT_MALE_VOICE } from '../ai/meditationComposer'
+import type { TtsVoice, VoiceGender } from '../ai/meditationComposer'
 import type { NoiseType } from '../types'
 
 export type AiMeditationConfig = {
@@ -23,8 +24,18 @@ interface AiMeditationPanelProps {
 
 type Step = 'idle' | 'writing' | 'rendering' | 'starting' | 'error'
 
+const DURATION_OPTIONS = [
+  { value: 5,  label: '5 min',  cost: '~$0.03' },
+  { value: 10, label: '10 min', cost: '~$0.06' },
+  { value: 15, label: '15 min', cost: '~$0.09' },
+  { value: 20, label: '20 min', cost: '~$0.12' },
+  { value: 30, label: '30 min', cost: '~$0.18' },
+  { value: 45, label: '45 min', cost: '~$0.27' },
+  { value: 60, label: '60 min', cost: '~$0.36' },
+]
+
 // ---------------------------------------------------------------------------
-// Loading messages — SimCity energy but make it meditation
+// Loading messages
 // ---------------------------------------------------------------------------
 const LOADING_MESSAGES: Record<'writing' | 'rendering' | 'starting', string[]> = {
   writing: [
@@ -61,26 +72,18 @@ const LOADING_MESSAGES: Record<'writing' | 'rendering' | 'starting', string[]> =
 function useRotatingMessage(step: 'writing' | 'rendering' | 'starting' | null, intervalMs = 2200): string {
   const [idx, setIdx] = useState(0)
   const timerRef = useRef<number | null>(null)
-
   useEffect(() => {
     if (!step) { setIdx(0); return }
     setIdx(0)
     timerRef.current = window.setInterval(() => {
       setIdx((i) => (i + 1) % LOADING_MESSAGES[step].length)
     }, intervalMs)
-    return () => {
-      if (timerRef.current !== null) window.clearInterval(timerRef.current)
-    }
+    return () => { if (timerRef.current !== null) window.clearInterval(timerRef.current) }
   }, [step, intervalMs])
-
   if (!step) return ''
   return LOADING_MESSAGES[step][idx % LOADING_MESSAGES[step].length]
 }
 
-// ---------------------------------------------------------------------------
-// Progress estimation
-// Each step gets a % range. We animate smoothly within it.
-// ---------------------------------------------------------------------------
 const STEP_PROGRESS: Record<'writing' | 'rendering' | 'starting', [number, number]> = {
   writing:   [5,  70],
   rendering: [72, 92],
@@ -90,18 +93,12 @@ const STEP_PROGRESS: Record<'writing' | 'rendering' | 'starting', [number, numbe
 function useAnimatedProgress(step: Step): number {
   const [progress, setProgress] = useState(0)
   const timerRef = useRef<number | null>(null)
-
   useEffect(() => {
     if (timerRef.current !== null) window.clearInterval(timerRef.current)
-    if (step === 'idle') { setProgress(0); return }
-    if (step === 'error') { setProgress(0); return }
-
+    if (step === 'idle' || step === 'error') { setProgress(0); return }
     const activeStep = step as 'writing' | 'rendering' | 'starting'
     const [start, end] = STEP_PROGRESS[activeStep]
-
     setProgress(start)
-
-    // Animate toward end, slowing down as it approaches
     timerRef.current = window.setInterval(() => {
       setProgress((p) => {
         const remaining = end - p
@@ -109,12 +106,8 @@ function useAnimatedProgress(step: Step): number {
         return Math.min(end, p + increment)
       })
     }, 150)
-
-    return () => {
-      if (timerRef.current !== null) window.clearInterval(timerRef.current)
-    }
+    return () => { if (timerRef.current !== null) window.clearInterval(timerRef.current) }
   }, [step])
-
   return progress
 }
 
@@ -123,28 +116,37 @@ function useAnimatedProgress(step: Step): number {
 // ---------------------------------------------------------------------------
 export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSettings }: AiMeditationPanelProps) {
   const [prompt, setPrompt] = useState('')
+  const [duration, setDuration] = useState(15)
+  const [gender, setGender] = useState<VoiceGender>('female')
+  const [voice, setVoice] = useState<TtsVoice>(DEFAULT_FEMALE_VOICE)
   const [step, setStep] = useState<Step>('idle')
   const [error, setError] = useState('')
 
   const activeLoadingStep = (step === 'writing' || step === 'rendering' || step === 'starting') ? step : null
   const rotatingMessage = useRotatingMessage(activeLoadingStep)
   const progress = useAnimatedProgress(step)
-
   const isGenerating = step === 'writing' || step === 'rendering' || step === 'starting'
+
+  // When gender changes, reset voice to that gender's default
+  const handleGenderChange = (g: VoiceGender) => {
+    setGender(g)
+    setVoice(g === 'female' ? DEFAULT_FEMALE_VOICE : DEFAULT_MALE_VOICE)
+  }
+
+  const filteredVoices = VOICE_OPTIONS.filter((v) => v.gender === gender)
+  const selectedDuration = DURATION_OPTIONS.find((d) => d.value === duration) ?? DURATION_OPTIONS[2]
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return
     setError('')
     setStep('writing')
-
     try {
-      const result = await generateMeditation(prompt, apiKey)
+      const result = await generateMeditation(prompt, apiKey, { durationMinutes: duration, voice })
       setStep('rendering')
       await new Promise((r) => setTimeout(r, 400))
       setStep('starting')
       await new Promise((r) => setTimeout(r, 400))
-
-      const config: AiMeditationConfig = {
+      onSessionReady({
         carrier: result.config.carrier,
         beat: result.config.beat,
         noiseType: result.config.noiseType as NoiseType,
@@ -154,9 +156,7 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
         audioBlob: result.audioBlob,
         theme: result.config.theme,
         script: result.script,
-      }
-
-      onSessionReady(config)
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
@@ -173,10 +173,9 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
     return 'pending'
   }
 
-  // Prevent backdrop click from closing while generating
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target !== e.currentTarget) return
-    if (isGenerating) return   // 🔒 locked during generation
+    if (isGenerating) return
     onClose()
   }
 
@@ -188,14 +187,7 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>✨ AI Guided Meditation</h2>
           {!isGenerating && (
-            <button
-              className="soft-button"
-              style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem' }}
-              onClick={onClose}
-              aria-label="Close"
-            >
-              ✕
-            </button>
+            <button className="soft-button" style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem' }} onClick={onClose} aria-label="Close">✕</button>
           )}
         </div>
 
@@ -207,9 +199,10 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
           </div>
         )}
 
-        {/* Idle — prompt input */}
+        {/* Idle form */}
         {apiKey && step === 'idle' && (
           <>
+            {/* Prompt */}
             <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: 600 }}>
               What do you want to meditate on?
               <textarea
@@ -221,12 +214,60 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
                 onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) void handleGenerate() }}
               />
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                className="ai-generate-btn"
-                onClick={() => void handleGenerate()}
-                disabled={!prompt.trim()}
-              >
+
+            {/* Duration + Voice row */}
+            <div className="ai-options-row">
+
+              {/* Duration */}
+              <div className="ai-option-group">
+                <span className="ai-option-label">Duration</span>
+                <div className="ai-segmented">
+                  {DURATION_OPTIONS.map((d) => (
+                    <button
+                      key={d.value}
+                      className={`ai-seg-btn${duration === d.value ? ' ai-seg-btn--active' : ''}`}
+                      onClick={() => setDuration(d.value)}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="ai-cost-note">Est. API cost: {selectedDuration.cost}</span>
+              </div>
+
+              {/* Voice gender toggle */}
+              <div className="ai-option-group">
+                <span className="ai-option-label">Voice</span>
+                <div className="ai-gender-toggle">
+                  <button
+                    className={`ai-gender-btn${gender === 'female' ? ' ai-gender-btn--active' : ''}`}
+                    onClick={() => handleGenderChange('female')}
+                  >♀ Female</button>
+                  <button
+                    className={`ai-gender-btn${gender === 'male' ? ' ai-gender-btn--active' : ''}`}
+                    onClick={() => handleGenderChange('male')}
+                  >♂ Male</button>
+                </div>
+                {/* Voice picker */}
+                <div className="ai-voice-grid">
+                  {filteredVoices.map((v) => (
+                    <button
+                      key={v.voice}
+                      className={`ai-voice-btn${voice === v.voice ? ' ai-voice-btn--active' : ''}`}
+                      onClick={() => setVoice(v.voice)}
+                      title={v.description}
+                    >
+                      <span className="ai-voice-name">{v.label}</span>
+                      <span className="ai-voice-desc">{v.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button className="ai-generate-btn" onClick={() => void handleGenerate()} disabled={!prompt.trim()}>
                 Generate &amp; Start Session
               </button>
               <button className="soft-button" onClick={onClose}>Cancel</button>
@@ -237,32 +278,23 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
         {/* Generating */}
         {isGenerating && (
           <div className="ai-generating">
-            {/* Progress bar */}
             <div className="ai-progress-track">
-              <div
-                className="ai-progress-fill"
-                style={{ width: `${progress.toFixed(1)}%` }}
-              />
+              <div className="ai-progress-fill" style={{ width: `${progress.toFixed(1)}%` }} />
             </div>
             <div className="ai-rotating-message">{rotatingMessage}</div>
-
-            {/* Step list */}
             <ul className="ai-step-indicator">
               {(['writing', 'rendering', 'starting'] as const).map((s, i) => {
                 const labels = ['Writing your meditation', 'Rendering voice', 'Starting session']
                 const status = stepStatus(s)
                 return (
                   <li key={s} className={`ai-step ai-step--${status}`}>
-                    <span className="ai-step-icon">
-                      {status === 'done' ? '✓' : status === 'active' ? '●' : `${i + 1}`}
-                    </span>
+                    <span className="ai-step-icon">{status === 'done' ? '✓' : status === 'active' ? '●' : `${i + 1}`}</span>
                     {labels[i]}
                     {status === 'active' && <span className="ai-step-ellipsis">…</span>}
                   </li>
                 )
               })}
             </ul>
-
             <p className="ai-lock-note">Please wait — your meditation is being prepared ✦</p>
           </div>
         )}

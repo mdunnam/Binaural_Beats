@@ -684,3 +684,121 @@ input[type='range'] {
   text-align: center;
   margin: 0;
 }
+
+/* AI options layout */
+.ai-options-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.ai-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ai-option-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5a7a6e;
+}
+
+/* Duration segmented */
+.ai-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.ai-seg-btn {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  border: 1px solid #b0ccc4;
+  border-radius: 4px;
+  background: transparent;
+  color: #3f5f53;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-seg-btn:hover { background: #e8f3ef; }
+
+.ai-seg-btn--active {
+  background: #3e8f72;
+  color: #fff;
+  border-color: #3e8f72;
+}
+
+.ai-cost-note {
+  font-size: 0.72rem;
+  color: #7a8f87;
+  font-style: italic;
+}
+
+/* Gender toggle */
+.ai-gender-toggle {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ai-gender-btn {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.82rem;
+  border: 1px solid #b0ccc4;
+  border-radius: 4px;
+  background: transparent;
+  color: #3f5f53;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-gender-btn:hover { background: #e8f3ef; }
+
+.ai-gender-btn--active {
+  background: #3e8f72;
+  color: #fff;
+  border-color: #3e8f72;
+}
+
+/* Voice grid */
+.ai-voice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+}
+
+.ai-voice-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.3rem 0.2rem;
+  border: 1px solid #b0ccc4;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ai-voice-btn:hover { background: #e8f3ef; }
+
+.ai-voice-btn--active {
+  background: #e0f2eb;
+  border-color: #3e8f72;
+}
+
+.ai-voice-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2a4a3e;
+}
+
+.ai-voice-desc {
+  font-size: 0.68rem;
+  color: #7a8f87;
+  text-align: center;
+}
