@@ -27,11 +27,12 @@ const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
 
 const TABS = [
-  { id: 'tones',   icon: '🎵', label: 'Tones'   },
-  { id: 'sound',   icon: '🌊', label: 'Sound'   },
-  { id: 'session', icon: '⏱',  label: 'Session' },
-  { id: 'ai',      icon: '✨',  label: 'AI'      },
-  { id: 'journal', icon: '📓', label: 'Journal' },
+  { id: 'dashboard', icon: '🏠', label: 'Home'      },
+  { id: 'tones',     icon: '🎵', label: 'Tones'     },
+  { id: 'sound',     icon: '🌊', label: 'Sound'     },
+  { id: 'session',   icon: '⏱',  label: 'Session'  },
+  { id: 'ai',        icon: '🧘', label: 'Meditate'  },
+  { id: 'journal',   icon: '📓', label: 'Journal'   },
 ]
 
 // ---------------------------------------------------------------------------
@@ -109,7 +110,7 @@ function defaultLanes(): AutomationLanes {
 // ---------------------------------------------------------------------------
 function App() {
   // Tab navigation
-  const [activeTab, setActiveTab] = useState('tones')
+  const [activeTab, setActiveTab] = useState('dashboard')
 
   // Frequency
   const [useIndependentTuning, setUseIndependentTuning] = useState(false)
@@ -736,6 +737,83 @@ function App() {
         <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
         <div className="tab-content">
+          {/* ──────────────── DASHBOARD TAB ──────────────── */}
+          {activeTab === 'dashboard' && (
+            <div className="dashboard">
+              {/* Hero state card */}
+              <div className={`dash-state-card ${graphRef.current ? 'dash-state-card--active' : ''}`}>
+                <div className="dash-state-icon">{graphRef.current ? '🎧' : '🧘'}</div>
+                <div className="dash-state-label">{graphRef.current ? 'Session Active' : 'Ready to Begin'}</div>
+                <div className="dash-state-sub">
+                  {graphRef.current
+                    ? `${carrier.toFixed(1)} Hz carrier · ${beat.toFixed(2)} Hz beat`
+                    : 'Configure your session and press Start'}
+                </div>
+              </div>
+
+              {/* Quick-start scene cards */}
+              <div className="section-label" style={{ marginTop: '1rem' }}>Quick Start</div>
+              <div className="dash-quick-grid">
+                {[
+                  { emoji: '😴', label: 'Deep Sleep',    carrier: 174, beat: 2.0,  scene: 'ocean'  },
+                  { emoji: '🎯', label: 'Focus',          carrier: 396, beat: 14.0, scene: 'forest' },
+                  { emoji: '🧘', label: 'Meditation',     carrier: 528, beat: 6.0,  scene: 'cave'   },
+                  { emoji: '💡', label: 'Creative Flow',  carrier: 741, beat: 10.0, scene: 'storm'  },
+                  { emoji: '✨', label: 'Lucid Dream',    carrier: 936, beat: 4.0,  scene: 'space'  },
+                  { emoji: '🌅', label: 'Morning Rise',   carrier: 396, beat: 18.0, scene: 'forest' },
+                ].map(({ emoji, label, carrier: c, beat: b, scene: s }) => (
+                  <button key={label} className="dash-quick-card" onClick={() => {
+                    setCarrier(c); setBeat(b)
+                    const scn = SOUNDSCAPE_SCENES.find(sc => sc.id === s)
+                    if (scn) {
+                      const gains = { ...DEFAULT_GAINS }
+                      Object.entries(scn.gains).forEach(([k, v]) => { (gains as Record<string, number>)[k] = v as number })
+                      setLayerGains(gains); setSoundsceneId(s)
+                    }
+                    setActiveTab('tones')
+                  }}>
+                    <span className="dash-quick-emoji">{emoji}</span>
+                    <span className="dash-quick-label">{label}</span>
+                    <span className="dash-quick-meta">{c} Hz · {b} Hz beat</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Current settings summary */}
+              <div className="section-label" style={{ marginTop: '1.25rem' }}>Current Setup</div>
+              <div className="dash-summary">
+                <div className="dash-summary-row"><span>Carrier</span><strong>{carrier.toFixed(1)} Hz</strong></div>
+                <div className="dash-summary-row"><span>Beat</span><strong>{beat.toFixed(2)} Hz</strong></div>
+                <div className="dash-summary-row"><span>Brainwave</span><strong>
+                  {beat < 4 ? 'Delta (deep sleep)' : beat < 8 ? 'Theta (meditation)' : beat < 14 ? 'Alpha (relax)' : beat < 30 ? 'Beta (focus)' : 'Gamma (peak)'}
+                </strong></div>
+                <div className="dash-summary-row"><span>Soundscape</span><strong>{soundsceneId === 'off' ? 'None' : SOUNDSCAPE_SCENES.find(s => s.id === soundsceneId)?.label ?? 'Custom'}</strong></div>
+                <div className="dash-summary-row"><span>Pad Synth</span><strong>{padEnabled ? 'On' : 'Off'}</strong></div>
+                <div className="dash-summary-row"><span>Session</span><strong>{sessionMinutes} min</strong></div>
+              </div>
+
+              {/* Recent journal entries preview */}
+              {journalEntries.length > 0 && (<>
+                <div className="section-label" style={{ marginTop: '1.25rem' }}>Recent Sessions</div>
+                <div className="dash-recent">
+                  {journalEntries.slice(0, 3).map(entry => (
+                    <div key={entry.id} className="dash-recent-row">
+                      <span className="dash-recent-date">{new Date(entry.startedAt).toLocaleDateString()}</span>
+                      <span className="dash-recent-note">{entry.notes?.slice(0, 60) || `${entry.carrier?.toFixed(0)} Hz · ${entry.beat?.toFixed(1)} Hz beat`}</span>
+                    </div>
+                  ))}
+                </div>
+              </>)}
+
+              {/* Nav hints */}
+              <div className="dash-nav-hints">
+                <button className="dash-hint-btn" onClick={() => setActiveTab('tones')}>🎵 Tones</button>
+                <button className="dash-hint-btn" onClick={() => setActiveTab('sound')}>🌊 Sound</button>
+                <button className="dash-hint-btn" onClick={() => setActiveTab('ai')}>🧘 Meditate</button>
+              </div>
+            </div>
+          )}
+
           {/* ──────────────── TONES TAB ──────────────── */}
           {activeTab === 'tones' && (
             <div className="grid">
