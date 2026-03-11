@@ -111,8 +111,8 @@ function App() {
 
   const [phaseOffset, setPhaseOffset] = useState(0)
   const [volume, setVolume] = useState(0.2)
-  const [binauralVolume, setBinauralVolume] = useState(1.0)
-  const [voiceVolume, setVoiceVolume] = useState(0.75)
+  const [binauralVolume, setBinauralVolume] = useState(0.15)
+  const [voiceVolume, setVoiceVolume] = useState(0.8)
 
   // Session
   const [sessionMinutes, setSessionMinutes] = useState(10)
@@ -317,10 +317,15 @@ function App() {
     if (graphRef.current) { stopSession(true); return }
     clearSessionTimers()
 
+    // If launching an AI session, use its noise config directly (bypasses React state flush race)
+    const aiConfig = pendingAiSessionRef.current
+    const activeNoiseType = aiConfig ? aiConfig.noiseType : noiseType
+    const activeNoiseVolume = aiConfig ? aiConfig.noiseVolume : noiseVolume
+
     const graph = createAudioGraph({
       leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
       wobbleWaveform, wobbleTarget, phaseOffset, volume,
-      noiseType, noiseVolume, filterType, filterFrequency, filterQ,
+      noiseType: activeNoiseType, noiseVolume: activeNoiseVolume, filterType, filterFrequency, filterQ,
     })
 
     if (graph.context.state !== 'running') await graph.context.resume()
@@ -601,7 +606,8 @@ function App() {
     }
     if (noiseType !== 'none') {
       const source = createNoiseBuffer(graph.context, noiseType)
-      source.connect(graph.noiseGain); graph.noiseSource = source
+      source.connect(graph.noiseGain)
+      graph.noiseSource = source
     }
     graph.noiseGain.gain.setValueAtTime(noiseType !== 'none' ? noiseVolume : 0, graph.context.currentTime)
   }, [noiseType]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -863,11 +869,15 @@ function App() {
             <input type="range" min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
           </label>
           <label>Binaural Volume ({Math.round(binauralVolume * 100)}%)
-            <small className="control-hint">Independent level for the binaural tones</small>
+            <small className="control-hint">Level of the binaural tones</small>
             <input type="range" min={0} max={1} step={0.01} value={binauralVolume} onChange={(e) => setBinauralVolume(Number(e.target.value))} />
           </label>
+          <label>Background Volume ({Math.round(noiseVolume * 100)}%)
+            <small className="control-hint">Ambient noise / soundscape level</small>
+            <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
+          </label>
           <label>Voice Volume ({Math.round(voiceVolume * 100)}%)
-            <small className="control-hint">AI meditation voice level (active when AI session is running)</small>
+            <small className="control-hint">AI meditation voice level</small>
             <input type="range" min={0} max={1} step={0.01} value={voiceVolume} onChange={(e) => setVoiceVolume(Number(e.target.value))} />
           </label>
 
