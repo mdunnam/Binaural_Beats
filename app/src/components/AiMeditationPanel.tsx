@@ -4,6 +4,7 @@ import type { TtsVoice, VoiceGender } from '../ai/meditationComposer'
 import { saveSession, listSessions, deleteSession, getSessionBlob, migrateFromLocalStorage } from '../ai/savedSessions'
 import type { SavedSession } from '../ai/savedSessions'
 import type { NoiseType } from '../types'
+import { WaveformPlayer } from './WaveformPlayer'
 
 export type AiMeditationConfig = {
   carrier: number
@@ -142,6 +143,9 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
   const [error, setError] = useState('')
   const [showSaved, setShowSaved] = useState(false)
   const [savedList, setSavedList] = useState<SavedSession[]>([])
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [previewBlobs, setPreviewBlobs] = useState<Record<string, Blob | null>>({})
+  const [previewLoading, setPreviewLoading] = useState<Record<string, boolean>>({})
 
   const activeLoadingStep = (step === 'writing' || step === 'rendering' || step === 'starting') ? step : null
   const rotatingMessage = useRotatingMessage(activeLoadingStep)
@@ -221,6 +225,19 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
     void deleteSession(id).then(() => refreshSaved())
   }
 
+  const handleTogglePreview = async (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(id)
+    if (previewBlobs[id] !== undefined) return // already loaded
+    setPreviewLoading((prev) => ({ ...prev, [id]: true }))
+    const blob = await getSessionBlob(id)
+    setPreviewBlobs((prev) => ({ ...prev, [id]: blob ?? null }))
+    setPreviewLoading((prev) => ({ ...prev, [id]: false }))
+  }
+
   const stepStatus = (s: 'writing' | 'rendering' | 'starting') => {
     const order = ['writing', 'rendering', 'starting']
     const current = order.indexOf(step)
@@ -281,7 +298,12 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
               <p style={{ opacity: 0.6, textAlign: 'center', padding: '1rem 0' }}>No saved sessions yet.</p>
             ) : (
               <div className="ai-saved-list">
-                {savedList.slice().reverse().map((session) => (
+                {savedList.slice().reverse().map((session) => {
+                  const isExpanded = expandedId === session.id
+                  const blob = previewBlobs[session.id]
+                  const loading = previewLoading[session.id]
+                  const previewLabel = `${session.theme} · ${session.durationMinutes} min · ${session.voice}`
+                  return (
                   <div key={session.id} className="ai-saved-card">
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>"{session.prompt}"</div>
@@ -291,13 +313,24 @@ export function AiMeditationPanel({ onSessionReady, onClose, apiKey, onOpenSetti
                       <div className="ai-saved-meta">
                         {session.voice} · {session.intensity.charAt(0).toUpperCase() + session.intensity.slice(1)} · {session.soundscape.charAt(0).toUpperCase() + session.soundscape.slice(1)} &nbsp;·&nbsp; {formatDate(session.savedAt)}
                       </div>
+                      {isExpanded && (
+                        <div className="ai-saved-preview">
+                          {loading && <div className="ai-saved-preview-loading">Loading audio…</div>}
+                          {!loading && blob && <WaveformPlayer blob={blob} label={previewLabel} />}
+                          {!loading && blob === null && <div className="ai-saved-preview-loading">Audio not found.</div>}
+                        </div>
+                      )}
                     </div>
                     <div className="ai-saved-actions">
-                      <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => void handlePlaySaved(session)}>▶ Play</button>
+                      <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => void handlePlaySaved(session)}>▶ Launch Session</button>
+                      <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => void handleTogglePreview(session.id)}>
+                        {isExpanded ? '▲ Hide' : '▼ Preview'}
+                      </button>
                       <button className="soft-button" style={{ fontSize: '0.85rem', color: '#e55' }} onClick={() => handleDeleteSaved(session.id)}>🗑</button>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

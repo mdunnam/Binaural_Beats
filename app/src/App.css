@@ -891,3 +891,116 @@ input[type='range'] {
   justify-content: center;
   padding: 0 3px;
 }
+
+/* ── Waveform Player ─────────────────────────────────────────────────── */
+.waveform-player {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.waveform-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #5a7a6e;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.waveform-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 64px;
+}
+
+.waveform-canvas {
+  display: block;
+  width: 100%;
+  height: 64px;
+  border-radius: 4px;
+}
+
+.waveform-scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: #dbe4dd;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+
+.waveform-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3e8f72;
+  cursor: pointer;
+}
+
+.waveform-scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3e8f72;
+  cursor: pointer;
+  border: none;
+}
+
+.waveform-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.waveform-play-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #b0ccc4;
+  background: #f5faf7;
+  color: #2a4a3e;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.waveform-play-btn:hover:not(:disabled) {
+  background: #e0f2eb;
+}
+
+.waveform-play-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.waveform-time {
+  font-size: 0.78rem;
+  color: #54625b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Saved card preview section ─────────────────────────────────────── */
+.ai-saved-preview {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #dbe4dd;
+}
+
+.ai-saved-preview-loading {
+  font-size: 0.82rem;
+  color: #7a8f87;
+  font-style: italic;
+  padding: 0.3rem 0;
+}
