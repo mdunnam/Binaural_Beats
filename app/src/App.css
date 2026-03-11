@@ -179,6 +179,51 @@ input[type='range'] {
   margin-top: 0.75rem;
 }
 
+/* Segmented control */
+.seg-control {
+  display: flex;
+  gap: 0;
+  border: 1px solid #bfd0c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.seg-control button {
+  flex: 1;
+  border: none;
+  border-right: 1px solid #bfd0c6;
+  background: #f5faf7;
+  color: #234234;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.3rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.seg-control button:last-child {
+  border-right: none;
+}
+
+.seg-control button:hover {
+  background: #e4f0ea;
+}
+
+.seg-control button.active {
+  background: linear-gradient(90deg, #3e8f72, #2a6b56);
+  color: #fff;
+}
+
+/* Small hint text beneath a label */
+.control-hint {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #7a8f87;
+  margin-top: -0.2rem;
+}
+
 @media (max-width: 760px) {
   .readout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
