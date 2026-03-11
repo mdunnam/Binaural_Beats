@@ -234,3 +234,252 @@ input[type='range'] {
     padding: 0.8rem;
   }
 }
+
+/* ── Session action row ── */
+.session-action-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  align-items: stretch;
+}
+
+.session-action-row .start-button {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.export-button {
+  white-space: nowrap;
+}
+
+/* ── Solfeggio / Brainwave presets ── */
+.preset-freq-section {
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  background: #f5faf7;
+  border: 1px solid #dbe4dd;
+  border-radius: 12px;
+}
+
+.preset-freq-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #3f5f53;
+  margin-bottom: 0.4rem;
+}
+
+.solfeggio-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+}
+
+.brainwave-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+}
+
+.freq-preset-btn, .beat-preset-btn {
+  border: 1px solid #bfd0c6;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.35rem 0.25rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.freq-preset-btn:hover, .beat-preset-btn:hover {
+  background: #e4f0ea;
+  border-color: #3e8f72;
+}
+
+.freq-preset-hz {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a3329;
+}
+
+.freq-preset-label, .beat-preset-label {
+  font-size: 0.65rem;
+  color: #54625b;
+  text-align: center;
+}
+
+.beat-preset-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a3329;
+}
+
+.beat-preset-hz {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #3e8f72;
+}
+
+/* ── Automation Editor ── */
+.automation-editor {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.automation-time-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #7a8f87;
+  padding: 0 0.2rem;
+}
+
+.automation-lane {
+  border: 1px solid #dbe4dd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.automation-lane-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #3f5f53;
+  padding: 0.3rem 0.5rem 0.2rem;
+  background: #f5faf7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.automation-lane-hint {
+  font-size: 0.65rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #9aada6;
+}
+
+.automation-svg {
+  width: 100%;
+  display: block;
+  background: #fafcfb;
+}
+
+/* ── Journal ── */
+.journal-panel {
+  background: linear-gradient(160deg, #fffcf4, #eef6f2);
+  border: 1px solid #d7dfd9;
+  border-radius: 18px;
+  padding: 1.2rem;
+  margin-top: 1rem;
+  box-shadow: 0 14px 40px rgba(21, 32, 20, 0.08);
+}
+
+.journal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.journal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1a3329;
+}
+
+.journal-empty {
+  color: #7a8f87;
+  font-size: 0.9rem;
+}
+
+.journal-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.journal-entry {
+  background: #fff;
+  border: 1px solid #dbe4dd;
+  border-radius: 10px;
+  padding: 0.7rem;
+}
+
+.journal-entry-meta {
+  display: flex;
+  gap: 0.7rem;
+  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+}
+
+.journal-entry-preset { font-weight: 700; color: #1a3329; }
+.journal-entry-duration { color: #3e8f72; font-weight: 600; }
+.journal-entry-date { color: #7a8f87; margin-left: auto; }
+
+.journal-entry-notes {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #3d3f42;
+  white-space: pre-wrap;
+}
+
+/* ── Journal Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.5rem;
+  width: min(480px, 90vw);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1a3329;
+}
+
+.modal-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #54625b;
+}
+
+.journal-textarea {
+  width: 100%;
+  border: 1px solid #bfd0c6;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  resize: vertical;
+  margin-top: 0.3rem;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+  .session-action-row { flex-direction: column; }
+}

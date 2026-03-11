@@ -1,101 +1,69 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
+import type {
+  NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
+  AudioGraph, AutomationLanes, AutomationPoint, SessionPreset, JournalEntry, PadSynthGraph,
+} from './types'
+import { createAudioGraph, stopAudioGraph, reconnectLfo, scaledLfoDepth } from './engine/audioGraph'
+import { createNoiseBuffer } from './engine/noiseGen'
+import {
+  createPadSynth, stopPadSynth,
+  updatePadVolume, updatePadReverbMix, updatePadBreatheRate, updatePadWaveform, updatePadRoot,
+} from './engine/padSynth'
+import { encodeWav, downloadBlob } from './engine/wavExport'
+import { AutomationEditor } from './components/AutomationEditor'
+import { SessionJournal } from './components/SessionJournal'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
-
-type NoiseType = 'none' | 'white' | 'pink' | 'brown'
-type LfoWaveform = 'sine' | 'triangle' | 'square' | 'sawtooth'
-type LfoTarget = 'detune' | 'amplitude' | 'beat'
-
-type AudioGraph = {
-  context: AudioContext
-  leftOsc: OscillatorNode
-  rightOsc: OscillatorNode
-  leftGain: GainNode
-  rightGain: GainNode
-  merger: ChannelMergerNode
-  /** AM modulation gain node — sits between merger and masterGain */
-  amGain: GainNode
-  /** DC bias source for AM mode (keeps gain positive) */
-  dcOffset: ConstantSourceNode | null
-  masterGain: GainNode
-  lfo: OscillatorNode
-  lfoDepth: GainNode
-  /** Tracks which target the LFO is currently wired to */
-  lfoTarget: LfoTarget
-  noiseSource: AudioBufferSourceNode | null
-  noiseGain: GainNode
-}
-
-type SessionPreset = {
-  name: string
-  useIndependentTuning: boolean
-  carrier: number
-  beat: number
-  leftFrequency: number
-  rightFrequency: number
-  wobbleRate: number
-  wobbleDepth: number
-  wobbleWaveform: LfoWaveform
-  wobbleTarget: LfoTarget
-  phaseOffset: number
-  volume: number
-  sessionMinutes: number
-  fadeInSeconds: number
-  fadeOutSeconds: number
-  noiseType: NoiseType
-  noiseVolume: number
-}
+const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
 
 // ---------------------------------------------------------------------------
-// Noise generation
+// Solfeggio + Brainwave data
 // ---------------------------------------------------------------------------
+const SOLFEGGIO = [
+  { hz: 174, label: 'Foundation' },
+  { hz: 285, label: 'Healing' },
+  { hz: 396, label: 'Liberation' },
+  { hz: 417, label: 'Change' },
+  { hz: 432, label: 'Harmony' },
+  { hz: 528, label: 'Transformation' },
+  { hz: 639, label: 'Connection' },
+  { hz: 741, label: 'Expression' },
+  { hz: 852, label: 'Intuition' },
+  { hz: 963, label: 'Oneness' },
+]
 
-function createNoiseSource(
-  context: AudioContext,
-  type: Exclude<NoiseType, 'none'>,
-): AudioBufferSourceNode {
-  const bufferSize = Math.ceil(context.sampleRate * 3)
-  const buffer = context.createBuffer(1, bufferSize, context.sampleRate)
-  const data = buffer.getChannelData(0)
+const BRAINWAVE_PRESETS = [
+  { name: 'Delta', hz: 2, label: 'Sleep' },
+  { name: 'Theta', hz: 6, label: 'Meditation' },
+  { name: 'Alpha', hz: 10, label: 'Relaxed Focus' },
+  { name: 'Beta', hz: 18, label: 'Alert' },
+  { name: 'Gamma', hz: 40, label: 'Peak' },
+]
 
-  if (type === 'white') {
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1
-    }
-  } else if (type === 'pink') {
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
-    for (let i = 0; i < bufferSize; i++) {
-      const w = Math.random() * 2 - 1
-      b0 = 0.99886 * b0 + w * 0.0555179
-      b1 = 0.99332 * b1 + w * 0.0750759
-      b2 = 0.96900 * b2 + w * 0.1538520
-      b3 = 0.86650 * b3 + w * 0.3104856
-      b4 = 0.55000 * b4 + w * 0.5329522
-      b5 = -0.7616 * b5 - w * 0.0168980
-      data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11
-      b6 = w * 0.115926
-    }
-  } else {
-    let last = 0
-    for (let i = 0; i < bufferSize; i++) {
-      const w = Math.random() * 2 - 1
-      last = (last + 0.02 * w) / 1.02
-      data[i] = last * 3.5
-    }
-  }
-
-  const source = context.createBufferSource()
-  source.buffer = buffer
-  source.loop = true
-  source.start()
-  return source
+// ---------------------------------------------------------------------------
+// Persistence helpers
+// ---------------------------------------------------------------------------
+function readSavedPresets(): SessionPreset[] {
+  const raw = localStorage.getItem(PRESET_STORAGE_KEY)
+  if (!raw) return []
+  try { return JSON.parse(raw) as SessionPreset[] } catch { return [] }
+}
+function writeSavedPresets(presets: SessionPreset[]): void {
+  localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets))
+}
+function readJournal(): JournalEntry[] {
+  const raw = localStorage.getItem(JOURNAL_STORAGE_KEY)
+  if (!raw) return []
+  try { return JSON.parse(raw) as JournalEntry[] } catch { return [] }
+}
+function writeJournal(entries: JournalEntry[]): void {
+  localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(entries))
 }
 
 // ---------------------------------------------------------------------------
 // End chime
 // ---------------------------------------------------------------------------
-
 function playEndChime(): void {
   const ctx = new AudioContext()
   const osc = ctx.createOscillator()
@@ -113,245 +81,30 @@ function playEndChime(): void {
 }
 
 // ---------------------------------------------------------------------------
-// LFO wiring helpers
+// Default automation lanes
 // ---------------------------------------------------------------------------
-
-/**
- * Scales wobble depth to the right unit for the given LFO target.
- * detune / beat → raw cents value
- * amplitude → normalised 0–1 (depth slider 0–60 maps to 0–1 AM depth)
- */
-function scaledLfoDepth(wobbleDepth: number, target: LfoTarget): number {
-  return target === 'amplitude' ? wobbleDepth / 60 : wobbleDepth
-}
-
-/**
- * Disconnects the LFO depth node from all current targets, tears down any
- * DC offset source, and rewires everything for the new target.
- */
-function reconnectLfo(graph: AudioGraph, newTarget: LfoTarget, wobbleDepth: number): void {
-  // Sever all outgoing connections from lfoDepth
-  try { graph.lfoDepth.disconnect() } catch { /* already disconnected */ }
-
-  // Tear down AM DC bias if present
-  if (graph.dcOffset) {
-    try { graph.dcOffset.stop() } catch { /* ignore */ }
-    try { graph.dcOffset.disconnect() } catch { /* ignore */ }
-    graph.dcOffset = null
-  }
-
-  // Reset amGain to transparent pass-through
-  graph.amGain.gain.cancelScheduledValues(graph.context.currentTime)
-  graph.amGain.gain.setValueAtTime(1, graph.context.currentTime)
-
-  graph.lfoTarget = newTarget
-  graph.lfoDepth.gain.setValueAtTime(
-    scaledLfoDepth(wobbleDepth, newTarget),
-    graph.context.currentTime,
-  )
-
-  if (newTarget === 'detune') {
-    graph.lfoDepth.connect(graph.leftOsc.detune)
-    graph.lfoDepth.connect(graph.rightOsc.detune)
-  } else if (newTarget === 'amplitude') {
-    // ConstantSourceNode (value=1) + LFO keeps amGain always positive
-    const dc = graph.context.createConstantSource()
-    dc.offset.value = 1
-    dc.connect(graph.amGain.gain)
-    dc.start()
-    graph.dcOffset = dc
-    graph.lfoDepth.connect(graph.amGain.gain)
-  } else {
-    // beat: wobble only the right oscillator's detune → beat difference pulses
-    graph.lfoDepth.connect(graph.rightOsc.detune)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Audio graph factory
-// ---------------------------------------------------------------------------
-
-type GraphParams = {
-  leftFrequency: number
-  rightFrequency: number
-  wobbleRate: number
-  wobbleDepth: number
-  wobbleWaveform: LfoWaveform
-  wobbleTarget: LfoTarget
-  phaseOffset: number
-  volume: number
-  noiseType: NoiseType
-  noiseVolume: number
-}
-
-function createAudioGraph(params: GraphParams): AudioGraph {
-  const {
-    leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
-    wobbleWaveform, wobbleTarget, phaseOffset,
-    volume, noiseType, noiseVolume,
-  } = params
-
-  const context = new AudioContext()
-  const now = context.currentTime
-
-  // --- Oscillators ---
-  const leftOsc = context.createOscillator()
-  const rightOsc = context.createOscillator()
-  leftOsc.type = 'sine'
-  rightOsc.type = 'sine'
-  leftOsc.frequency.value = leftFrequency
-  rightOsc.frequency.value = rightFrequency
-
-  // --- Per-channel gain (for future per-channel volume) ---
-  const leftGain = context.createGain()
-  const rightGain = context.createGain()
-  leftGain.gain.value = 1
-  rightGain.gain.value = 1
-
-  // --- Stereo merge ---
-  const merger = context.createChannelMerger(2)
-
-  // --- AM gain node (transparent unless AM target active) ---
-  const amGain = context.createGain()
-  amGain.gain.value = 1
-
-  // --- Master output ---
-  const masterGain = context.createGain()
-  masterGain.gain.value = volume
-
-  // Signal path: L/R osc → per-channel gain → merger → amGain → masterGain → out
-  leftOsc.connect(leftGain)
-  rightOsc.connect(rightGain)
-  leftGain.connect(merger, 0, 0)
-  rightGain.connect(merger, 0, 1)
-  merger.connect(amGain)
-  amGain.connect(masterGain)
-  masterGain.connect(context.destination)
-
-  // --- LFO ---
-  const lfo = context.createOscillator()
-  lfo.type = wobbleWaveform
-  lfo.frequency.value = wobbleRate
-  const lfoDepth = context.createGain()
-  lfoDepth.gain.value = scaledLfoDepth(wobbleDepth, wobbleTarget)
-  lfo.connect(lfoDepth)
-
-  // Wire LFO to chosen target
-  let dcOffset: ConstantSourceNode | null = null
-  if (wobbleTarget === 'detune') {
-    lfoDepth.connect(leftOsc.detune)
-    lfoDepth.connect(rightOsc.detune)
-  } else if (wobbleTarget === 'amplitude') {
-    const dc = context.createConstantSource()
-    dc.offset.value = 1
-    dc.connect(amGain.gain)
-    dc.start(now)
-    dcOffset = dc
-    lfoDepth.connect(amGain.gain)
-  } else {
-    // beat
-    lfoDepth.connect(rightOsc.detune)
-  }
-
-  // --- Noise layer ---
-  const noiseGain = context.createGain()
-  noiseGain.gain.value = noiseType !== 'none' ? noiseVolume : 0
-  noiseGain.connect(masterGain)
-
-  let noiseSource: AudioBufferSourceNode | null = null
-  if (noiseType !== 'none') {
-    noiseSource = createNoiseSource(context, noiseType)
-    noiseSource.connect(noiseGain)
-  }
-
-  // --- Phase offset ---
-  // Starting the right oscillator "in the past" gives an equivalent phase shift.
-  // phaseDelay (seconds) = (phaseOffset / 360) / frequency
-  const phaseDelay = phaseOffset > 0 ? (phaseOffset / 360) / rightFrequency : 0
-
-  leftOsc.start(now)
-  rightOsc.start(Math.max(0, now - phaseDelay))
-  lfo.start(now)
-
-  return {
-    context,
-    leftOsc,
-    rightOsc,
-    leftGain,
-    rightGain,
-    merger,
-    amGain,
-    dcOffset,
-    masterGain,
-    lfo,
-    lfoDepth,
-    lfoTarget: wobbleTarget,
-    noiseSource,
-    noiseGain,
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Stop helper
-// ---------------------------------------------------------------------------
-
-function stopAudioGraph(graph: AudioGraph | null): void {
-  if (!graph) return
-  if (graph.noiseSource) {
-    graph.noiseSource.stop()
-    graph.noiseSource.disconnect()
-  }
-  if (graph.dcOffset) {
-    graph.dcOffset.stop()
-    graph.dcOffset.disconnect()
-  }
-  graph.lfo.stop()
-  graph.leftOsc.stop()
-  graph.rightOsc.stop()
-  void graph.context.close()
-}
-
-// ---------------------------------------------------------------------------
-// Preset persistence
-// ---------------------------------------------------------------------------
-
-function readSavedPresets(): SessionPreset[] {
-  const raw = localStorage.getItem(PRESET_STORAGE_KEY)
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as SessionPreset[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function writeSavedPresets(presets: SessionPreset[]): void {
-  localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets))
+function defaultLanes(): AutomationLanes {
+  return { volume: [], filterCutoff: [], beatFrequency: [] }
 }
 
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
-
 function App() {
-  // Frequency controls
+  // Frequency
   const [useIndependentTuning, setUseIndependentTuning] = useState(false)
   const [carrier, setCarrier] = useState(432)
   const [beat, setBeat] = useState(6)
   const [leftFrequency, setLeftFrequency] = useState(432)
   const [rightFrequency, setRightFrequency] = useState(438)
 
-  // LFO / wobble
+  // LFO
   const [wobbleRate, setWobbleRate] = useState(0.4)
   const [wobbleDepth, setWobbleDepth] = useState(8)
   const [wobbleWaveform, setWobbleWaveform] = useState<LfoWaveform>('sine')
   const [wobbleTarget, setWobbleTarget] = useState<LfoTarget>('detune')
 
-  // Phase
   const [phaseOffset, setPhaseOffset] = useState(0)
-
-  // Output
   const [volume, setVolume] = useState(0.2)
 
   // Session
@@ -363,6 +116,21 @@ function App() {
   const [noiseType, setNoiseType] = useState<NoiseType>('none')
   const [noiseVolume, setNoiseVolume] = useState(0.15)
 
+  // Filter
+  const [filterType, setFilterType] = useState<FilterType>('off')
+  const [filterFrequency, setFilterFrequency] = useState(1000)
+  const [filterQ, setFilterQ] = useState(1)
+
+  // Pad synth
+  const [padEnabled, setPadEnabled] = useState(false)
+  const [padVolume, setPadVolume] = useState(0.15)
+  const [padReverbMix, setPadReverbMix] = useState(0.5)
+  const [padWaveform, setPadWaveform] = useState<PadWaveform>('sine')
+  const [padBreatheRate, setPadBreatheRate] = useState(0.1)
+
+  // Automation
+  const [automationLanes, setAutomationLanes] = useState<AutomationLanes>(defaultLanes)
+
   // Presets
   const [presetName, setPresetName] = useState('My Session')
   const [savedPresets, setSavedPresets] = useState<SessionPreset[]>([])
@@ -373,37 +141,61 @@ function App() {
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [sessionTotalSeconds, setSessionTotalSeconds] = useState(0)
 
+  // Journal
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
+  const [showJournalModal, setShowJournalModal] = useState(false)
+  const [showJournalList, setShowJournalList] = useState(false)
+  const [pendingJournalEntry, setPendingJournalEntry] = useState<Omit<JournalEntry, 'id' | 'notes'> | null>(null)
+
+  // WAV export
+  const [isExporting, setIsExporting] = useState(false)
+
   const graphRef = useRef<AudioGraph | null>(null)
+  const padRef = useRef<PadSynthGraph | null>(null)
   const fadeStopTimeoutRef = useRef<number | null>(null)
   const countdownIntervalRef = useRef<number | null>(null)
   const sessionEndTimeoutRef = useRef<number | null>(null)
+  const sessionStartTimeRef = useRef<number>(0)
 
-  // --- Timer helpers ---
+  // Stable refs for use in closures
+  const sessionMinutesRef = useRef(sessionMinutes)
+  const presetNameRef = useRef(presetName)
+  useEffect(() => { sessionMinutesRef.current = sessionMinutes }, [sessionMinutes])
+  useEffect(() => { presetNameRef.current = presetName }, [presetName])
 
+  // ---------------------------------------------------------------------------
+  // Timer helpers
+  // ---------------------------------------------------------------------------
   const clearSessionTimers = (): void => {
-    if (fadeStopTimeoutRef.current !== null) {
-      window.clearTimeout(fadeStopTimeoutRef.current)
-      fadeStopTimeoutRef.current = null
-    }
-    if (countdownIntervalRef.current !== null) {
-      window.clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
-    }
-    if (sessionEndTimeoutRef.current !== null) {
-      window.clearTimeout(sessionEndTimeoutRef.current)
-      sessionEndTimeoutRef.current = null
-    }
+    if (fadeStopTimeoutRef.current !== null) { window.clearTimeout(fadeStopTimeoutRef.current); fadeStopTimeoutRef.current = null }
+    if (countdownIntervalRef.current !== null) { window.clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null }
+    if (sessionEndTimeoutRef.current !== null) { window.clearTimeout(sessionEndTimeoutRef.current); sessionEndTimeoutRef.current = null }
   }
 
-  const stopSession = (useFade: boolean, withChime = false): void => {
+  const stopSession = useCallback((useFade: boolean, withChime = false, natural = false): void => {
     const graph = graphRef.current
     if (!graph) return
-
     clearSessionTimers()
     setRemainingSeconds(0)
-
     const now = graph.context.currentTime
     const fadeOut = useFade ? Math.max(0, fadeOutSeconds) : 0
+
+    if (natural) {
+      const mins = sessionMinutesRef.current
+      const name = presetNameRef.current
+      setPendingJournalEntry({
+        date: new Date().toLocaleString(),
+        presetName: name || 'Unnamed',
+        durationMinutes: mins,
+      })
+      setShowJournalModal(true)
+    }
+
+    // Fade pad out
+    if (padRef.current) {
+      void stopPadSynth(padRef.current, Math.max(1, fadeOut))
+      padRef.current = null
+    }
 
     if (fadeOut <= 0) {
       stopAudioGraph(graph)
@@ -412,12 +204,10 @@ function App() {
       if (withChime) playEndChime()
       return
     }
-
     const currentGain = graph.masterGain.gain.value
     graph.masterGain.gain.cancelScheduledValues(now)
     graph.masterGain.gain.setValueAtTime(currentGain, now)
     graph.masterGain.gain.linearRampToValueAtTime(0.0001, now + fadeOut)
-
     fadeStopTimeoutRef.current = window.setTimeout(() => {
       stopAudioGraph(graphRef.current)
       graphRef.current = null
@@ -425,13 +215,55 @@ function App() {
       if (withChime) playEndChime()
       fadeStopTimeoutRef.current = null
     }, Math.ceil(fadeOut * 1000))
+  }, [fadeOutSeconds])
+
+  // ---------------------------------------------------------------------------
+  // Automation scheduling
+  // ---------------------------------------------------------------------------
+  const scheduleAutomation = (graph: AudioGraph, lanes: AutomationLanes, totalSec: number, startTime: number): void => {
+    const ctx = graph.context
+
+    // Volume lane → automationGain
+    if (lanes.volume.length > 0) {
+      const sorted = [...lanes.volume].sort((a, b) => a.time - b.time)
+      graph.automationGain.gain.cancelScheduledValues(startTime)
+      sorted.forEach((pt) => {
+        const t = startTime + pt.time * totalSec
+        graph.automationGain.gain.linearRampToValueAtTime(pt.value, t)
+      })
+    }
+
+    // Filter cutoff lane
+    if (lanes.filterCutoff.length > 0) {
+      const sorted = [...lanes.filterCutoff].sort((a, b) => a.time - b.time)
+      graph.filterNode.frequency.cancelScheduledValues(startTime)
+      sorted.forEach((pt) => {
+        const t = startTime + pt.time * totalSec
+        graph.filterNode.frequency.linearRampToValueAtTime(pt.value, t)
+      })
+    }
+
+    // Beat frequency lane → rightOsc frequency offset
+    if (lanes.beatFrequency.length > 0) {
+      const sorted = [...lanes.beatFrequency].sort((a, b) => a.time - b.time)
+      // We'll modulate rightOsc frequency: leftFreq + beatValue
+      const lf = graph.leftOsc.frequency.value
+      graph.rightOsc.frequency.cancelScheduledValues(startTime)
+      sorted.forEach((pt) => {
+        const t = startTime + pt.time * totalSec
+        graph.rightOsc.frequency.linearRampToValueAtTime(lf + pt.value, t)
+      })
+    }
   }
 
-  const startSessionTimers = (): void => {
+  const startSessionTimers = useCallback((graph: AudioGraph, lanes: AutomationLanes): void => {
     const totalSeconds = Math.max(0, Math.round(sessionMinutes * 60))
     setRemainingSeconds(totalSeconds)
     setSessionTotalSeconds(totalSeconds)
     if (totalSeconds <= 0) return
+
+    // Schedule automation
+    scheduleAutomation(graph, lanes, totalSeconds, graph.context.currentTime)
 
     let secondsLeft = totalSeconds
     countdownIntervalRef.current = window.setInterval(() => {
@@ -442,107 +274,29 @@ function App() {
         countdownIntervalRef.current = null
       }
     }, 1000)
-
     const fadeOutStartMs = Math.max(totalSeconds - Math.max(0, fadeOutSeconds), 0) * 1000
     sessionEndTimeoutRef.current = window.setTimeout(() => {
-      stopSession(true, true)
+      stopSession(true, true, true)
     }, Math.ceil(fadeOutStartMs))
-  }
+  }, [sessionMinutes, fadeOutSeconds, stopSession])
 
-  // --- Preset helpers ---
-
-  const buildCurrentPreset = (): SessionPreset => ({
-    name: presetName.trim() || `Preset ${savedPresets.length + 1}`,
-    useIndependentTuning,
-    carrier,
-    beat,
-    leftFrequency,
-    rightFrequency,
-    wobbleRate,
-    wobbleDepth,
-    wobbleWaveform,
-    wobbleTarget,
-    phaseOffset,
-    volume,
-    sessionMinutes,
-    fadeInSeconds,
-    fadeOutSeconds,
-    noiseType,
-    noiseVolume,
-  })
-
-  const savePreset = (): void => {
-    const next = buildCurrentPreset()
-    const idx = savedPresets.findIndex((p) => p.name === next.name)
-    const list = [...savedPresets]
-    if (idx >= 0) {
-      list[idx] = next
-    } else {
-      list.push(next)
-    }
-    setSavedPresets(list)
-    setSelectedPresetName(next.name)
-    writeSavedPresets(list)
-  }
-
-  const loadSelectedPreset = (): void => {
-    const preset = savedPresets.find((p) => p.name === selectedPresetName)
-    if (!preset) return
-    setUseIndependentTuning(preset.useIndependentTuning)
-    setCarrier(preset.carrier)
-    setBeat(preset.beat)
-    setLeftFrequency(preset.leftFrequency)
-    setRightFrequency(preset.rightFrequency)
-    setWobbleRate(preset.wobbleRate)
-    setWobbleDepth(preset.wobbleDepth)
-    setWobbleWaveform(preset.wobbleWaveform ?? 'sine')
-    setWobbleTarget(preset.wobbleTarget ?? 'detune')
-    setPhaseOffset(preset.phaseOffset ?? 0)
-    setVolume(preset.volume)
-    setSessionMinutes(preset.sessionMinutes)
-    setFadeInSeconds(preset.fadeInSeconds)
-    setFadeOutSeconds(preset.fadeOutSeconds)
-    setNoiseType(preset.noiseType ?? 'none')
-    setNoiseVolume(preset.noiseVolume ?? 0.15)
-    setPresetName(preset.name)
-  }
-
-  const deleteSelectedPreset = (): void => {
-    if (!selectedPresetName) return
-    const list = savedPresets.filter((p) => p.name !== selectedPresetName)
-    setSavedPresets(list)
-    writeSavedPresets(list)
-    setSelectedPresetName(list.length > 0 ? list[0].name : '')
-  }
-
-  // --- Toggle session ---
-
+  // ---------------------------------------------------------------------------
+  // Toggle session
+  // ---------------------------------------------------------------------------
   const toggleAudio = async (): Promise<void> => {
-    if (graphRef.current) {
-      stopSession(true)
-      return
-    }
-
+    if (graphRef.current) { stopSession(true); return }
     clearSessionTimers()
 
     const graph = createAudioGraph({
-      leftFrequency,
-      rightFrequency,
-      wobbleRate,
-      wobbleDepth,
-      wobbleWaveform,
-      wobbleTarget,
-      phaseOffset,
-      volume,
-      noiseType,
-      noiseVolume,
+      leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
+      wobbleWaveform, wobbleTarget, phaseOffset, volume,
+      noiseType, noiseVolume, filterType, filterFrequency, filterQ,
     })
 
-    if (graph.context.state !== 'running') {
-      await graph.context.resume()
-    }
+    if (graph.context.state !== 'running') await graph.context.resume()
 
     const now = graph.context.currentTime
+    sessionStartTimeRef.current = now
     const safeVolume = Math.max(0.0001, volume)
     if (fadeInSeconds > 0) {
       graph.masterGain.gain.setValueAtTime(0.0001, now)
@@ -552,28 +306,164 @@ function App() {
     }
 
     graphRef.current = graph
+
+    // Start pad synth
+    if (padEnabled) {
+      const pad = createPadSynth(graph.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, graph.masterGain)
+      padRef.current = pad
+    }
+
     setIsRunning(true)
-    startSessionTimers()
+    startSessionTimers(graph, automationLanes)
   }
 
   // ---------------------------------------------------------------------------
-  // Effects — live parameter updates while session is running
+  // Preset helpers
   // ---------------------------------------------------------------------------
+  const buildCurrentPreset = (): SessionPreset => ({
+    name: presetName.trim() || `Preset ${savedPresets.length + 1}`,
+    useIndependentTuning, carrier, beat, leftFrequency, rightFrequency,
+    wobbleRate, wobbleDepth, wobbleWaveform, wobbleTarget,
+    phaseOffset, volume, sessionMinutes, fadeInSeconds, fadeOutSeconds,
+    noiseType, noiseVolume,
+  })
 
+  const savePreset = (): void => {
+    const next = buildCurrentPreset()
+    const idx = savedPresets.findIndex((p) => p.name === next.name)
+    const list = [...savedPresets]
+    if (idx >= 0) list[idx] = next; else list.push(next)
+    setSavedPresets(list); setSelectedPresetName(next.name); writeSavedPresets(list)
+  }
+
+  const loadSelectedPreset = (): void => {
+    const preset = savedPresets.find((p) => p.name === selectedPresetName)
+    if (!preset) return
+    setUseIndependentTuning(preset.useIndependentTuning)
+    setCarrier(preset.carrier); setBeat(preset.beat)
+    setLeftFrequency(preset.leftFrequency); setRightFrequency(preset.rightFrequency)
+    setWobbleRate(preset.wobbleRate); setWobbleDepth(preset.wobbleDepth)
+    setWobbleWaveform(preset.wobbleWaveform ?? 'sine')
+    setWobbleTarget(preset.wobbleTarget ?? 'detune')
+    setPhaseOffset(preset.phaseOffset ?? 0)
+    setVolume(preset.volume); setSessionMinutes(preset.sessionMinutes)
+    setFadeInSeconds(preset.fadeInSeconds); setFadeOutSeconds(preset.fadeOutSeconds)
+    setNoiseType(preset.noiseType ?? 'none'); setNoiseVolume(preset.noiseVolume ?? 0.15)
+    setPresetName(preset.name)
+  }
+
+  const deleteSelectedPreset = (): void => {
+    if (!selectedPresetName) return
+    const list = savedPresets.filter((p) => p.name !== selectedPresetName)
+    setSavedPresets(list); writeSavedPresets(list)
+    setSelectedPresetName(list.length > 0 ? list[0].name : '')
+  }
+
+  // ---------------------------------------------------------------------------
+  // WAV Export
+  // ---------------------------------------------------------------------------
+  const exportWav = async (): Promise<void> => {
+    setIsExporting(true)
+    try {
+      const totalSec = sessionMinutes * 60
+      const sampleRate = 44100
+      const offCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalSec), sampleRate)
+      const now = offCtx.currentTime
+
+      // Rebuild binaural graph
+      const lOsc = offCtx.createOscillator(); lOsc.type = 'sine'; lOsc.frequency.value = leftFrequency
+      const rOsc = offCtx.createOscillator(); rOsc.type = 'sine'; rOsc.frequency.value = rightFrequency
+      const lGain = offCtx.createGain(); const rGain = offCtx.createGain()
+      lGain.gain.value = 1; rGain.gain.value = 1
+      const merger = offCtx.createChannelMerger(2)
+      const amGain = offCtx.createGain(); amGain.gain.value = 1
+      const filterNode = offCtx.createBiquadFilter()
+      if (filterType !== 'off') {
+        filterNode.type = filterType === 'lowpass' ? 'lowpass' : 'highpass'
+        filterNode.frequency.value = filterFrequency; filterNode.Q.value = filterQ
+      } else { filterNode.type = 'allpass' }
+      const autoGain = offCtx.createGain(); autoGain.gain.value = 1
+      const masterGain = offCtx.createGain(); masterGain.gain.value = volume
+
+      lOsc.connect(lGain); rOsc.connect(rGain)
+      lGain.connect(merger, 0, 0); rGain.connect(merger, 0, 1)
+      merger.connect(amGain); amGain.connect(filterNode)
+      filterNode.connect(autoGain); autoGain.connect(masterGain)
+      masterGain.connect(offCtx.destination)
+
+      // Fade in
+      if (fadeInSeconds > 0) {
+        masterGain.gain.setValueAtTime(0.0001, now)
+        masterGain.gain.linearRampToValueAtTime(Math.max(0.0001, volume), now + fadeInSeconds)
+      }
+      // Fade out
+      const fadeOutStart = Math.max(totalSec - fadeOutSeconds, fadeInSeconds)
+      masterGain.gain.setValueAtTime(Math.max(0.0001, volume), now + fadeOutStart)
+      masterGain.gain.linearRampToValueAtTime(0.0001, now + totalSec)
+
+      // Automation
+      if (automationLanes.volume.length > 0) {
+        const sorted = [...automationLanes.volume].sort((a, b) => a.time - b.time)
+        sorted.forEach((pt) => { autoGain.gain.linearRampToValueAtTime(pt.value, now + pt.time * totalSec) })
+      }
+      if (automationLanes.filterCutoff.length > 0) {
+        const sorted = [...automationLanes.filterCutoff].sort((a, b) => a.time - b.time)
+        sorted.forEach((pt) => { filterNode.frequency.linearRampToValueAtTime(pt.value, now + pt.time * totalSec) })
+      }
+      if (automationLanes.beatFrequency.length > 0) {
+        const sorted = [...automationLanes.beatFrequency].sort((a, b) => a.time - b.time)
+        sorted.forEach((pt) => { rOsc.frequency.linearRampToValueAtTime(leftFrequency + pt.value, now + pt.time * totalSec) })
+      }
+
+      lOsc.start(now); rOsc.start(now)
+
+      // Noise
+      if (noiseType !== 'none') {
+        const noiseSrc = createNoiseBuffer(offCtx as unknown as AudioContext, noiseType)
+        const nGain = offCtx.createGain(); nGain.gain.value = noiseVolume
+        noiseSrc.connect(nGain); nGain.connect(masterGain)
+      }
+
+      const renderedBuffer = await offCtx.startRendering()
+      const blob = encodeWav(renderedBuffer)
+      downloadBlob(blob, `binaural-session-${presetName.replace(/\s+/g, '-')}.wav`)
+    } catch (err) {
+      console.error('WAV export failed', err)
+    }
+    setIsExporting(false)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Journal
+  // ---------------------------------------------------------------------------
+  const saveJournalEntry = (notes: string): void => {
+    if (!pendingJournalEntry) return
+    const entry: JournalEntry = {
+      id: Date.now().toString(),
+      ...pendingJournalEntry,
+      notes,
+    }
+    const list = [entry, ...journalEntries]
+    setJournalEntries(list)
+    writeJournal(list)
+    setShowJournalModal(false)
+    setPendingJournalEntry(null)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Effects
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const presets = readSavedPresets()
-    setSavedPresets(presets)
-    if (presets.length > 0) setSelectedPresetName(presets[0].name)
+    setSavedPresets(readSavedPresets())
+    setJournalEntries(readJournal())
   }, [])
 
-  // Sync carrier/beat → L/R frequencies in linked mode
   useEffect(() => {
     if (useIndependentTuning) return
     setLeftFrequency(carrier)
     setRightFrequency(carrier + beat)
   }, [carrier, beat, useIndependentTuning])
 
-  // Oscillator frequencies
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
@@ -581,70 +471,65 @@ function App() {
     graph.rightOsc.frequency.setValueAtTime(rightFrequency, graph.context.currentTime)
   }, [leftFrequency, rightFrequency])
 
-  // LFO rate + depth
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
     graph.lfo.frequency.setValueAtTime(wobbleRate, graph.context.currentTime)
-    graph.lfoDepth.gain.setValueAtTime(
-      scaledLfoDepth(wobbleDepth, graph.lfoTarget),
-      graph.context.currentTime,
-    )
+    graph.lfoDepth.gain.setValueAtTime(scaledLfoDepth(wobbleDepth, graph.lfoTarget), graph.context.currentTime)
   }, [wobbleRate, wobbleDepth])
 
-  // LFO waveform — can change on a live OscillatorNode
-  useEffect(() => {
-    const graph = graphRef.current
-    if (!graph) return
-    graph.lfo.type = wobbleWaveform
-  }, [wobbleWaveform])
+  useEffect(() => { const graph = graphRef.current; if (!graph) return; graph.lfo.type = wobbleWaveform }, [wobbleWaveform])
 
-  // LFO target — requires rewiring the graph
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
     reconnectLfo(graph, wobbleTarget, wobbleDepth)
   }, [wobbleTarget]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Master volume
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
     graph.masterGain.gain.setTargetAtTime(Math.max(0.0001, volume), graph.context.currentTime, 0.05)
   }, [volume])
 
-  // Noise type swap
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
     if (graph.noiseSource) {
-      graph.noiseSource.stop()
-      graph.noiseSource.disconnect()
-      graph.noiseSource = null
+      try { graph.noiseSource.stop() } catch { /* ignore */ }
+      graph.noiseSource.disconnect(); graph.noiseSource = null
     }
     if (noiseType !== 'none') {
-      const source = createNoiseSource(graph.context, noiseType)
-      source.connect(graph.noiseGain)
-      graph.noiseSource = source
+      const source = createNoiseBuffer(graph.context, noiseType)
+      source.connect(graph.noiseGain); graph.noiseSource = source
     }
-    graph.noiseGain.gain.setValueAtTime(
-      noiseType !== 'none' ? noiseVolume : 0,
-      graph.context.currentTime,
-    )
+    graph.noiseGain.gain.setValueAtTime(noiseType !== 'none' ? noiseVolume : 0, graph.context.currentTime)
   }, [noiseType]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Noise volume
   useEffect(() => {
-    const graph = graphRef.current
-    if (!graph) return
-    graph.noiseGain.gain.setTargetAtTime(
-      noiseType !== 'none' ? Math.max(0.0001, noiseVolume) : 0,
-      graph.context.currentTime,
-      0.05,
-    )
+    const graph = graphRef.current; if (!graph) return
+    graph.noiseGain.gain.setTargetAtTime(noiseType !== 'none' ? Math.max(0.0001, noiseVolume) : 0, graph.context.currentTime, 0.05)
   }, [noiseVolume, noiseType])
 
-  // Cleanup on unmount
+  // Filter live updates
+  useEffect(() => {
+    const graph = graphRef.current; if (!graph) return
+    if (filterType === 'off') {
+      graph.filterNode.type = 'allpass'
+    } else {
+      graph.filterNode.type = filterType === 'lowpass' ? 'lowpass' : 'highpass'
+      graph.filterNode.frequency.setValueAtTime(filterFrequency, graph.context.currentTime)
+      graph.filterNode.Q.setValueAtTime(filterQ, graph.context.currentTime)
+    }
+  }, [filterType, filterFrequency, filterQ])
+
+  // Pad synth live updates
+  useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadVolume(pad, padVolume) }, [padVolume])
+  useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadReverbMix(pad, padReverbMix) }, [padReverbMix])
+  useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadBreatheRate(pad, padBreatheRate) }, [padBreatheRate])
+  useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadWaveform(pad, padWaveform) }, [padWaveform])
+  useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadRoot(pad, carrier) }, [carrier])
+
   useEffect(() => {
     return () => {
       clearSessionTimers()
@@ -654,264 +539,306 @@ function App() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
-  // Derived display values
+  // Derived
   // ---------------------------------------------------------------------------
-
   const beatDifference = rightFrequency - leftFrequency
-  const progressFraction =
-    sessionTotalSeconds > 0 && remainingSeconds > 0
-      ? 1 - remainingSeconds / sessionTotalSeconds
-      : 0
-  const timerDisplay =
-    remainingSeconds > 0
-      ? `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`
-      : '00:00'
-
-  const wobbleDepthLabel =
-    wobbleTarget === 'amplitude'
-      ? `${Math.round((wobbleDepth / 60) * 100)}% AM depth`
-      : `${wobbleDepth.toFixed(1)} cents`
+  const progressFraction = sessionTotalSeconds > 0 && remainingSeconds > 0
+    ? 1 - remainingSeconds / sessionTotalSeconds : 0
+  const timerDisplay = remainingSeconds > 0
+    ? `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`
+    : '00:00'
+  const wobbleDepthLabel = wobbleTarget === 'amplitude'
+    ? `${Math.round((wobbleDepth / 60) * 100)}% AM depth`
+    : `${wobbleDepth.toFixed(1)} cents`
 
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
-
   return (
     <main className="app-shell">
       <section className="hero">
         <p className="eyebrow">Solfeggio + Binaural Beats</p>
-        <h1>Binaural Engine MVP</h1>
+        <h1>Binaural Engine</h1>
         <p className="subtitle">
-          Tune any carrier frequency, shape beat difference, and add wobble modulation.
-          Headphones recommended.
+          Tune any carrier frequency, shape beat difference, and add wobble modulation. Headphones recommended.
         </p>
       </section>
 
       <section className="panel">
-        {/* Readout */}
+        {/* ── Frequency Presets ── */}
+        <div className="preset-freq-section">
+          <div className="preset-freq-label">Solfeggio Frequencies</div>
+          <div className="solfeggio-grid">
+            {SOLFEGGIO.map((s) => (
+              <button key={s.hz} type="button" className="freq-preset-btn"
+                onClick={() => {
+                  if (useIndependentTuning) { setLeftFrequency(s.hz) }
+                  else { setCarrier(s.hz) }
+                }}>
+                <span className="freq-preset-hz">{s.hz}</span>
+                <span className="freq-preset-label">{s.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="preset-freq-label" style={{ marginTop: '0.6rem' }}>Brainwave Presets</div>
+          <div className="brainwave-grid">
+            {BRAINWAVE_PRESETS.map((b) => (
+              <button key={b.name} type="button" className="beat-preset-btn"
+                onClick={() => setBeat(b.hz)}>
+                <span className="beat-preset-name">{b.name}</span>
+                <span className="beat-preset-hz">{b.hz} Hz</span>
+                <span className="beat-preset-label">{b.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Readout ── */}
         <div className="readout">
-          <div>
-            <span>Left</span>
-            <strong>{leftFrequency.toFixed(2)} Hz</strong>
-          </div>
-          <div>
-            <span>Right</span>
-            <strong>{rightFrequency.toFixed(2)} Hz</strong>
-          </div>
-          <div>
-            <span>Beat</span>
-            <strong>{beatDifference.toFixed(2)} Hz</strong>
-          </div>
-          <div>
-            <span>Timer</span>
-            <strong>{timerDisplay}</strong>
-          </div>
+          <div><span>Left</span><strong>{leftFrequency.toFixed(2)} Hz</strong></div>
+          <div><span>Right</span><strong>{rightFrequency.toFixed(2)} Hz</strong></div>
+          <div><span>Beat</span><strong>{beatDifference.toFixed(2)} Hz</strong></div>
+          <div><span>Timer</span><strong>{timerDisplay}</strong></div>
         </div>
 
         {isRunning && sessionTotalSeconds > 0 && (
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${Math.min(1, progressFraction) * 100}%` }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${Math.min(1, progressFraction) * 100}%` }} />
           </div>
         )}
 
-        <button className="start-button" onClick={() => void toggleAudio()}>
-          {isRunning ? 'Stop Session (Fade Out)' : 'Start Session'}
-        </button>
+        <div className="session-action-row">
+          <button className="start-button" onClick={() => void toggleAudio()}>
+            {isRunning ? 'Stop Session (Fade Out)' : 'Start Session'}
+          </button>
+          <button className="soft-button export-button" onClick={() => void exportWav()}
+            disabled={isRunning || isExporting}>
+            {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
+          </button>
+          <button className="soft-button" onClick={() => setShowJournalList((v) => !v)}>
+            📓 Journal
+          </button>
+        </div>
 
         <div className="grid">
-
           {/* ── Frequency ── */}
           <div className="section-label">Frequency</div>
-
           <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={useIndependentTuning}
-              onChange={(e) => setUseIndependentTuning(e.target.checked)}
-            />
+            <input type="checkbox" checked={useIndependentTuning} onChange={(e) => setUseIndependentTuning(e.target.checked)} />
             Independent Left / Right Tuning
           </label>
-
-          {!useIndependentTuning && (
-            <>
-              <label>
-                Carrier Frequency ({carrier.toFixed(1)} Hz)
-                <input type="range" min={40} max={1200} step={0.1} value={carrier}
-                  onChange={(e) => setCarrier(Number(e.target.value))} />
-              </label>
-              <label>
-                Beat Difference ({beat.toFixed(2)} Hz)
-                <input type="range" min={0} max={40} step={0.01} value={beat}
-                  onChange={(e) => setBeat(Number(e.target.value))} />
-              </label>
-            </>
-          )}
-
-          {useIndependentTuning && (
-            <>
-              <label>
-                Left Frequency ({leftFrequency.toFixed(2)} Hz)
-                <input type="range" min={40} max={1200} step={0.01} value={leftFrequency}
-                  onChange={(e) => setLeftFrequency(Number(e.target.value))} />
-              </label>
-              <label>
-                Right Frequency ({rightFrequency.toFixed(2)} Hz)
-                <input type="range" min={40} max={1200} step={0.01} value={rightFrequency}
-                  onChange={(e) => setRightFrequency(Number(e.target.value))} />
-              </label>
-            </>
-          )}
-
-          {/* Phase offset */}
-          <label>
-            Phase Offset ({phaseOffset}°)
+          {!useIndependentTuning && (<>
+            <label>Carrier Frequency ({carrier.toFixed(1)} Hz)
+              <input type="range" min={40} max={1200} step={0.1} value={carrier} onChange={(e) => setCarrier(Number(e.target.value))} />
+            </label>
+            <label>Beat Difference ({beat.toFixed(2)} Hz)
+              <input type="range" min={0} max={40} step={0.01} value={beat} onChange={(e) => setBeat(Number(e.target.value))} />
+            </label>
+          </>)}
+          {useIndependentTuning && (<>
+            <label>Left Frequency ({leftFrequency.toFixed(2)} Hz)
+              <input type="range" min={40} max={1200} step={0.01} value={leftFrequency} onChange={(e) => setLeftFrequency(Number(e.target.value))} />
+            </label>
+            <label>Right Frequency ({rightFrequency.toFixed(2)} Hz)
+              <input type="range" min={40} max={1200} step={0.01} value={rightFrequency} onChange={(e) => setRightFrequency(Number(e.target.value))} />
+            </label>
+          </>)}
+          <label>Phase Offset ({phaseOffset}°)
             <small className="control-hint">Applied at session start — restart to hear change</small>
-            <input type="range" min={0} max={360} step={1} value={phaseOffset}
-              onChange={(e) => setPhaseOffset(Number(e.target.value))} />
+            <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
           </label>
+
+          {/* ── Filter ── */}
+          <div className="section-label">Filter</div>
+          <label>Filter Type
+            <div className="seg-control">
+              {(['off', 'lowpass', 'highpass'] as FilterType[]).map((ft) => (
+                <button key={ft} type="button" className={filterType === ft ? 'active' : ''} onClick={() => setFilterType(ft)}>
+                  {ft === 'off' ? 'Off' : ft === 'lowpass' ? 'Lowpass' : 'Highpass'}
+                </button>
+              ))}
+            </div>
+          </label>
+          {filterType !== 'off' && (<>
+            <label>Filter Frequency ({filterFrequency.toFixed(0)} Hz)
+              <input type="range" min={20} max={20000} step={1} value={filterFrequency}
+                onChange={(e) => setFilterFrequency(Number(e.target.value))} />
+            </label>
+            <label>Resonance / Q ({filterQ.toFixed(1)})
+              <input type="range" min={0.1} max={20} step={0.1} value={filterQ}
+                onChange={(e) => setFilterQ(Number(e.target.value))} />
+            </label>
+          </>)}
 
           {/* ── Wobble / LFO ── */}
           <div className="section-label">Wobble / LFO</div>
-
-          <label>
-            LFO Waveform
+          <label>LFO Waveform
             <div className="seg-control">
               {(['sine', 'triangle', 'square', 'sawtooth'] as LfoWaveform[]).map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  className={wobbleWaveform === w ? 'active' : ''}
-                  onClick={() => setWobbleWaveform(w)}
-                >
+                <button key={w} type="button" className={wobbleWaveform === w ? 'active' : ''} onClick={() => setWobbleWaveform(w)}>
                   {w.charAt(0).toUpperCase() + w.slice(1)}
                 </button>
               ))}
             </div>
           </label>
-
-          <label>
-            LFO Target
+          <label>LFO Target
             <div className="seg-control">
-              {([
-                ['detune', 'Carrier Detune'],
-                ['amplitude', 'Amplitude (AM)'],
-                ['beat', 'Beat Freq'],
-              ] as [LfoTarget, string][]).map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  className={wobbleTarget === val ? 'active' : ''}
-                  onClick={() => setWobbleTarget(val)}
-                >
-                  {label}
-                </button>
+              {([['detune', 'Carrier Detune'], ['amplitude', 'Amplitude (AM)'], ['beat', 'Beat Freq']] as [LfoTarget, string][]).map(([val, lbl]) => (
+                <button key={val} type="button" className={wobbleTarget === val ? 'active' : ''} onClick={() => setWobbleTarget(val)}>{lbl}</button>
               ))}
             </div>
           </label>
-
-          <label>
-            Wobble Rate ({wobbleRate.toFixed(2)} Hz)
-            <input type="range" min={0} max={12} step={0.01} value={wobbleRate}
-              onChange={(e) => setWobbleRate(Number(e.target.value))} />
+          <label>Wobble Rate ({wobbleRate.toFixed(2)} Hz)
+            <input type="range" min={0} max={12} step={0.01} value={wobbleRate} onChange={(e) => setWobbleRate(Number(e.target.value))} />
+          </label>
+          <label>Wobble Depth ({wobbleDepthLabel})
+            <input type="range" min={0} max={60} step={0.1} value={wobbleDepth} onChange={(e) => setWobbleDepth(Number(e.target.value))} />
           </label>
 
-          <label>
-            Wobble Depth ({wobbleDepthLabel})
-            <input type="range" min={0} max={60} step={0.1} value={wobbleDepth}
-              onChange={(e) => setWobbleDepth(Number(e.target.value))} />
+          {/* ── Pad Synth ── */}
+          <div className="section-label">Pad Synth Underlay</div>
+          <label className="toggle-row">
+            <input type="checkbox" checked={padEnabled} onChange={(e) => setPadEnabled(e.target.checked)} />
+            Enable Pad Synth
           </label>
+          {padEnabled && (<>
+            <label>Pad Volume ({Math.round(padVolume * 100)}%)
+              <input type="range" min={0} max={1} step={0.01} value={padVolume} onChange={(e) => setPadVolume(Number(e.target.value))} />
+            </label>
+            <label>Pad Reverb Mix ({Math.round(padReverbMix * 100)}%)
+              <input type="range" min={0} max={1} step={0.01} value={padReverbMix} onChange={(e) => setPadReverbMix(Number(e.target.value))} />
+            </label>
+            <label>Pad Waveform
+              <div className="seg-control">
+                {(['sine', 'triangle'] as PadWaveform[]).map((w) => (
+                  <button key={w} type="button" className={padWaveform === w ? 'active' : ''} onClick={() => setPadWaveform(w)}>
+                    {w.charAt(0).toUpperCase() + w.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </label>
+            <label>Breathe Rate ({padBreatheRate.toFixed(2)} Hz)
+              <input type="range" min={0.05} max={0.5} step={0.01} value={padBreatheRate} onChange={(e) => setPadBreatheRate(Number(e.target.value))} />
+            </label>
+          </>)}
 
           {/* ── Session ── */}
           <div className="section-label">Session</div>
-
-          <label>
-            Session Length ({sessionMinutes.toFixed(0)} min)
-            <input type="range" min={1} max={180} step={1} value={sessionMinutes}
-              onChange={(e) => setSessionMinutes(Number(e.target.value))} />
+          <label>Session Length ({sessionMinutes.toFixed(0)} min)
+            <input type="range" min={1} max={180} step={1} value={sessionMinutes} onChange={(e) => setSessionMinutes(Number(e.target.value))} />
           </label>
-          <label>
-            Fade In ({fadeInSeconds.toFixed(0)} sec)
-            <input type="range" min={0} max={60} step={1} value={fadeInSeconds}
-              onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
+          <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
+            <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
           </label>
-          <label>
-            Fade Out ({fadeOutSeconds.toFixed(0)} sec)
-            <input type="range" min={0} max={60} step={1} value={fadeOutSeconds}
-              onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
+          <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
+            <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
           </label>
-
-          <label>
-            Output Volume ({Math.round(volume * 100)}%)
-            <input type="range" min={0} max={1} step={0.01} value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))} />
+          <label>Output Volume ({Math.round(volume * 100)}%)
+            <input type="range" min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
           </label>
 
           {/* ── Noise ── */}
           <div className="section-label">Ambient Noise Layer</div>
-
-          <label>
-            Noise Type
-            <select className="text-input" value={noiseType}
-              onChange={(e) => setNoiseType(e.target.value as NoiseType)}>
+          <label>Noise Type
+            <select className="text-input" value={noiseType} onChange={(e) => setNoiseType(e.target.value as NoiseType)}>
               <option value="none">Off</option>
               <option value="white">White</option>
               <option value="pink">Pink</option>
               <option value="brown">Brown</option>
             </select>
           </label>
-
           {noiseType !== 'none' && (
-            <label>
-              Noise Volume ({Math.round(noiseVolume * 100)}%)
-              <input type="range" min={0} max={1} step={0.01} value={noiseVolume}
-                onChange={(e) => setNoiseVolume(Number(e.target.value))} />
+            <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
+              <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
             </label>
           )}
+
+          {/* ── Automation ── */}
+          <div className="section-label">Automation Lanes</div>
+          <AutomationEditor
+            lanes={automationLanes}
+            onChange={setAutomationLanes}
+            sessionMinutes={sessionMinutes}
+          />
 
           {/* ── Presets ── */}
           <div className="preset-panel">
             <div className="section-label" style={{ borderTop: 'none', paddingTop: 0 }}>Presets</div>
-            <label>
-              Preset Name
-              <input className="text-input" type="text" value={presetName}
-                onChange={(e) => setPresetName(e.target.value)} />
+            <label>Preset Name
+              <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
             </label>
             <div className="preset-actions">
-              <button type="button" className="soft-button" onClick={savePreset}>
-                Save Preset
-              </button>
+              <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
             </div>
-            <label>
-              Load Preset
-              <select className="text-input" value={selectedPresetName}
-                onChange={(e) => setSelectedPresetName(e.target.value)}>
+            <label>Load Preset
+              <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
                 <option value="">Select a preset</option>
-                {savedPresets.map((p) => (
-                  <option key={p.name} value={p.name}>{p.name}</option>
-                ))}
+                {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
               </select>
             </label>
             <div className="preset-actions">
-              <button type="button" className="soft-button" onClick={loadSelectedPreset}>
-                Load Selected
-              </button>
-              <button type="button" className="soft-button soft-button--danger"
-                onClick={deleteSelectedPreset} disabled={!selectedPresetName}>
-                Delete
-              </button>
+              <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
+              <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
             </div>
           </div>
-
         </div>
       </section>
+
+      {/* ── Journal List ── */}
+      {showJournalList && (
+        <SessionJournal entries={journalEntries} onClose={() => setShowJournalList(false)} />
+      )}
+
+      {/* ── Journal Modal ── */}
+      {showJournalModal && pendingJournalEntry && (
+        <JournalModal
+          entry={pendingJournalEntry}
+          onSave={saveJournalEntry}
+          onCancel={() => { setShowJournalModal(false); setPendingJournalEntry(null) }}
+        />
+      )}
 
       <p className="footnote">
         Safety: keep volume low at session start. Use headphones for full binaural effect. Avoid therapeutic claims.
       </p>
     </main>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Journal Modal
+// ---------------------------------------------------------------------------
+function JournalModal({
+  entry,
+  onSave,
+  onCancel,
+}: {
+  entry: Omit<JournalEntry, 'id' | 'notes'>
+  onSave: (notes: string) => void
+  onCancel: () => void
+}) {
+  const [notes, setNotes] = useState('')
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box">
+        <h2 className="modal-title">Session Complete 🎧</h2>
+        <p className="modal-meta">{entry.presetName} · {entry.durationMinutes} min · {entry.date}</p>
+        <label style={{ fontWeight: 600, color: '#244336' }}>
+          How did that feel?
+          <textarea
+            className="journal-textarea"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            placeholder="Describe your experience…"
+          />
+        </label>
+        <div className="modal-actions">
+          <button className="soft-button" onClick={() => onSave(notes)}>Save Entry</button>
+          <button className="soft-button soft-button--danger" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
   )
 }
 
