@@ -581,7 +581,111 @@ type Session = {
 
 ---
 
-## Moongate Parity Build Backlog
+## Music Content Strategy
+
+Moongate's primary product is **produced music tracks** composed and mixed specifically to work with binaural beats underneath. The binaural engine is the enhancement layer — the music is what users actually listen to. This is a critical gap to close.
+
+### The Gap
+- Users expect real music, not just noise + pad synth over a tone
+- Tracks must be mastered for headphone listening — stereo integrity preserved, no mono collapse, binaural frequencies always audible through the mix
+- Content library needs regular updates to drive retention and justify subscription
+
+### Strategy: Path C — License Now, Generate Later
+
+**Phase 1: Licensed Tracks (Ship Fast)**
+Get to market with a real content library immediately:
+
+- License royalty-free ambient music from:
+  - **Artlist** (~$200/yr unlimited license, commercial use, sync rights)
+  - **Epidemic Sound** (subscription, strong ambient/meditation catalog)
+  - **Musicbed** (higher quality, higher cost, film-grade ambient)
+  - **Pixabay / Freesound** (free tier, limited quality, good for prototyping)
+- Curate 20–40 tracks at launch, tagged by goal (sleep / focus / meditate / explore)
+- Each track professionally mixed to leave binaural frequencies audible:
+  - Low mid frequencies kept clear (150–600 Hz) so carrier tones cut through
+  - No heavy stereo widening that could interfere with binaural perception
+  - Master volume headroom to mix under binaural bus without masking
+- Track metadata: goal tags, brainwave target, recommended carrier frequency, duration
+- New tracks added monthly — content calendar drives subscriber retention
+
+**Phase 2: Generative Music Engine (The Moat)**
+Build the long-term differentiator — music that generates itself, always fitting the current frequency and brainwave state:
+
+- Expand the existing pad synth into a full generative ambient engine:
+  - **Drone layer** — root + detuned unison, slow filter sweep
+  - **Pad layer** — chord voicing (already built), slow volume breathing
+  - **Pluck / bell layer** — scale-locked random melodic events, soft attack, long decay
+  - **Bass pulse layer** — sub-frequency pulse at beat frequency (reinforces isochronic effect)
+  - **Texture layer** — granular-style noise bursts, filtered and spatialized
+- All layers are **scale-locked** to a key derived from the carrier frequency
+  - Carrier → nearest musical root note (A=432, C=256, etc.)
+  - Scale selection: major (activation), minor (introspection), pentatonic (universal)
+  - Harmonic series aware — chord voicings built from natural overtones
+- **Scene presets**: Deep Space, Forest Temple, Ocean Cave, Crystal Bowls, Storm Meditation
+- Slow random modulation on all parameters — no two sessions sound identical
+- Heavy convolution reverb + delay — spatial depth essential for immersion
+- This approach is Endel's model — generative, infinite variation, no licensing cost, always fits the frequency
+
+**Phase 3: AI Music Generation (Future)**
+Once product-market fit is confirmed:
+- **Stable Audio** (Stability AI) — text-to-audio API, ambient/meditation prompts
+- **MusicGen via Replicate** — rapid prototyping, controllable style
+- **Hugging Face Inference Endpoints** — self-hosted MusicGen for cost control
+- **Self-host AudioCraft** — maximum control, no per-generation cost at scale
+- AI-generated tracks rendered offline, reviewed for quality, added to library
+- Personalized generation: "make me a 30-minute sleep track in the style of rain + singing bowls"
+
+### Music Bus Architecture
+The song/music layer lives on its own dedicated bus — never mixed into the binaural signal chain:
+
+```
+[Music Track / Generative Engine]
+    └──► [Music Gain] ──► [Music EQ (HPF 80Hz, gentle LPF 14kHz)] ──► [Music Bus]
+                                                                              │
+[Binaural Bus] ─────────────────────────────────────────────────────────────┤
+                                                                              │
+[Noise Layer] ──────────────────────────────────────────────────────────────┤
+                                                                              │
+[Pad Synth] ────────────────────────────────────────────────────────────────┤
+                                                                              ▼
+                                                                       [Master Gain] ──► [Limiter] ──► Output
+```
+
+Rules:
+- Music and binaural are **always on separate buses** — never summed before the master
+- Music gain defaults to 60–70% so binaural frequencies remain perceptible
+- Binaural bus gain is protected — never ducked below 20% regardless of music volume
+- Music EQ cuts sub-bass (80 Hz HPF) to keep the carrier frequency region clean
+- Stereo integrity enforced on music bus — no mono fold-down ever
+
+### Content Tagging System
+Every track (licensed or generated) is tagged:
+
+```typescript
+type MusicTrack = {
+  id: string
+  title: string
+  durationSeconds: number
+  goals: ('sleep' | 'focus' | 'meditate' | 'relax' | 'explore' | 'dream')[]
+  brainwaveTarget: ('delta' | 'theta' | 'alpha' | 'beta' | 'gamma')[]
+  recommendedCarrier: number      // Hz
+  recommendedBeat: number         // Hz
+  energy: 'very-low' | 'low' | 'medium'
+  mood: 'dark' | 'neutral' | 'uplifting' | 'mystical'
+  source: 'licensed' | 'generative' | 'ai'
+  license: string
+  tier: 'free' | 'premium'
+}
+```
+
+### Licensing Compliance
+- All licensed tracks must have explicit commercial-use rights confirmed
+- No sync-license-only tracks (those can't be used in apps)
+- Track provenance logged (source, license type, expiry if applicable)
+- User-uploaded songs: local only, never uploaded to servers, user assumes copyright responsibility
+- AI-generated tracks: confirm output ownership per provider TOS before shipping
+
+---
 
 Three tiers of parity, in order of impact:
 
