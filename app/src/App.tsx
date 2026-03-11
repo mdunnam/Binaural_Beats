@@ -10,7 +10,7 @@ import {
   createPadSynth, stopPadSynth,
   updatePadVolume, updatePadReverbMix, updatePadBreatheRate, updatePadWaveform, updatePadRoot,
 } from './engine/padSynth'
-import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, setVoiceReverb } from './engine/voiceBus'
+import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, setVoiceReverb as setVoiceReverb_bus } from './engine/voiceBus'
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
@@ -347,7 +347,7 @@ function App() {
 
     const graph = createAudioGraph({
       leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
-      wobbleWaveform, wobbleTarget, phaseOffset, volume,
+      wobbleWaveform, wobbleTarget, phaseOffset, volume, binauralVolume,
       noiseType: activeNoiseType, noiseVolume: activeNoiseVolume, filterType, filterFrequency, filterQ,
     })
 
@@ -611,7 +611,7 @@ function App() {
   useEffect(() => {
     const vb = voiceBusRef.current
     if (!vb) return
-    setVoiceReverb(vb, voiceReverb)
+    setVoiceReverb_bus(vb, voiceReverb)
   }, [voiceReverb])
 
   useEffect(() => {

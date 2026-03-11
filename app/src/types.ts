@@ -84,6 +84,7 @@ export type GraphParams = {
   wobbleTarget: LfoTarget
   phaseOffset: number
   volume: number
+  binauralVolume: number
   noiseType: NoiseType
   noiseVolume: number
   filterType: FilterType

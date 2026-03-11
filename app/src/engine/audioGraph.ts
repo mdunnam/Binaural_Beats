@@ -44,7 +44,7 @@ export function createAudioGraph(params: GraphParams): AudioGraph {
   const {
     leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
     wobbleWaveform, wobbleTarget, phaseOffset,
-    volume, noiseType, noiseVolume,
+    volume, binauralVolume, noiseType, noiseVolume,
     filterType, filterFrequency, filterQ,
   } = params
 
@@ -60,8 +60,8 @@ export function createAudioGraph(params: GraphParams): AudioGraph {
 
   const leftGain = context.createGain()
   const rightGain = context.createGain()
-  leftGain.gain.value = 1
-  rightGain.gain.value = 1
+  leftGain.gain.value = binauralVolume
+  rightGain.gain.value = binauralVolume
 
   const merger = context.createChannelMerger(2)
   const amGain = context.createGain()
