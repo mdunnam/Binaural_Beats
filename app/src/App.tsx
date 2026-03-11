@@ -18,9 +18,18 @@ import { SessionJournal } from './components/SessionJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
 import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
+import { TabNav } from './components/TabNav'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
+
+const TABS = [
+  { id: 'tones',   icon: '🎵', label: 'Tones'   },
+  { id: 'sound',   icon: '🌊', label: 'Sound'   },
+  { id: 'session', icon: '⏱',  label: 'Session' },
+  { id: 'ai',      icon: '✨',  label: 'AI'      },
+  { id: 'journal', icon: '📓', label: 'Journal' },
+]
 
 // ---------------------------------------------------------------------------
 // Solfeggio + Brainwave data
@@ -96,6 +105,9 @@ function defaultLanes(): AutomationLanes {
 // App
 // ---------------------------------------------------------------------------
 function App() {
+  // Tab navigation
+  const [activeTab, setActiveTab] = useState('tones')
+
   // Frequency
   const [useIndependentTuning, setUseIndependentTuning] = useState(false)
   const [carrier, setCarrier] = useState(432)
@@ -252,7 +264,6 @@ function App() {
     const ctx = graph.context
     const now = ctx.currentTime
 
-    // Volume lane → automationGain
     if (lanes.volume.length > 0) {
       const sorted = [...lanes.volume].sort((a, b) => a.time - b.time)
       graph.automationGain.gain.cancelScheduledValues(now)
@@ -263,7 +274,6 @@ function App() {
       })
     }
 
-    // Filter cutoff lane
     if (lanes.filterCutoff.length > 0) {
       const sorted = [...lanes.filterCutoff].sort((a, b) => a.time - b.time)
       graph.filterNode.frequency.cancelScheduledValues(now)
@@ -274,7 +284,6 @@ function App() {
       })
     }
 
-    // Beat frequency lane → rightOsc frequency
     if (lanes.beatFrequency.length > 0) {
       const sorted = [...lanes.beatFrequency].sort((a, b) => a.time - b.time)
       const lf = graph.leftOsc.frequency.value
@@ -293,7 +302,6 @@ function App() {
     setSessionTotalSeconds(totalSeconds)
     if (totalSeconds <= 0) return
 
-    // Schedule automation
     scheduleAutomation(graph, lanes, totalSeconds, graph.context.currentTime)
 
     let secondsLeft = totalSeconds
@@ -318,7 +326,6 @@ function App() {
     if (graphRef.current) { stopSession(true); return }
     clearSessionTimers()
 
-    // If launching an AI session, use its noise config directly (bypasses React state flush race)
     const aiConfig = pendingAiSessionRef.current
     const activeNoiseType = aiConfig ? aiConfig.noiseType : noiseType
     const activeNoiseVolume = aiConfig ? aiConfig.noiseVolume : noiseVolume
@@ -343,13 +350,11 @@ function App() {
 
     graphRef.current = graph
 
-    // Start pad synth
     if (padEnabled) {
       const pad = createPadSynth(graph.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, graph.masterGain)
       padRef.current = pad
     }
 
-    // Start voice bus if there's a pending AI session
     if (pendingAiSessionRef.current) {
       const aiConfig = pendingAiSessionRef.current
       pendingAiSessionRef.current = null
@@ -417,7 +422,6 @@ function App() {
       const offCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalSec), sampleRate)
       const now = offCtx.currentTime
 
-      // Rebuild binaural graph
       const lOsc = offCtx.createOscillator(); lOsc.type = 'sine'; lOsc.frequency.value = leftFrequency
       const rOsc = offCtx.createOscillator(); rOsc.type = 'sine'; rOsc.frequency.value = rightFrequency
       const lGain = offCtx.createGain(); const rGain = offCtx.createGain()
@@ -438,17 +442,14 @@ function App() {
       filterNode.connect(autoGain); autoGain.connect(masterGain)
       masterGain.connect(offCtx.destination)
 
-      // Fade in
       if (fadeInSeconds > 0) {
         masterGain.gain.setValueAtTime(0.0001, now)
         masterGain.gain.linearRampToValueAtTime(Math.max(0.0001, volume), now + fadeInSeconds)
       }
-      // Fade out
       const fadeOutStart = Math.max(totalSec - fadeOutSeconds, fadeInSeconds)
       masterGain.gain.setValueAtTime(Math.max(0.0001, volume), now + fadeOutStart)
       masterGain.gain.linearRampToValueAtTime(0.0001, now + totalSec)
 
-      // Automation
       if (automationLanes.volume.length > 0) {
         const sorted = [...automationLanes.volume].sort((a, b) => a.time - b.time)
         sorted.forEach((pt) => { autoGain.gain.linearRampToValueAtTime(pt.value, now + pt.time * totalSec) })
@@ -464,7 +465,6 @@ function App() {
 
       lOsc.start(now); rOsc.start(now)
 
-      // Noise
       if (noiseType !== 'none') {
         const noiseSrc = createNoiseBuffer(offCtx as unknown as AudioContext, noiseType)
         const nGain = offCtx.createGain(); nGain.gain.value = noiseVolume
@@ -501,12 +501,10 @@ function App() {
   // AI Session handler
   // ---------------------------------------------------------------------------
   const handleAiSessionReady = useCallback((config: AiMeditationConfig): void => {
-    // Stop any running session first
     if (graphRef.current) {
       stopSession(false)
     }
 
-    // Apply config to state
     setCarrier(config.carrier)
     setBeat(config.beat)
     setNoiseType(config.noiseType)
@@ -515,14 +513,12 @@ function App() {
     setSessionMinutes(config.sessionMinutes)
     setUseIndependentTuning(false)
 
-    // Store the AI session blob for toggleAudio to pick up
     pendingAiSessionRef.current = config
     if (pendingAiObjectUrlRef.current) {
       URL.revokeObjectURL(pendingAiObjectUrlRef.current)
     }
     pendingAiObjectUrlRef.current = URL.createObjectURL(config.audioBlob)
 
-    // Start the session after state has settled
     setTimeout(() => {
       void toggleAudio()
     }, 100)
@@ -547,7 +543,6 @@ function App() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
-    // Cancel any pre-scheduled automation ramps so manual slider wins
     graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.leftOsc.frequency.setValueAtTime(leftFrequency, graph.context.currentTime)
@@ -564,9 +559,7 @@ function App() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
-    // OscillatorNode.type is a live writable property — works on running oscillators
     graph.lfo.type = wobbleWaveform
-    // Re-apply depth so the new waveform takes immediate effect at full depth
     graph.lfoDepth.gain.cancelScheduledValues(graph.context.currentTime)
     graph.lfoDepth.gain.setValueAtTime(scaledLfoDepth(wobbleDepth, graph.lfoTarget), graph.context.currentTime)
   }, [wobbleWaveform, wobbleDepth])
@@ -583,7 +576,6 @@ function App() {
     graph.masterGain.gain.setTargetAtTime(Math.max(0.0001, volume), graph.context.currentTime, 0.05)
   }, [volume])
 
-  // Binaural bus volume — automationGain sits between filter and masterGain; use leftGain+rightGain as the binaural sub-volume
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
@@ -591,14 +583,12 @@ function App() {
     graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), graph.context.currentTime, 0.05)
   }, [binauralVolume])
 
-  // Voice volume — live update the voice bus output gain
   useEffect(() => {
     const vb = voiceBusRef.current
     if (!vb) return
     setVoiceVolume_bus(vb, voiceVolume)
   }, [voiceVolume])
 
-  // Voice reverb — live update dry/wet mix
   useEffect(() => {
     const vb = voiceBusRef.current
     if (!vb) return
@@ -625,7 +615,6 @@ function App() {
     graph.noiseGain.gain.setTargetAtTime(noiseType !== 'none' ? Math.max(0.0001, noiseVolume) : 0, graph.context.currentTime, 0.05)
   }, [noiseVolume, noiseType])
 
-  // Filter type live update
   useEffect(() => {
     const graph = graphRef.current; if (!graph) return
     if (filterType === 'off') {
@@ -635,21 +624,18 @@ function App() {
     }
   }, [filterType])
 
-  // Filter frequency live update — always apply so automation and slider both work
   useEffect(() => {
     const graph = graphRef.current; if (!graph) return
     graph.filterNode.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.filterNode.frequency.setValueAtTime(filterFrequency, graph.context.currentTime)
   }, [filterFrequency])
 
-  // Filter Q live update
   useEffect(() => {
     const graph = graphRef.current; if (!graph) return
     graph.filterNode.Q.cancelScheduledValues(graph.context.currentTime)
     graph.filterNode.Q.setValueAtTime(filterQ, graph.context.currentTime)
   }, [filterQ])
 
-  // Re-schedule automation lanes in real-time when points are edited during a session
   useEffect(() => {
     const graph = graphRef.current
     if (!graph || !isRunning) return
@@ -657,7 +643,6 @@ function App() {
     scheduleAutomation(graph, automationLanes, totalSec, sessionStartTimeRef.current)
   }, [automationLanes, isRunning]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pad synth live updates
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadVolume(pad, padVolume) }, [padVolume])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadReverbMix(pad, padReverbMix) }, [padReverbMix])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadBreatheRate(pad, padBreatheRate) }, [padBreatheRate])
@@ -699,34 +684,6 @@ function App() {
       </section>
 
       <section className="panel">
-        {/* ── Frequency Presets ── */}
-        <div className="preset-freq-section">
-          <div className="preset-freq-label">Solfeggio Frequencies</div>
-          <div className="solfeggio-grid">
-            {SOLFEGGIO.map((s) => (
-              <button key={s.hz} type="button" className="freq-preset-btn"
-                onClick={() => {
-                  if (useIndependentTuning) { setLeftFrequency(s.hz) }
-                  else { setCarrier(s.hz) }
-                }}>
-                <span className="freq-preset-hz">{s.hz}</span>
-                <span className="freq-preset-label">{s.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="preset-freq-label" style={{ marginTop: '0.6rem' }}>Brainwave Presets</div>
-          <div className="brainwave-grid">
-            {BRAINWAVE_PRESETS.map((b) => (
-              <button key={b.name} type="button" className="beat-preset-btn"
-                onClick={() => setBeat(b.hz)}>
-                <span className="beat-preset-name">{b.name}</span>
-                <span className="beat-preset-hz">{b.hz} Hz</span>
-                <span className="beat-preset-label">{b.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* ── Readout ── */}
         <div className="readout">
           <div><span>Left</span><strong>{leftFrequency.toFixed(2)} Hz</strong></div>
@@ -741,198 +698,266 @@ function App() {
           </div>
         )}
 
-        <div className="session-action-row">
+        {/* ── Session start/stop — always visible ── */}
+        <div className="session-start-row">
           <button className="start-button" onClick={() => void toggleAudio()}>
             {isRunning ? 'Stop Session (Fade Out)' : 'Start Session'}
           </button>
-          <button className="soft-button export-button" onClick={() => void exportWav()}
-            disabled={isRunning || isExporting}>
-            {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
-          </button>
-          <button className="soft-button" onClick={() => setShowJournalList((v) => !v)}>
-            📓 Journal
-          </button>
-          <button className="soft-button" onClick={() => setShowAiPanel(true)}>
-            ✨ AI Meditation
-          </button>
-          <button className="soft-button" onClick={() => setShowApiSettings(true)} title="OpenAI API Key Settings">
-            ⚙ API Key
-          </button>
         </div>
 
-        <div className="grid">
-          {/* ── Frequency ── */}
-          <div className="section-label">Frequency</div>
-          <label className="toggle-row">
-            <input type="checkbox" checked={useIndependentTuning} onChange={(e) => setUseIndependentTuning(e.target.checked)} />
-            Independent Left / Right Tuning
-          </label>
-          {!useIndependentTuning && (<>
-            <label>Carrier Frequency ({carrier.toFixed(1)} Hz)
-              <input type="range" min={40} max={1200} step={0.1} value={carrier} onChange={(e) => setCarrier(Number(e.target.value))} />
-            </label>
-            <label>Beat Difference ({beat.toFixed(2)} Hz)
-              <input type="range" min={0} max={40} step={0.01} value={beat} onChange={(e) => setBeat(Number(e.target.value))} />
-            </label>
-          </>)}
-          {useIndependentTuning && (<>
-            <label>Left Frequency ({leftFrequency.toFixed(2)} Hz)
-              <input type="range" min={40} max={1200} step={0.01} value={leftFrequency} onChange={(e) => setLeftFrequency(Number(e.target.value))} />
-            </label>
-            <label>Right Frequency ({rightFrequency.toFixed(2)} Hz)
-              <input type="range" min={40} max={1200} step={0.01} value={rightFrequency} onChange={(e) => setRightFrequency(Number(e.target.value))} />
-            </label>
-          </>)}
-          <label>Phase Offset ({phaseOffset}°)
-            <small className="control-hint">Applied at session start — restart to hear change</small>
-            <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
-          </label>
+        {/* ── Tab navigation ── */}
+        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
-          {/* ── Filter ── */}
-          <div className="section-label">Filter</div>
-          <label>Filter Type
-            <div className="seg-control">
-              {(['off', 'lowpass', 'highpass'] as FilterType[]).map((ft) => (
-                <button key={ft} type="button" className={filterType === ft ? 'active' : ''} onClick={() => setFilterType(ft)}>
-                  {ft === 'off' ? 'Off' : ft === 'lowpass' ? 'Lowpass' : 'Highpass'}
-                </button>
-              ))}
-            </div>
-          </label>
-          {filterType !== 'off' && (<>
-            <label>Filter Frequency ({filterFrequency.toFixed(0)} Hz)
-              <input type="range" min={20} max={20000} step={1} value={filterFrequency}
-                onChange={(e) => setFilterFrequency(Number(e.target.value))} />
-            </label>
-            <label>Resonance / Q ({filterQ.toFixed(1)})
-              <input type="range" min={0.1} max={20} step={0.1} value={filterQ}
-                onChange={(e) => setFilterQ(Number(e.target.value))} />
-            </label>
-          </>)}
-
-          {/* ── Wobble / LFO ── */}
-          <div className="section-label">Wobble / LFO</div>
-          <label>LFO Waveform
-            <div className="seg-control">
-              {(['sine', 'triangle', 'square', 'sawtooth'] as LfoWaveform[]).map((w) => (
-                <button key={w} type="button" className={wobbleWaveform === w ? 'active' : ''} onClick={() => setWobbleWaveform(w)}>
-                  {w.charAt(0).toUpperCase() + w.slice(1)}
-                </button>
-              ))}
-            </div>
-          </label>
-          <label>LFO Target
-            <div className="seg-control">
-              {([['detune', 'Carrier Detune'], ['amplitude', 'Amplitude (AM)'], ['beat', 'Beat Freq']] as [LfoTarget, string][]).map(([val, lbl]) => (
-                <button key={val} type="button" className={wobbleTarget === val ? 'active' : ''} onClick={() => setWobbleTarget(val)}>{lbl}</button>
-              ))}
-            </div>
-          </label>
-          <label>Wobble Rate ({wobbleRate.toFixed(2)} Hz)
-            <input type="range" min={0} max={12} step={0.01} value={wobbleRate} onChange={(e) => setWobbleRate(Number(e.target.value))} />
-          </label>
-          <label>Wobble Depth ({wobbleDepthLabel})
-            <input type="range" min={0} max={60} step={0.1} value={wobbleDepth} onChange={(e) => setWobbleDepth(Number(e.target.value))} />
-          </label>
-
-          {/* ── Pad Synth ── */}
-          <div className="section-label">Pad Synth Underlay</div>
-          <label className="toggle-row">
-            <input type="checkbox" checked={padEnabled} onChange={(e) => setPadEnabled(e.target.checked)} />
-            Enable Pad Synth
-          </label>
-          {padEnabled && (<>
-            <label>Pad Volume ({Math.round(padVolume * 100)}%)
-              <input type="range" min={0} max={1} step={0.01} value={padVolume} onChange={(e) => setPadVolume(Number(e.target.value))} />
-            </label>
-            <label>Pad Reverb Mix ({Math.round(padReverbMix * 100)}%)
-              <input type="range" min={0} max={1} step={0.01} value={padReverbMix} onChange={(e) => setPadReverbMix(Number(e.target.value))} />
-            </label>
-            <label>Pad Waveform
-              <div className="seg-control">
-                {(['sine', 'triangle'] as PadWaveform[]).map((w) => (
-                  <button key={w} type="button" className={padWaveform === w ? 'active' : ''} onClick={() => setPadWaveform(w)}>
-                    {w.charAt(0).toUpperCase() + w.slice(1)}
-                  </button>
-                ))}
+        <div className="tab-content">
+          {/* ──────────────── TONES TAB ──────────────── */}
+          {activeTab === 'tones' && (
+            <div className="grid">
+              {/* Solfeggio quick-select */}
+              <div className="preset-freq-section">
+                <div className="preset-freq-label">Solfeggio Frequencies</div>
+                <div className="solfeggio-grid">
+                  {SOLFEGGIO.map((s) => (
+                    <button key={s.hz} type="button" className="freq-preset-btn"
+                      onClick={() => {
+                        if (useIndependentTuning) { setLeftFrequency(s.hz) }
+                        else { setCarrier(s.hz) }
+                      }}>
+                      <span className="freq-preset-hz">{s.hz}</span>
+                      <span className="freq-preset-label">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="preset-freq-label" style={{ marginTop: '0.6rem' }}>Brainwave Presets</div>
+                <div className="brainwave-grid">
+                  {BRAINWAVE_PRESETS.map((b) => (
+                    <button key={b.name} type="button" className="beat-preset-btn"
+                      onClick={() => setBeat(b.hz)}>
+                      <span className="beat-preset-name">{b.name}</span>
+                      <span className="beat-preset-hz">{b.hz} Hz</span>
+                      <span className="beat-preset-label">{b.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </label>
-            <label>Breathe Rate ({padBreatheRate.toFixed(2)} Hz)
-              <input type="range" min={0.05} max={0.5} step={0.01} value={padBreatheRate} onChange={(e) => setPadBreatheRate(Number(e.target.value))} />
-            </label>
-          </>)}
 
-          {/* ── Session ── */}
-          <div className="section-label">Session</div>
-          <label>Session Length ({sessionMinutes.toFixed(0)} min)
-            <input type="range" min={1} max={180} step={1} value={sessionMinutes} onChange={(e) => setSessionMinutes(Number(e.target.value))} />
-          </label>
-          <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
-            <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
-          </label>
-          <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
-            <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
-          </label>
-          <label>Output Volume ({Math.round(volume * 100)}%)
-            <input type="range" min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
-          </label>
-          <label>Binaural Volume ({Math.round(binauralVolume * 100)}%)
-            <small className="control-hint">Level of the binaural tones</small>
-            <input type="range" min={0} max={1} step={0.01} value={binauralVolume} onChange={(e) => setBinauralVolume(Number(e.target.value))} />
-          </label>
-          <label>Background Volume ({Math.round(noiseVolume * 100)}%)
-            <small className="control-hint">Ambient noise / soundscape level</small>
-            <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
-          </label>
-          <label>Voice Volume ({Math.round(voiceVolume * 100)}%)
-            <small className="control-hint">AI meditation voice level</small>
-            <input type="range" min={0} max={1} step={0.01} value={voiceVolume} onChange={(e) => setVoiceVolume(Number(e.target.value))} />
-          </label>
+              {/* Frequency */}
+              <div className="section-label">Frequency</div>
+              <label className="toggle-row">
+                <input type="checkbox" checked={useIndependentTuning} onChange={(e) => setUseIndependentTuning(e.target.checked)} />
+                Independent Left / Right Tuning
+              </label>
+              {!useIndependentTuning && (<>
+                <label>Carrier Frequency ({carrier.toFixed(1)} Hz)
+                  <input type="range" min={40} max={1200} step={0.1} value={carrier} onChange={(e) => setCarrier(Number(e.target.value))} />
+                </label>
+                <label>Beat Difference ({beat.toFixed(2)} Hz)
+                  <input type="range" min={0} max={40} step={0.01} value={beat} onChange={(e) => setBeat(Number(e.target.value))} />
+                </label>
+              </>)}
+              {useIndependentTuning && (<>
+                <label>Left Frequency ({leftFrequency.toFixed(2)} Hz)
+                  <input type="range" min={40} max={1200} step={0.01} value={leftFrequency} onChange={(e) => setLeftFrequency(Number(e.target.value))} />
+                </label>
+                <label>Right Frequency ({rightFrequency.toFixed(2)} Hz)
+                  <input type="range" min={40} max={1200} step={0.01} value={rightFrequency} onChange={(e) => setRightFrequency(Number(e.target.value))} />
+                </label>
+              </>)}
+              <label>Phase Offset ({phaseOffset}°)
+                <small className="control-hint">Applied at session start — restart to hear change</small>
+                <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
+              </label>
 
-          {/* ── Noise ── */}
-          <div className="section-label">Ambient Noise Layer</div>
-          <label>Noise Type
-            <select className="text-input" value={noiseType} onChange={(e) => setNoiseType(e.target.value as NoiseType)}>
-              <option value="none">Off</option>
-              <option value="white">White</option>
-              <option value="pink">Pink</option>
-              <option value="brown">Brown</option>
-            </select>
-          </label>
-          {noiseType !== 'none' && (
-            <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
-              <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
-            </label>
+              {/* Filter */}
+              <div className="section-label">Filter</div>
+              <label>Filter Type
+                <div className="seg-control">
+                  {(['off', 'lowpass', 'highpass'] as FilterType[]).map((ft) => (
+                    <button key={ft} type="button" className={filterType === ft ? 'active' : ''} onClick={() => setFilterType(ft)}>
+                      {ft === 'off' ? 'Off' : ft === 'lowpass' ? 'Lowpass' : 'Highpass'}
+                    </button>
+                  ))}
+                </div>
+              </label>
+              {filterType !== 'off' && (<>
+                <label>Filter Frequency ({filterFrequency.toFixed(0)} Hz)
+                  <input type="range" min={20} max={20000} step={1} value={filterFrequency}
+                    onChange={(e) => setFilterFrequency(Number(e.target.value))} />
+                </label>
+                <label>Resonance / Q ({filterQ.toFixed(1)})
+                  <input type="range" min={0.1} max={20} step={0.1} value={filterQ}
+                    onChange={(e) => setFilterQ(Number(e.target.value))} />
+                </label>
+              </>)}
+
+              {/* Wobble / LFO */}
+              <div className="section-label">Wobble / LFO</div>
+              <label>LFO Waveform
+                <div className="seg-control">
+                  {(['sine', 'triangle', 'square', 'sawtooth'] as LfoWaveform[]).map((w) => (
+                    <button key={w} type="button" className={wobbleWaveform === w ? 'active' : ''} onClick={() => setWobbleWaveform(w)}>
+                      {w.charAt(0).toUpperCase() + w.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </label>
+              <label>LFO Target
+                <div className="seg-control">
+                  {([['detune', 'Carrier Detune'], ['amplitude', 'Amplitude (AM)'], ['beat', 'Beat Freq']] as [LfoTarget, string][]).map(([val, lbl]) => (
+                    <button key={val} type="button" className={wobbleTarget === val ? 'active' : ''} onClick={() => setWobbleTarget(val)}>{lbl}</button>
+                  ))}
+                </div>
+              </label>
+              <label>Wobble Rate ({wobbleRate.toFixed(2)} Hz)
+                <input type="range" min={0} max={12} step={0.01} value={wobbleRate} onChange={(e) => setWobbleRate(Number(e.target.value))} />
+              </label>
+              <label>Wobble Depth ({wobbleDepthLabel})
+                <input type="range" min={0} max={60} step={0.1} value={wobbleDepth} onChange={(e) => setWobbleDepth(Number(e.target.value))} />
+              </label>
+            </div>
           )}
 
-          {/* ── Automation ── */}
-          <div className="section-label">Automation Lanes</div>
-          <AutomationEditor
-            lanes={automationLanes}
-            onChange={setAutomationLanes}
-            sessionMinutes={sessionMinutes}
-          />
+          {/* ──────────────── SOUND TAB ──────────────── */}
+          {activeTab === 'sound' && (
+            <div className="grid">
+              {/* Pad Synth */}
+              <div className="section-label">Pad Synth Underlay</div>
+              <label className="toggle-row">
+                <input type="checkbox" checked={padEnabled} onChange={(e) => setPadEnabled(e.target.checked)} />
+                Enable Pad Synth
+              </label>
+              {padEnabled && (<>
+                <label>Pad Volume ({Math.round(padVolume * 100)}%)
+                  <input type="range" min={0} max={1} step={0.01} value={padVolume} onChange={(e) => setPadVolume(Number(e.target.value))} />
+                </label>
+                <label>Pad Reverb Mix ({Math.round(padReverbMix * 100)}%)
+                  <input type="range" min={0} max={1} step={0.01} value={padReverbMix} onChange={(e) => setPadReverbMix(Number(e.target.value))} />
+                </label>
+                <label>Pad Waveform
+                  <div className="seg-control">
+                    {(['sine', 'triangle'] as PadWaveform[]).map((w) => (
+                      <button key={w} type="button" className={padWaveform === w ? 'active' : ''} onClick={() => setPadWaveform(w)}>
+                        {w.charAt(0).toUpperCase() + w.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </label>
+                <label>Breathe Rate ({padBreatheRate.toFixed(2)} Hz)
+                  <input type="range" min={0.05} max={0.5} step={0.01} value={padBreatheRate} onChange={(e) => setPadBreatheRate(Number(e.target.value))} />
+                </label>
+              </>)}
 
-          {/* ── Presets ── */}
-          <div className="preset-panel">
-            <div className="section-label" style={{ borderTop: 'none', paddingTop: 0 }}>Presets</div>
-            <label>Preset Name
-              <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
-            </label>
-            <div className="preset-actions">
-              <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
+              {/* Noise / Soundscape */}
+              <div className="section-label">Ambient Noise Layer</div>
+              <label>Noise Type
+                <select className="text-input" value={noiseType} onChange={(e) => setNoiseType(e.target.value as NoiseType)}>
+                  <option value="none">Off</option>
+                  <option value="white">White</option>
+                  <option value="pink">Pink</option>
+                  <option value="brown">Brown</option>
+                </select>
+              </label>
+              {noiseType !== 'none' && (
+                <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
+                  <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
+                </label>
+              )}
+
+              {/* Volume controls */}
+              <div className="section-label">Volume</div>
+              <label>Output Volume ({Math.round(volume * 100)}%)
+                <input type="range" min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
+              </label>
+              <label>Binaural Volume ({Math.round(binauralVolume * 100)}%)
+                <small className="control-hint">Level of the binaural tones</small>
+                <input type="range" min={0} max={1} step={0.01} value={binauralVolume} onChange={(e) => setBinauralVolume(Number(e.target.value))} />
+              </label>
+              <label>Background Volume ({Math.round(noiseVolume * 100)}%)
+                <small className="control-hint">Ambient noise / soundscape level</small>
+                <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
+              </label>
+              <label>Voice Volume ({Math.round(voiceVolume * 100)}%)
+                <small className="control-hint">AI meditation voice level</small>
+                <input type="range" min={0} max={1} step={0.01} value={voiceVolume} onChange={(e) => setVoiceVolume(Number(e.target.value))} />
+              </label>
+              <label>Voice Reverb ({Math.round(voiceReverb * 100)}%)
+                <input type="range" min={0} max={1} step={0.01} value={voiceReverb} onChange={(e) => setVoiceReverb(Number(e.target.value))} />
+              </label>
             </div>
-            <label>Load Preset
-              <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
-                <option value="">Select a preset</option>
-                {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
-              </select>
-            </label>
-            <div className="preset-actions">
-              <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
-              <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
+          )}
+
+          {/* ──────────────── SESSION TAB ──────────────── */}
+          {activeTab === 'session' && (
+            <div className="grid">
+              <div className="section-label">Session</div>
+              <label>Session Length ({sessionMinutes.toFixed(0)} min)
+                <input type="range" min={1} max={180} step={1} value={sessionMinutes} onChange={(e) => setSessionMinutes(Number(e.target.value))} />
+              </label>
+              <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
+                <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
+              </label>
+              <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
+                <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
+              </label>
+
+              {/* Export WAV */}
+              <button className="soft-button export-button" onClick={() => void exportWav()}
+                disabled={isRunning || isExporting} style={{ width: '100%' }}>
+                {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
+              </button>
+
+              {/* Automation */}
+              <div className="section-label">Automation Lanes</div>
+              <AutomationEditor
+                lanes={automationLanes}
+                onChange={setAutomationLanes}
+                sessionMinutes={sessionMinutes}
+              />
+
+              {/* Presets */}
+              <div className="preset-panel">
+                <div className="section-label" style={{ borderTop: 'none', paddingTop: 0 }}>Presets</div>
+                <label>Preset Name
+                  <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
+                </label>
+                <div className="preset-actions">
+                  <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
+                </div>
+                <label>Load Preset
+                  <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
+                    <option value="">Select a preset</option>
+                    {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
+                  </select>
+                </label>
+                <div className="preset-actions">
+                  <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
+                  <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ──────────────── AI TAB ──────────────── */}
+          {activeTab === 'ai' && (
+            <div className="ai-tab-content">
+              <p className="ai-tab-desc">Generate a complete guided meditation from a single prompt — the AI selects the right frequencies, soundscape, and narrates the entire session.</p>
+              <button className="ai-generate-btn" style={{ width: '100%', marginBottom: '0.75rem' }} onClick={() => setShowAiPanel(true)}>
+                ✨ Generate AI Meditation
+              </button>
+              <button className="soft-button" style={{ width: '100%' }} onClick={() => setShowApiSettings(true)}>
+                ⚙ OpenAI API Key Settings
+              </button>
+            </div>
+          )}
+
+          {/* ──────────────── JOURNAL TAB ──────────────── */}
+          {activeTab === 'journal' && (
+            <div className="ai-tab-content">
+              <p className="ai-tab-desc">Review your past sessions and reflections.</p>
+              <button className="soft-button" style={{ width: '100%' }} onClick={() => setShowJournalList(true)}>
+                📓 Open Session Journal
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

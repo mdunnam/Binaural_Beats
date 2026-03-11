@@ -484,6 +484,168 @@ input[type='range'] {
   .session-action-row { flex-direction: column; }
 }
 
+/* ── Tab Navigation ── */
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #d0e4dc;
+  margin-bottom: 0.75rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #5a7a6e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn--active {
+  background: #e0f2eb;
+  color: #2a6b56;
+  font-weight: 700;
+}
+
+.tab-btn:hover:not(.tab-btn--active) {
+  background: #f0f9f4;
+}
+
+.tab-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.tab-content {
+  padding-top: 0.25rem;
+}
+
+/* ── Session start row ── */
+.session-start-row {
+  margin-bottom: 0.5rem;
+}
+
+/* ── AI / Journal tab content ── */
+.ai-tab-content {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.ai-tab-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #3d3f42;
+  line-height: 1.5;
+}
+
+/* ── Mobile: bottom tab bar ── */
+@media (max-width: 599px) {
+  .app-shell {
+    max-width: 100%;
+    margin: 0.75rem auto;
+    padding: 0.75rem 0.75rem 80px;
+  }
+
+  .tab-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1a2e26;
+    border-top: 1px solid #2e4a3e;
+    border-bottom: none;
+    padding: 0.25rem 0;
+    z-index: 100;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .tab-btn {
+    color: #7aaa96;
+    font-size: 0.7rem;
+    padding: 0.4rem 0.2rem;
+    min-height: 48px;
+  }
+
+  .tab-btn--active {
+    color: #5bb896;
+    background: transparent;
+  }
+
+  .tab-icon {
+    font-size: 1.3rem;
+  }
+
+  /* Full-width start button on mobile */
+  .start-button {
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 1rem;
+  }
+
+  /* Prevent horizontal overflow */
+  input[type='range'] {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Segmented controls wrap on mobile */
+  .seg-control {
+    flex-wrap: wrap;
+  }
+
+  .seg-control button {
+    min-height: 44px;
+  }
+
+  /* Labels stack vertically */
+  label {
+    font-size: 0.9rem;
+  }
+
+  /* Tap targets */
+  .soft-button,
+  .freq-preset-btn,
+  .beat-preset-btn {
+    min-height: 44px;
+  }
+
+  .readout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Solfeggio/brainwave grid adapts */
+  .solfeggio-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .brainwave-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .freq-preset-btn,
+  .beat-preset-btn {
+    padding: 0.4rem 0.15rem;
+  }
+
+  /* iOS zoom prevention: inputs min font-size 16px */
+  input[type='text'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ── AI Meditation ── */
 .ai-panel,
 .settings-panel {
