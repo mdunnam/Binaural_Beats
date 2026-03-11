@@ -14,6 +14,9 @@ import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, set
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
+import { SoundscapeMixer } from './components/SoundscapeMixer'
+import type { LayerGains, SoundscapeMixerNodes } from './engine/soundscapeMixer'
+import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
 import { SessionJournal } from './components/SessionJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
 import type { AiMeditationConfig } from './components/AiMeditationPanel'
@@ -136,6 +139,11 @@ function App() {
   const [noiseType, setNoiseType] = useState<NoiseType>('none')
   const [noiseVolume, setNoiseVolume] = useState(0.15)
 
+  // Soundscape mixer
+  const [layerGains, setLayerGains] = useState<LayerGains>({ ...DEFAULT_GAINS })
+  const [soundsceneId, setSoundsceneId] = useState<string>('off')
+  const mixerNodesRef = useRef<SoundscapeMixerNodes | null>(null)
+
   // Filter
   const [filterType, setFilterType] = useState<FilterType>('off')
   const [filterFrequency, setFilterFrequency] = useState(1000)
@@ -223,6 +231,12 @@ function App() {
     if (padRef.current) {
       void stopPadSynth(padRef.current, Math.max(1, fadeOut))
       padRef.current = null
+    }
+
+    // Stop soundscape mixer
+    if (mixerNodesRef.current) {
+      stopSoundscapeMixer(mixerNodesRef.current)
+      mixerNodesRef.current = null
     }
 
     // Fade voice bus out
@@ -349,6 +363,10 @@ function App() {
     }
 
     graphRef.current = graph
+
+    // Start soundscape mixer
+    const mixerNodes = createSoundscapeMixer(graph.context, graph.masterGain, layerGains)
+    mixerNodesRef.current = mixerNodes
 
     if (padEnabled) {
       const pad = createPadSynth(graph.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, graph.masterGain)
@@ -649,6 +667,15 @@ function App() {
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadWaveform(pad, padWaveform) }, [padWaveform])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadRoot(pad, carrier) }, [carrier])
 
+  // Live-update soundscape layer gains
+  useEffect(() => {
+    const nodes = mixerNodesRef.current
+    if (!nodes) return
+    SOUND_LAYERS.forEach(layer => {
+      updateLayerGain(nodes, layer.id, layerGains[layer.id])
+    })
+  }, [layerGains])
+
   useEffect(() => {
     return () => {
       clearSessionTimers()
@@ -847,20 +874,21 @@ function App() {
               </>)}
 
               {/* Noise / Soundscape */}
-              <div className="section-label">Ambient Noise Layer</div>
-              <label>Noise Type
-                <select className="text-input" value={noiseType} onChange={(e) => setNoiseType(e.target.value as NoiseType)}>
-                  <option value="none">Off</option>
-                  <option value="white">White</option>
-                  <option value="pink">Pink</option>
-                  <option value="brown">Brown</option>
-                </select>
-              </label>
-              {noiseType !== 'none' && (
-                <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
-                  <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
-                </label>
-              )}
+              <div className="section-label">Soundscape</div>
+              <SoundscapeMixer
+                gains={layerGains}
+                activeSceneId={soundsceneId}
+                onChange={(gains) => {
+                  setLayerGains(gains)
+                  const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
+                    scene.id !== 'custom' && scene.id !== 'off' &&
+                    SOUND_LAYERS.every(l => Math.abs((scene.gains[l.id] ?? 0) - gains[l.id]) < 0.01)
+                  )
+                  setSoundsceneId(matchedScene?.id ?? 'custom')
+                }}
+                onSceneChange={(sceneId) => setSoundsceneId(sceneId)}
+                disabled={false}
+              />
 
               {/* Volume controls */}
               <div className="section-label">Volume</div>

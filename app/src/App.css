@@ -1166,3 +1166,20 @@ input[type='range'] {
   font-style: italic;
   padding: 0.3rem 0;
 }
+
+
+/* ── Soundscape Mixer ── */
+.soundscape-mixer { display: flex; flex-direction: column; gap: 0.5rem; }
+.soundscape-scenes { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+.soundscape-scene-btn { padding: 0.3rem 0.6rem; font-size: 0.78rem; border: 1px solid #b0ccc4; border-radius: 20px; background: transparent; color: #3f5f53; cursor: pointer; }
+.soundscape-scene-btn:hover { background: #e8f3ef; }
+.soundscape-scene-btn--active { background: #3e8f72; color: #fff; border-color: #3e8f72; }
+.soundscape-layer-row { display: flex; align-items: center; gap: 0.5rem; }
+.soundscape-layer-icon { font-size: 1.1rem; width: 1.5rem; text-align: center; flex-shrink: 0; }
+.soundscape-layer-label { font-size: 0.8rem; color: #3f5f53; width: 3.5rem; flex-shrink: 0; }
+.soundscape-layer-slider { flex: 1; min-width: 0; }
+.soundscape-layer-pct { font-size: 0.75rem; color: #7a8f87; width: 2.5rem; text-align: right; flex-shrink: 0; }
+
+@media (max-width: 599px) {
+  .soundscape-layer-label { display: none; }
+}
