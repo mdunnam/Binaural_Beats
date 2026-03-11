@@ -483,3 +483,140 @@ input[type='range'] {
 @media (max-width: 600px) {
   .session-action-row { flex-direction: column; }
 }
+
+/* ── AI Meditation ── */
+.ai-panel,
+.settings-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.ai-panel-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.75rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+
+.ai-prompt-textarea {
+  display: block;
+  width: 100%;
+  min-height: 80px;
+  margin-top: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #bfd0c6;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.ai-generate-btn {
+  background: linear-gradient(135deg, #2e7d52 0%, #4caf85 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ai-generate-btn:disabled { opacity: 0.4; cursor: default; }
+.ai-generate-btn:not(:disabled):hover { opacity: 0.88; }
+
+.ai-step-indicator {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ai-step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.ai-step-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  background: #e8f4ec;
+  color: #2e7d52;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ai-step--active {
+  color: #2e7d52;
+  font-weight: 600;
+}
+
+.ai-step--active .ai-step-icon {
+  background: #2e7d52;
+  color: #fff;
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+.ai-step--done .ai-step-icon {
+  background: #4caf85;
+  color: #fff;
+}
+
+.ai-step--pending {
+  opacity: 0.4;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.ai-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.ai-no-key {
+  background: #f5f9f6;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.api-key-input {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #bfd0c6;
+  border-radius: 8px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.api-key-note {
+  font-size: 0.82rem;
+  color: #666;
+  margin: 0.4rem 0 0;
+}

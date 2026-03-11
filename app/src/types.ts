@@ -98,3 +98,13 @@ export type PadParams = {
   padWaveform: PadWaveform
   padBreatheRate: number
 }
+
+export type VoiceBus = {
+  context: AudioContext
+  source: AudioBufferSourceNode | null
+  gainNode: GainNode
+  reverbNode: ConvolverNode
+  dryGain: GainNode
+  wetGain: GainNode
+  outputGain: GainNode
+}

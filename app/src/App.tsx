@@ -10,9 +10,14 @@ import {
   createPadSynth, stopPadSynth,
   updatePadVolume, updatePadReverbMix, updatePadBreatheRate, updatePadWaveform, updatePadRoot,
 } from './engine/padSynth'
+import { createVoiceBus, stopVoiceBus } from './engine/voiceBus'
+import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
 import { SessionJournal } from './components/SessionJournal'
+import { AiMeditationPanel } from './components/AiMeditationPanel'
+import type { AiMeditationConfig } from './components/AiMeditationPanel'
+import { ApiKeySettings } from './components/ApiKeySettings'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -150,8 +155,16 @@ function App() {
   // WAV export
   const [isExporting, setIsExporting] = useState(false)
 
+  // AI Meditation
+  const [aiApiKey, setAiApiKey] = useState<string>('')
+  const [showAiPanel, setShowAiPanel] = useState(false)
+  const [showApiSettings, setShowApiSettings] = useState(false)
+
   const graphRef = useRef<AudioGraph | null>(null)
   const padRef = useRef<PadSynthGraph | null>(null)
+  const voiceBusRef = useRef<VoiceBus | null>(null)
+  const pendingAiSessionRef = useRef<AiMeditationConfig | null>(null)
+  const pendingAiObjectUrlRef = useRef<string | null>(null)
   const fadeStopTimeoutRef = useRef<number | null>(null)
   const countdownIntervalRef = useRef<number | null>(null)
   const sessionEndTimeoutRef = useRef<number | null>(null)
@@ -195,6 +208,18 @@ function App() {
     if (padRef.current) {
       void stopPadSynth(padRef.current, Math.max(1, fadeOut))
       padRef.current = null
+    }
+
+    // Fade voice bus out
+    if (voiceBusRef.current) {
+      stopVoiceBus(voiceBusRef.current, Math.max(1, fadeOut))
+      voiceBusRef.current = null
+    }
+
+    // Revoke object URL
+    if (pendingAiObjectUrlRef.current) {
+      URL.revokeObjectURL(pendingAiObjectUrlRef.current)
+      pendingAiObjectUrlRef.current = null
     }
 
     if (fadeOut <= 0) {
@@ -314,6 +339,17 @@ function App() {
     if (padEnabled) {
       const pad = createPadSynth(graph.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, graph.masterGain)
       padRef.current = pad
+    }
+
+    // Start voice bus if there's a pending AI session
+    if (pendingAiSessionRef.current) {
+      const aiConfig = pendingAiSessionRef.current
+      pendingAiSessionRef.current = null
+      createVoiceBus(graph.context, aiConfig.audioBlob, graph.masterGain, 0.75).then((bus) => {
+        voiceBusRef.current = bus
+      }).catch((err) => {
+        console.error('Voice bus failed:', err)
+      })
     }
 
     setIsRunning(true)
@@ -454,11 +490,44 @@ function App() {
   }
 
   // ---------------------------------------------------------------------------
+  // AI Session handler
+  // ---------------------------------------------------------------------------
+  const handleAiSessionReady = useCallback((config: AiMeditationConfig): void => {
+    // Stop any running session first
+    if (graphRef.current) {
+      stopSession(false)
+    }
+
+    // Apply config to state
+    setCarrier(config.carrier)
+    setBeat(config.beat)
+    setNoiseType(config.noiseType)
+    setNoiseVolume(config.noiseVolume)
+    setPadEnabled(config.padEnabled)
+    setSessionMinutes(config.sessionMinutes)
+    setUseIndependentTuning(false)
+
+    // Store the AI session blob for toggleAudio to pick up
+    pendingAiSessionRef.current = config
+    if (pendingAiObjectUrlRef.current) {
+      URL.revokeObjectURL(pendingAiObjectUrlRef.current)
+    }
+    pendingAiObjectUrlRef.current = URL.createObjectURL(config.audioBlob)
+
+    // Start the session after state has settled
+    setTimeout(() => {
+      void toggleAudio()
+    }, 100)
+  }, [stopSession]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
   // Effects
   // ---------------------------------------------------------------------------
   useEffect(() => {
     setSavedPresets(readSavedPresets())
     setJournalEntries(readJournal())
+    const key = localStorage.getItem('binaural-openai-key') ?? ''
+    setAiApiKey(key)
   }, [])
 
   useEffect(() => {
@@ -652,6 +721,12 @@ function App() {
           <button className="soft-button" onClick={() => setShowJournalList((v) => !v)}>
             📓 Journal
           </button>
+          <button className="soft-button" onClick={() => setShowAiPanel(true)}>
+            ✨ AI Meditation
+          </button>
+          <button className="soft-button" onClick={() => setShowApiSettings(true)} title="OpenAI API Key Settings">
+            ⚙ API Key
+          </button>
         </div>
 
         <div className="grid">
@@ -829,6 +904,25 @@ function App() {
           entry={pendingJournalEntry}
           onSave={saveJournalEntry}
           onCancel={() => { setShowJournalModal(false); setPendingJournalEntry(null) }}
+        />
+      )}
+
+      {/* ── AI Meditation Panel ── */}
+      {showAiPanel && (
+        <AiMeditationPanel
+          onSessionReady={handleAiSessionReady}
+          onClose={() => setShowAiPanel(false)}
+          apiKey={aiApiKey}
+          onOpenSettings={() => { setShowAiPanel(false); setShowApiSettings(true) }}
+        />
+      )}
+
+      {/* ── API Key Settings ── */}
+      {showApiSettings && (
+        <ApiKeySettings
+          onClose={() => setShowApiSettings(false)}
+          onSaved={(key) => setAiApiKey(key)}
+          currentKey={aiApiKey}
         />
       )}
 
