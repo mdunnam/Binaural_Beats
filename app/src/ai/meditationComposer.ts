@@ -43,16 +43,19 @@ export async function generateMeditation(
   }
 
   // Step 2 — generate script via OpenAI Chat API
-  const systemPrompt = `You are a professional meditation guide. Write a guided meditation script based on the user's intent.
+  const systemPrompt = `You are a deeply experienced meditation guide with a slow, intimate, hypnotic voice. Write a guided meditation script based on the user's intent.
 Rules:
-- Duration: ${config.sessionMinutes} minutes when read at a slow, meditative pace
+- Duration: ${config.sessionMinutes} minutes when read at a very slow, deeply relaxed pace with long pauses
 - Tone: ${config.scriptTone}
-- Include [PAUSE 5s] and [PAUSE 10s] markers where silence helps
-- Opening: gentle grounding breath awareness (1-2 min)
-- Core: visualisation or affirmations on the theme (main duration)
-- Closing: gentle return to awareness (1-2 min)
-- Do NOT include any section headers or stage labels in the output — just the spoken words and pause markers
-- Keep language simple, present tense, second person ("you")`
+- Use long, flowing sentences. Short sentences should be rare and used only for emphasis.
+- Include generous [PAUSE 5s] and [PAUSE 10s] markers — more pauses than you think you need
+- Leave space for the listener to breathe and sink deeper between phrases
+- Opening: slow grounding breath awareness, invite the body to completely release (1-2 min)
+- Core: rich, immersive visualisation or affirmations on the theme (main duration)
+- Closing: very gentle, unhurried return to awareness (1-2 min)
+- Do NOT include any section headers or stage labels — just the spoken words and pause markers
+- Keep language sensory, present tense, second person ("you")
+- Avoid clinical or instructional language — speak as if whispering directly into someone's ear`
 
   const chatRes = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -92,10 +95,10 @@ Rules:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'tts-1',
-      voice: 'nova',
+      model: 'tts-1-hd',
+      voice: 'shimmer',
       input: ttsInput,
-      speed: 0.85,
+      speed: 0.75,
     }),
   })
 
