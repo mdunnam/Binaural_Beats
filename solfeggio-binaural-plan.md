@@ -61,8 +61,65 @@ Each transition is smoothly automated over the session timeline. The brain follo
 | Calm | Brand trust, guided sessions | No binaural, no frequency work |
 | MyNoise | Deep manual control | Ugly, no journeys, no export |
 | BrainAural | Frequency focused | Dated UX, static sessions |
+| Moongate | Great onboarding UX, goal-based entry, solid content + subscription layer | Shallower audio engine, no stage sequencer, no WAV export, no advanced modulation |
 
-Gap: **No app combines pro-level frequency control + dynamic state transitions + beautiful generative soundscapes + consciousness framing.**
+Gap: **No app combines pro-level frequency control + dynamic state transitions + beautiful generative soundscapes + consciousness framing + polished goal-based onboarding + subscription business layer.**
+
+### What Moongate Does Well (Must Match or Beat)
+Moongate has nailed the product and business wrapper around a simpler audio engine. These are parity targets:
+
+**Onboarding + Discovery**
+- Goal-based entry: Sleep / Relax / Focus / Meditate — user picks an outcome, not a frequency
+- "Tap a goal" flow — no technical setup on first launch
+- Time-of-day / intent-based session recommendations
+- Featured and new content sections
+- "Used recently" and "continue listening"
+- Educational layer: what binaural beats are, brainwave ranges, headphone requirements, how long to listen
+
+**Content**
+- Curated soundscape library per goal
+- Multiple content types: music, nature, noise soundscapes
+- Frequent release cadence for new soundscapes
+- Subscriber-only content drops
+- Goal-focused playlists or packs
+
+**Audio UX**
+- True binaural playback with headphone guidance
+- Speaker-friendly isochronic mode (no headphones required)
+- Quick-start sessions (works in 5–10 minute windows)
+- Background playback while using other apps
+- Session timer and fade controls
+
+**Monetization**
+- Free tier + Premium tier
+- Monthly + annual plans (annual highlighted as popular)
+- Free trial support
+- In-app / web checkout + entitlement sync
+- Simple cancellation flow
+- Money-back guarantee policy
+
+**Account + Support**
+- Email sign-in
+- Auto-account creation from purchase email
+- Cross-device entitlement activation
+- In-app restore purchases
+- Help center (FAQ, soundscapes, features, billing, account)
+
+**Trust + Conversion**
+- Social proof block (ratings / testimonials)
+- Benefit-first landing copy (sleep, stress, focus outcomes)
+- Compliance-safe claims language
+- Privacy + terms + fulfillment policy visibility
+
+### Where This App Wins Over Moongate
+- Far deeper audio engine (LFO targeting, phase offset, pad synth, filter, automation lanes)
+- Dynamic brainwave stage sequencer (Moongate has no journey transitions)
+- WAV export
+- Visual resonance interface
+- Pro manual control mode
+- Consciousness exploration / ritual / lucid dream framing
+- Session journal + state tracking
+- AI frequency composer (roadmap)
 
 ---
 
@@ -524,7 +581,52 @@ type Session = {
 
 ---
 
-## Build Order (Recommended)
+## Moongate Parity Build Backlog
+
+Three tiers of parity, in order of impact:
+
+### Tier 1 — Must-Have MVP Parity
+These are table-stakes. Without them, the app can't compete.
+
+- [ ] **Goal-based onboarding flow** — first screen is "What do you want?" (Sleep / Relax / Focus / Meditate / Explore). No Hz values, no sliders. Just intent.
+- [ ] **Curated session library per goal** — pre-built sessions organized by outcome, not by frequency
+- [ ] **Headphone guidance** — persistent first-launch reminder, with isochronic fallback CTA for speaker users
+- [ ] **Isochronic mode** — speaker-friendly, no headphones required (already on roadmap, now a parity requirement)
+- [ ] **Quick-start sessions** — tap goal → session starts in under 5 seconds, no configuration required
+- [ ] **Background playback** — audio context keeps running when screen is off / app is backgrounded (PWA + wake lock API)
+- [ ] **Session timer + fade** — already built
+- [ ] **Favorites / presets** — already built, needs goal-tagging
+- [ ] **Educational layer** — what binaural beats are, brainwave ranges, headphone requirements. Inline tooltips or a "Learn" tab
+- [ ] **Benefit-first UI copy** — replace "Carrier Frequency: 432 Hz" with "Deep Meditation Tone" as the default label. Technical values visible in Pro mode only
+- [ ] **Compliance-safe claims** — audit all copy for medical claims; add "for relaxation and entertainment" disclaimer
+
+### Tier 2 — Subscription-Ready Parity
+Required before charging money.
+
+- [ ] **Auth system** — email sign-in (magic link or password). Supabase or Firebase Auth
+- [ ] **Free vs. Pro entitlement** — feature gating, server-side entitlement check
+- [ ] **Subscription plans** — monthly + annual (annual = highlighted as popular), free trial
+- [ ] **Web checkout** — Stripe or RevenueCat integration
+- [ ] **Cross-device activation** — entitlement tied to account, not device
+- [ ] **Restore purchases** flow
+- [ ] **Simple cancellation** — no dark patterns
+- [ ] **Money-back guarantee** handling
+- [ ] **Privacy policy + Terms of Service + Fulfillment policy** — visible in app and on web
+- [ ] **Social proof block** — ratings, testimonials, user counts on landing/paywall
+
+### Tier 3 — Retention + Content Parity
+Required to keep users coming back.
+
+- [ ] **"Continue listening"** — resume last session from home screen
+- [ ] **"Used recently"** — quick access to recent sessions
+- [ ] **Featured + New sections** — editorial content curation
+- [ ] **Subscriber-only content drops** — locked content visible to free users as upgrade incentive
+- [ ] **Goal-focused playlists / packs** — curated collections (Sleep Pack, Focus Pack, etc.)
+- [ ] **Frequent soundscape releases** — content calendar, new sessions added regularly
+- [ ] **Time-of-day recommendations** — morning activation vs. evening wind-down suggestions
+- [ ] **Help center** — FAQ covering: what binaural beats are, soundscapes, app features, billing, account management
+
+---
 
 ```
 ✅ Done:   Binaural core + modulation controls
