@@ -1996,3 +1996,51 @@ input[type='range'] {
   margin: 0;
   font-style: italic;
 }
+
+
+.iso-section {
+  background: #f5faf7;
+  border: 1px solid #c8ddd5;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #2d5a45;
+  cursor: pointer;
+}
+
+.seg-btn {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #b4cfc6;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #3d5a4f;
+  transition: background 0.15s;
+}
+
+.seg-btn--active {
+  background: #3e8f72;
+  color: #fff;
+  border-color: #3e8f72;
+}
+
+.value-badge {
+  display: inline-block;
+  background: #e0f0ea;
+  color: #2d5a45;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-left: 0.4rem;
+}

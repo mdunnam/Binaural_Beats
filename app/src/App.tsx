@@ -24,6 +24,8 @@ import { ApiKeySettings } from './components/ApiKeySettings'
 import { TabNav } from './components/TabNav'
 import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
+import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
+import type { IsochronicGraph } from './engine/isochronic'
 import { PlayerTab } from './components/PlayerTab'
 import { JourneyBuilder } from './components/JourneyBuilder'
 import type { Journey, ActiveJourney } from './engine/journeyEngine'
@@ -195,6 +197,13 @@ function App() {
   const graphRef = useRef<AudioGraph | null>(null)
   const padRef = useRef<PadSynthGraph | null>(null)
   const voiceBusRef = useRef<VoiceBus | null>(null)
+  const isoGraphRef = useRef<IsochronicGraph | null>(null)
+
+  // Isochronic tone state
+  const [isoEnabled, setIsoEnabled] = useState(false)
+  const [isoVolume, setIsoVolume] = useState(0.15)
+  const [isoWaveform, setIsoWaveform] = useState<OscillatorType>('sine')
+  const [isoDutyCycle, setIsoDutyCycle] = useState(0.5)
   const pendingAiSessionRef = useRef<AiMeditationConfig | null>(null)
   const pendingAiObjectUrlRef = useRef<string | null>(null)
   const fadeStopTimeoutRef = useRef<number | null>(null)
@@ -273,6 +282,10 @@ function App() {
     }
 
     const doStop = (): void => {
+      if (isoGraphRef.current) {
+        stopIsochronicTone(isoGraphRef.current)
+        isoGraphRef.current = null
+      }
       stopAudioGraph(graph)
       graphRef.current = null
       // Close the shared AudioContext owned by masterBus
@@ -441,6 +454,16 @@ function App() {
     }
 
     setIsRunning(true)
+    if (isoEnabled) {
+      isoGraphRef.current = createIsochronicTone({
+        carrier,
+        beatFrequency: beat,
+        volume: isoVolume,
+        waveform: isoWaveform,
+        dutyCycle: isoDutyCycle,
+        rampMs: 20,
+      }, bus)
+    }
     startSessionTimers(graph, automationLanes)
   }
 
@@ -724,6 +747,16 @@ function App() {
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadWaveform(pad, padWaveform) }, [padWaveform])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadRoot(pad, carrier) }, [carrier])
 
+  // Live-update isochronic tone when carrier or beat changes
+  useEffect(() => {
+    if (!isRunning || !isoEnabled || !isoGraphRef.current || !masterBusRef.current) return
+    stopIsochronicTone(isoGraphRef.current)
+    isoGraphRef.current = createIsochronicTone({
+      carrier, beatFrequency: beat, volume: isoVolume,
+      waveform: isoWaveform, dutyCycle: isoDutyCycle, rampMs: 20,
+    }, masterBusRef.current)
+  }, [carrier, beat]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Live-update soundscape layer gains
   useEffect(() => {
     const nodes = mixerNodesRef.current
@@ -952,9 +985,38 @@ function App() {
                 </label>
               </>)}
 
+              {/* Isochronic Tones */}
+              <div className="section-label">Isochronic Tones</div>
+              <div className="iso-section">
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={isoEnabled} onChange={e => setIsoEnabled(e.target.checked)} />
+                  Enable isochronic tones (works without headphones)
+                </label>
+                {isoEnabled && (
+                  <>
+                    <label>Volume
+                      <input type="range" min={0} max={1} step={0.01} value={isoVolume}
+                        onChange={e => setIsoVolume(Number(e.target.value))} />
+                    </label>
+                    <label>Waveform
+                      <div className="seg-control">
+                        {(['sine', 'triangle', 'square', 'sawtooth'] as OscillatorType[]).map(w => (
+                          <button key={w} type="button" className={isoWaveform === w ? 'seg-btn seg-btn--active' : 'seg-btn'}
+                            onClick={() => setIsoWaveform(w)}>{w}</button>
+                        ))}
+                      </div>
+                    </label>
+                    <label>Duty Cycle <span className="value-badge">{Math.round(isoDutyCycle * 100)}%</span>
+                      <input type="range" min={0.1} max={0.9} step={0.05} value={isoDutyCycle}
+                        onChange={e => setIsoDutyCycle(Number(e.target.value))} />
+                      <span style={{fontSize:'0.75rem',color:'#6e8f7d'}}>Lower = sharper pulse. 50% = equal on/off.</span>
+                    </label>
+                  </>
+                )}
+              </div>
+
               {/* Wobble / LFO */}
-              <div className="section-label">Wobble / LFO</div>
-              <label>LFO Waveform
+              <div className="section-label">Wobble / LFO</div>              <label>LFO Waveform
                 <div className="seg-control">
                   {(['sine', 'triangle', 'square', 'sawtooth'] as LfoWaveform[]).map((w) => (
                     <button key={w} type="button" className={wobbleWaveform === w ? 'active' : ''} onClick={() => setWobbleWaveform(w)}>
