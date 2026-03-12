@@ -163,6 +163,9 @@ function App() {
   const [noiseType, setNoiseType] = useState<NoiseType>('none')
   const [noiseVolume, setNoiseVolume] = useState(0.15)
 
+  // Soundscape volume (controls soundscapeBus master gain)
+  const [soundscapeVolume, setSoundscapeVolume] = useState(0.15)
+
   // Soundscape mixer
   const [layerGains, setLayerGains] = useState<LayerGains>({ ...DEFAULT_GAINS })
   const [soundsceneId, setSoundsceneId] = useState<string>('off')
@@ -723,6 +726,12 @@ function App() {
   }, [binauralVolume])
 
   useEffect(() => {
+    const bus = masterBusRef.current
+    if (!bus) return
+    bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, soundscapeVolume), bus.context.currentTime, 0.05)
+  }, [soundscapeVolume])
+
+  useEffect(() => {
     const vb = voiceBusRef.current
     if (!vb) return
     setVoiceVolume_bus(vb, voiceVolume)
@@ -1225,8 +1234,8 @@ function App() {
               setVolume={setVolume}
               binauralVolume={binauralVolume}
               setBinauralVolume={setBinauralVolume}
-              noiseVolume={noiseVolume}
-              setNoiseVolume={setNoiseVolume}
+              noiseVolume={soundscapeVolume}
+              setNoiseVolume={setSoundscapeVolume}
               voiceVolume={voiceVolume}
               setVoiceVolume={setVoiceVolume}
               voiceReverb={voiceReverb}
