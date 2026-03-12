@@ -1726,6 +1726,7 @@ input[type='range'] {
   border: 1px solid #c8ddd5;
   border-radius: 8px;
   padding: 0.5rem 0.4rem;
+  overflow: hidden;
 }
 
 .player-mood-col {
@@ -1733,6 +1734,8 @@ input[type='range'] {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .player-mood-label {
@@ -1741,6 +1744,7 @@ input[type='range'] {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   text-align: center;
+  word-break: break-all;
 }
 
 .player-mood-slider {
@@ -1750,15 +1754,19 @@ input[type='range'] {
   appearance: auto;
   width: 24px;
   height: 120px;
+  max-width: 24px;
   cursor: pointer;
   accent-color: #3e8f72;
+  flex-shrink: 0;
 }
 
 .player-mood-hint {
   font-size: 0.58rem;
   color: #7a9a8a;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 /* ── Quick Preset Pills ── */
