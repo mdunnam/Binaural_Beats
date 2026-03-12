@@ -808,6 +808,25 @@ function App() {
     }, masterBusRef.current)
   }, [carrier, beat]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Live-update isochronic tone when its own params change
+  useEffect(() => {
+    if (!isRunning || !masterBusRef.current) return
+    if (!isoEnabled) {
+      // Disable: stop if running
+      if (isoGraphRef.current) {
+        stopIsochronicTone(isoGraphRef.current)
+        isoGraphRef.current = null
+      }
+      return
+    }
+    // Enable or param change: restart
+    if (isoGraphRef.current) stopIsochronicTone(isoGraphRef.current)
+    isoGraphRef.current = createIsochronicTone({
+      carrier, beatFrequency: beat, volume: isoVolume,
+      waveform: isoWaveform, dutyCycle: isoDutyCycle, rampMs: 20,
+    }, masterBusRef.current)
+  }, [isoEnabled, isoVolume, isoWaveform, isoDutyCycle]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Live-update soundscape layer gains
   useEffect(() => {
     const nodes = mixerNodesRef.current
