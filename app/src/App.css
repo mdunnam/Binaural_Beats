@@ -1555,3 +1555,188 @@ input[type='range'] {
 .player-btn-start--active:hover {
   opacity: 0.9;
 }
+
+/* ── Player section label ── */
+.player-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5a7a6e;
+  margin-bottom: 0.25rem;
+  margin-top: 0.1rem;
+}
+
+/* ── Session Intensity Ring ── */
+.player-ring-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+
+.player-ring-svg {
+  display: block;
+  overflow: visible;
+}
+
+.player-ring-text {
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Oscilloscope ── */
+.player-oscilloscope {
+  display: block;
+  width: 100%;
+  height: 80px;
+  border-radius: 6px;
+  background: #f5faf7;
+}
+
+/* ── Spectrum ── */
+.player-spectrum {
+  display: block;
+  width: 100%;
+  height: 80px;
+  border-radius: 6px;
+  background: #f5faf7;
+}
+
+/* ── Brainwave Band ── */
+.player-brainwave-bar {
+  width: 100%;
+}
+
+.player-brainwave-zones {
+  display: flex;
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+  height: 36px;
+}
+
+.player-brainwave-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.player-brainwave-zone-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  line-height: 1;
+}
+
+.player-brainwave-zone-name {
+  font-size: 0.55rem;
+  color: rgba(255,255,255,0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.player-brainwave-dot-row {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  background: #eef6f2;
+  border-radius: 0 0 6px 6px;
+  border: 1px solid #c8ddd5;
+  border-top: none;
+}
+
+.player-brainwave-dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1a3329;
+  box-shadow: 0 0 0 3px rgba(62,143,114,0.4), 0 0 8px rgba(62,143,114,0.6);
+  transition: left 0.3s ease;
+}
+
+/* ── Mood EQ ── */
+.player-mood-eq {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+  background: #f5faf7;
+  border: 1px solid #c8ddd5;
+  border-radius: 8px;
+  padding: 0.5rem 0.4rem;
+}
+
+.player-mood-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.player-mood-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.player-mood-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: auto;
+  width: 24px;
+  height: 120px;
+  cursor: pointer;
+  accent-color: #3e8f72;
+}
+
+.player-mood-hint {
+  font-size: 0.58rem;
+  color: #7a9a8a;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ── Quick Preset Pills ── */
+.player-quick-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.25rem 0;
+}
+
+.player-quick-pill {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #b0ccc4;
+  border-radius: 20px;
+  background: #f5faf7;
+  color: #234234;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.player-quick-pill:hover {
+  background: #e0f2eb;
+  border-color: #3e8f72;
+}
+
+.player-quick-pill--active {
+  background: #3e8f72;
+  color: #fff;
+  border-color: #2a6b56;
+}
+

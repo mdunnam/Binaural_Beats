@@ -3,6 +3,14 @@ import { useEffect, useRef, useState } from 'react'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+type MoodSliders = {
+  ground: number
+  relax: number
+  focus: number
+  dream: number
+  ascend: number
+}
+
 type PlayerTabProps = {
   isRunning: boolean
   carrier: number
@@ -23,6 +31,9 @@ type PlayerTabProps = {
   analyserNode: AnalyserNode | null
   voiceObjectUrl: string | null
   onToggle: () => void
+  setCarrier: (v: number) => void
+  setBeat: (v: number) => void
+  setWobbleRate: (v: number) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -53,6 +64,72 @@ const SOUNDSCAPE_LABELS: Record<string, string> = {
   custom: 'Custom Mix',
 }
 
+// Brainwave zone config
+const BRAINWAVE_ZONES = [
+  { label: 'δ', name: 'Delta', min: 0, max: 4, color: '#7b68ee' },
+  { label: 'θ', name: 'Theta', min: 4, max: 8, color: '#5b9bd5' },
+  { label: 'α', name: 'Alpha', min: 8, max: 14, color: '#3e8f72' },
+  { label: 'β', name: 'Beta', min: 14, max: 30, color: '#e8b84b' },
+  { label: 'γ', name: 'Gamma', min: 30, max: 100, color: '#e05a3a' },
+]
+
+const MAX_HZ = 100
+
+// Quick preset pills
+const QUICK_PILLS = [
+  { emoji: '😴', label: 'Sleep',    carrier: 174, beat: 2.0,  mood: { ground: 0.8, relax: 0.6, focus: 0, dream: 0.3, ascend: 0 } },
+  { emoji: '🎯', label: 'Focus',    carrier: 396, beat: 14.0, mood: { ground: 0, relax: 0, focus: 0.9, dream: 0, ascend: 0.2 } },
+  { emoji: '🧘', label: 'Meditate', carrier: 528, beat: 6.0,  mood: { ground: 0.2, relax: 0.5, focus: 0, dream: 0.7, ascend: 0.1 } },
+  { emoji: '💡', label: 'Flow',     carrier: 741, beat: 10.0, mood: { ground: 0, relax: 0.4, focus: 0.4, dream: 0.2, ascend: 0 } },
+  { emoji: '✨', label: 'Lucid',    carrier: 936, beat: 4.0,  mood: { ground: 0, relax: 0.3, focus: 0, dream: 0.8, ascend: 0.3 } },
+  { emoji: '🌅', label: 'Rise',     carrier: 396, beat: 18.0, mood: { ground: 0, relax: 0, focus: 0.7, dream: 0, ascend: 0.5 } },
+]
+
+// Mood slider metadata
+const MOOD_META = [
+  { key: 'ground' as const, label: 'GROUND', hint: 'δ 1.5Hz', color: '#7b68ee' },
+  { key: 'relax'  as const, label: 'RELAX',  hint: 'α 9Hz',   color: '#5b9bd5' },
+  { key: 'focus'  as const, label: 'FOCUS',  hint: 'β 18Hz',  color: '#e8b84b' },
+  { key: 'dream'  as const, label: 'DREAM',  hint: 'θ 6Hz',   color: '#3e8f72' },
+  { key: 'ascend' as const, label: 'ASCEND', hint: 'γ 40Hz',  color: '#e05a3a' },
+]
+
+// ---------------------------------------------------------------------------
+// applyMoodSliders
+// ---------------------------------------------------------------------------
+function applyMoodSliders(
+  sliders: MoodSliders,
+  setCarrier: (v: number) => void,
+  setBeat: (v: number) => void,
+  setNoiseVolume: (v: number) => void,
+  setBinauralVolume: (v: number) => void,
+  setWobbleRate: (v: number) => void,
+): void {
+  let carrierTarget = 0, carrierWeight = 0
+  if (sliders.ground > 0.05) { carrierTarget += 174 * sliders.ground; carrierWeight += sliders.ground }
+  if (sliders.dream > 0.05)  { carrierTarget += 528 * sliders.dream;  carrierWeight += sliders.dream }
+  if (sliders.ascend > 0.05) { carrierTarget += 852 * sliders.ascend; carrierWeight += sliders.ascend }
+  if (carrierWeight > 0) setCarrier(Math.round(carrierTarget / carrierWeight))
+
+  let beatTarget = 0, beatWeight = 0
+  if (sliders.ground > 0.05) { beatTarget += 1.5  * sliders.ground; beatWeight += sliders.ground }
+  if (sliders.relax > 0.05)  { beatTarget += 9.0  * sliders.relax;  beatWeight += sliders.relax }
+  if (sliders.focus > 0.05)  { beatTarget += 18.0 * sliders.focus;  beatWeight += sliders.focus }
+  if (sliders.dream > 0.05)  { beatTarget += 6.0  * sliders.dream;  beatWeight += sliders.dream }
+  if (sliders.ascend > 0.05) { beatTarget += 40.0 * sliders.ascend; beatWeight += sliders.ascend }
+  if (beatWeight > 0) setBeat(Math.round(beatTarget / beatWeight * 10) / 10)
+
+  let wobbleRate = 0.4
+  if (sliders.relax > 0.05)  wobbleRate = Math.max(wobbleRate, 0.15 * sliders.relax)
+  if (sliders.focus > 0.05)  wobbleRate = Math.max(wobbleRate, 0.6  * sliders.focus)
+  if (sliders.dream > 0.05)  wobbleRate = Math.min(wobbleRate, 0.08 + (1 - sliders.dream) * 0.4)
+  setWobbleRate(Math.max(0.05, Math.min(4, wobbleRate)))
+
+  if (sliders.relax > 0.05) setNoiseVolume(Math.min(1, 0.15 + sliders.relax * 0.4))
+  if (sliders.focus > 0.05 || sliders.ascend > 0.05)
+    setBinauralVolume(Math.min(1, 0.15 + Math.max(sliders.focus, sliders.ascend) * 0.3))
+}
+
 // ---------------------------------------------------------------------------
 // VU Meter canvas
 // ---------------------------------------------------------------------------
@@ -67,7 +144,6 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
     if (!ctx) return
 
     if (!analyserNode) {
-      // Static OFF display
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.fillStyle = '#dbe4dd'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -84,19 +160,14 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
     const draw = () => {
       rafRef.current = requestAnimationFrame(draw)
       analyserNode.getByteFrequencyData(dataArray)
-
-      // Compute average level (0–1)
       let sum = 0
       for (let i = 0; i < bufferLength; i++) sum += dataArray[i]
       const avg = sum / (bufferLength * 255)
-
       const w = canvas.width
       const h = canvas.height
       ctx.clearRect(0, 0, w, h)
       ctx.fillStyle = '#e8f4ee'
       ctx.fillRect(0, 0, w, h)
-
-      // Gradient bar
       const fillW = Math.round(avg * w)
       const grad = ctx.createLinearGradient(0, 0, w, 0)
       grad.addColorStop(0, '#3e8f72')
@@ -105,8 +176,6 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
       grad.addColorStop(1.0, '#e05a3a')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, fillW, h)
-
-      // Segmented lines
       ctx.fillStyle = '#e8f4ee'
       for (let i = 1; i < 20; i++) {
         const x = Math.round((i / 20) * w)
@@ -121,12 +190,180 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
   }, [analyserNode])
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="player-vu-canvas"
-      width={300}
-      height={16}
-    />
+    <canvas ref={canvasRef} className="player-vu-canvas" width={300} height={16} />
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Oscilloscope
+// ---------------------------------------------------------------------------
+function Oscilloscope({ analyserNode }: { analyserNode: AnalyserNode | null }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const drawEmpty = () => {
+      const w = canvas.width
+      const h = canvas.height
+      ctx.fillStyle = '#f5faf7'
+      ctx.fillRect(0, 0, w, h)
+      ctx.strokeStyle = '#c8ddd5'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(0, h / 2)
+      ctx.lineTo(w, h / 2)
+      ctx.stroke()
+    }
+
+    if (!analyserNode) {
+      drawEmpty()
+      return
+    }
+
+    const bufferLength = analyserNode.fftSize
+    const dataArray = new Uint8Array(bufferLength)
+
+    const draw = () => {
+      rafRef.current = requestAnimationFrame(draw)
+      analyserNode.getByteTimeDomainData(dataArray)
+      const w = canvas.width
+      const h = canvas.height
+      ctx.fillStyle = '#f5faf7'
+      ctx.fillRect(0, 0, w, h)
+      // Centerline
+      ctx.strokeStyle = '#c8ddd5'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(0, h / 2)
+      ctx.lineTo(w, h / 2)
+      ctx.stroke()
+      // Waveform
+      ctx.strokeStyle = '#3e8f72'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      const sliceWidth = w / bufferLength
+      let x = 0
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0
+        const y = (v * h) / 2
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+        x += sliceWidth
+      }
+      ctx.stroke()
+    }
+
+    draw()
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [analyserNode])
+
+  return (
+    <div>
+      <div className="player-section-label">Waveform</div>
+      <canvas ref={canvasRef} className="player-oscilloscope" width={400} height={80} />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Frequency Spectrum
+// ---------------------------------------------------------------------------
+function FrequencySpectrum({ analyserNode }: { analyserNode: AnalyserNode | null }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const rafRef = useRef<number | null>(null)
+  const peaksRef = useRef<number[]>(new Array(32).fill(0))
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const NUM_BARS = 32
+    const peaks = peaksRef.current
+
+    const drawEmpty = () => {
+      const w = canvas.width
+      const h = canvas.height
+      ctx.fillStyle = '#f5faf7'
+      ctx.fillRect(0, 0, w, h)
+      const gap = 2
+      const barW = (w - gap * (NUM_BARS - 1)) / NUM_BARS
+      for (let i = 0; i < NUM_BARS; i++) {
+        const x = i * (barW + gap)
+        ctx.fillStyle = '#dbe4dd'
+        ctx.fillRect(x, h - 2, barW, 2)
+      }
+    }
+
+    if (!analyserNode) {
+      drawEmpty()
+      return
+    }
+
+    const dataArray = new Uint8Array(analyserNode.frequencyBinCount)
+
+    const draw = () => {
+      rafRef.current = requestAnimationFrame(draw)
+      analyserNode.getByteFrequencyData(dataArray)
+
+      const w = canvas.width
+      const h = canvas.height
+      ctx.fillStyle = '#f5faf7'
+      ctx.fillRect(0, 0, w, h)
+
+      const gap = 2
+      const barW = (w - gap * (NUM_BARS - 1)) / NUM_BARS
+      const binStep = Math.floor(dataArray.length / NUM_BARS)
+
+      for (let i = 0; i < NUM_BARS; i++) {
+        let sum = 0
+        for (let j = 0; j < binStep; j++) {
+          sum += dataArray[i * binStep + j]
+        }
+        const val = sum / binStep // 0–255
+
+        // Decay peak
+        peaks[i] = Math.max(peaks[i] - 2, val)
+        const barH = Math.max(2, (peaks[i] / 255) * h)
+
+        const x = i * (barW + gap)
+        const y = h - barH
+
+        // Gradient: green at bottom, amber/orange at top for high bars
+        const grad = ctx.createLinearGradient(x, y, x, h)
+        const norm = peaks[i] / 255
+        if (norm > 0.75) {
+          grad.addColorStop(0, '#e05a3a')
+          grad.addColorStop(0.4, '#e8b84b')
+          grad.addColorStop(1, '#3e8f72')
+        } else {
+          grad.addColorStop(0, '#7ac96e')
+          grad.addColorStop(1, '#3e8f72')
+        }
+        ctx.fillStyle = grad
+        ctx.fillRect(x, y, barW, barH)
+      }
+    }
+
+    draw()
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [analyserNode])
+
+  return (
+    <div>
+      <div className="player-section-label">Spectrum</div>
+      <canvas ref={canvasRef} className="player-spectrum" width={400} height={80} />
+    </div>
   )
 }
 
@@ -155,14 +392,12 @@ function VoiceWaveform({ objectUrl }: { objectUrl: string }) {
         const h = canvas.height
         const step = Math.ceil(data.length / w)
         const mid = h / 2
-
         ctx.clearRect(0, 0, w, h)
         ctx.fillStyle = '#f0f8f4'
         ctx.fillRect(0, 0, w, h)
         ctx.strokeStyle = '#3e8f72'
         ctx.lineWidth = 1
         ctx.beginPath()
-
         for (let x = 0; x < w; x++) {
           let min = 1, max = -1
           for (let j = 0; j < step; j++) {
@@ -181,22 +416,188 @@ function VoiceWaveform({ objectUrl }: { objectUrl: string }) {
         ctx.stroke()
       })
       .catch(() => { /* hide gracefully */ })
-      .finally(() => {
-        void audioCtx.close()
-      })
+      .finally(() => { void audioCtx.close() })
 
-    return () => {
-      closed = true
-    }
+    return () => { closed = true }
   }, [objectUrl])
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="player-waveform-canvas"
-      width={400}
-      height={48}
-    />
+    <canvas ref={canvasRef} className="player-waveform-canvas" width={400} height={48} />
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Brainwave Band Indicator
+// ---------------------------------------------------------------------------
+function BrainwaveBand({ beat }: { beat: number }) {
+  // Compute dot position as percentage along the full 0–100Hz bar
+  const clampedBeat = Math.min(beat, MAX_HZ)
+  const dotPct = (clampedBeat / MAX_HZ) * 100
+
+  return (
+    <div>
+      <div className="player-section-label">Brainwave</div>
+      <div className="player-brainwave-bar">
+        {/* Zone labels row */}
+        <div className="player-brainwave-zones">
+          {BRAINWAVE_ZONES.map(z => (
+            <div
+              key={z.name}
+              className="player-brainwave-zone"
+              style={{
+                flex: z.max - z.min,
+                backgroundColor: z.color,
+              }}
+            >
+              <span className="player-brainwave-zone-label">{z.label}</span>
+              <span className="player-brainwave-zone-name">{z.name}</span>
+            </div>
+          ))}
+        </div>
+        {/* Dot row */}
+        <div className="player-brainwave-dot-row">
+          <div
+            className="player-brainwave-dot"
+            style={{ left: `${dotPct}%` }}
+            title={`${beat.toFixed(1)} Hz`}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Session Intensity Ring
+// ---------------------------------------------------------------------------
+function SessionRing({
+  remainingSeconds,
+  sessionTotalSeconds,
+  isRunning,
+  beat,
+}: {
+  remainingSeconds: number
+  sessionTotalSeconds: number
+  isRunning: boolean
+  beat: number
+}) {
+  const r = 50
+  const cx = 60
+  const cy = 60
+  const circumference = 2 * Math.PI * r
+
+  const progress = isRunning && sessionTotalSeconds > 0
+    ? Math.max(0, Math.min(1, 1 - remainingSeconds / sessionTotalSeconds))
+    : 0
+
+  const dashOffset = circumference * (1 - progress)
+  const timeLabel = isRunning ? formatTime(remainingSeconds) : 'Ready'
+  const brainwaveLabel = getBrainwaveName(beat)
+
+  return (
+    <div className="player-ring-wrap">
+      <svg className="player-ring-svg" width={120} height={120} viewBox="0 0 120 120">
+        {/* Track */}
+        <circle
+          cx={cx} cy={cy} r={r}
+          fill="none"
+          stroke="#dbe4dd"
+          strokeWidth={6}
+        />
+        {/* Progress */}
+        <circle
+          cx={cx} cy={cy} r={r}
+          fill="none"
+          stroke="#3e8f72"
+          strokeWidth={6}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '60px 60px', transition: 'stroke-dashoffset 1s linear' }}
+        />
+        {/* Center time */}
+        <text
+          x={cx} y={cy - 4}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={18}
+          fontWeight={700}
+          fill="#1a3329"
+          className="player-ring-text"
+        >
+          {timeLabel}
+        </text>
+        {/* Brainwave label */}
+        <text
+          x={cx} y={cy + 16}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={10}
+          fill="#7a9a8a"
+        >
+          {brainwaveLabel}
+        </text>
+      </svg>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Mood Equalizer
+// ---------------------------------------------------------------------------
+function MoodEqualizer({
+  sliders,
+  onChange,
+}: {
+  sliders: MoodSliders
+  onChange: (k: keyof MoodSliders, v: number) => void
+}) {
+  return (
+    <div>
+      <div className="player-section-label">Mood EQ</div>
+      <div className="player-mood-eq">
+        {MOOD_META.map(m => (
+          <div key={m.key} className="player-mood-col">
+            <span className="player-mood-label" style={{ color: m.color }}>{m.label}</span>
+            <input
+              type="range"
+              className="player-mood-slider"
+              min={0}
+              max={1}
+              step={0.01}
+              value={sliders[m.key]}
+              onChange={e => onChange(m.key, Number(e.target.value))}
+            />
+            <span className="player-mood-hint">{m.hint}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Quick Preset Pills
+// ---------------------------------------------------------------------------
+function QuickPills({
+  activePill,
+  onPill,
+}: {
+  activePill: string | null
+  onPill: (pill: typeof QUICK_PILLS[number]) => void
+}) {
+  return (
+    <div className="player-quick-pills">
+      {QUICK_PILLS.map(p => (
+        <button
+          key={p.label}
+          className={`player-quick-pill ${activePill === p.label ? 'player-quick-pill--active' : ''}`}
+          onClick={() => onPill(p)}
+        >
+          {p.emoji} {p.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -243,9 +644,14 @@ export function PlayerTab(props: PlayerTabProps) {
     voiceReverb, setVoiceReverb,
     analyserNode, voiceObjectUrl,
     onToggle,
+    setCarrier, setBeat, setWobbleRate,
   } = props
 
   const [showReverb, setShowReverb] = useState(false)
+  const [moodSliders, setMoodSliders] = useState<MoodSliders>({
+    ground: 0, relax: 0, focus: 0, dream: 0, ascend: 0,
+  })
+  const [activePill, setActivePill] = useState<string | null>(null)
 
   const brainwave = getBrainwaveName(beat)
   const timerDisplay = formatTime(remainingSeconds)
@@ -254,9 +660,24 @@ export function PlayerTab(props: PlayerTabProps) {
     ? Math.max(0, Math.min(1, 1 - remainingSeconds / sessionTotalSeconds))
     : 0
 
+  const handleMoodChange = (k: keyof MoodSliders, v: number) => {
+    const next = { ...moodSliders, [k]: v }
+    setMoodSliders(next)
+    setActivePill(null)
+    applyMoodSliders(next, setCarrier, setBeat, setNoiseVolume, setBinauralVolume, setWobbleRate)
+  }
+
+  const handlePill = (pill: typeof QUICK_PILLS[number]) => {
+    setActivePill(pill.label)
+    setMoodSliders(pill.mood)
+    setCarrier(pill.carrier)
+    setBeat(pill.beat)
+    applyMoodSliders(pill.mood, setCarrier, setBeat, setNoiseVolume, setBinauralVolume, setWobbleRate)
+  }
+
   return (
     <div className="player-skin">
-      {/* ── Top bar: status + VU ── */}
+      {/* ── 1. Top bar: status + VU ── */}
       <div className="player-topbar">
         <div className="player-status-dots">
           <span className={`player-dot player-dot--rec ${isRunning ? 'player-dot--active-rec' : ''}`}>●REC</span>
@@ -269,7 +690,15 @@ export function PlayerTab(props: PlayerTabProps) {
         </div>
       </div>
 
-      {/* ── LCD Display ── */}
+      {/* ── 2. Session Intensity Ring ── */}
+      <SessionRing
+        remainingSeconds={remainingSeconds}
+        sessionTotalSeconds={sessionTotalSeconds}
+        isRunning={isRunning}
+        beat={beat}
+      />
+
+      {/* ── 3. LCD Display ── */}
       <div className="player-lcd">
         <div className={`player-lcd-inner ${!isRunning ? 'player-lcd--dim' : ''}`}>
           <div className="player-lcd-text">
@@ -299,14 +728,29 @@ export function PlayerTab(props: PlayerTabProps) {
         <span className="player-scrub-time">{timerDisplay}</span>
       </div>
 
-      {/* ── Voice waveform ── */}
+      {/* ── 4. Oscilloscope ── */}
+      <Oscilloscope analyserNode={analyserNode} />
+
+      {/* ── 5. Frequency Spectrum ── */}
+      <FrequencySpectrum analyserNode={analyserNode} />
+
+      {/* ── 6. Voice Waveform ── */}
       {voiceObjectUrl && (
         <div className="player-waveform-wrap">
           <VoiceWaveform objectUrl={voiceObjectUrl} />
         </div>
       )}
 
-      {/* ── Volume sliders ── */}
+      {/* ── 7. Brainwave Band ── */}
+      <BrainwaveBand beat={beat} />
+
+      {/* ── 8. Mood Equalizer ── */}
+      <MoodEqualizer sliders={moodSliders} onChange={handleMoodChange} />
+
+      {/* ── 9. Quick Preset Pills ── */}
+      <QuickPills activePill={activePill} onPill={handlePill} />
+
+      {/* ── 10. Volume sliders ── */}
       <div className="player-vol-section">
         <div className="player-vol-section-label">Volume</div>
         <VolRow label="MASTER" value={volume} onChange={setVolume} />
@@ -352,7 +796,7 @@ export function PlayerTab(props: PlayerTabProps) {
         </div>
       </div>
 
-      {/* ── Play/Stop button ── */}
+      {/* ── 11. Play/Stop button ── */}
       <button
         className={`player-btn-start ${isRunning ? 'player-btn-start--active' : ''}`}
         onClick={onToggle}

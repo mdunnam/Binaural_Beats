@@ -1068,6 +1068,9 @@ function App() {
               analyserNode={masterBusRef.current?.analyser ?? null}
               voiceObjectUrl={pendingAiObjectUrlRef.current}
               onToggle={() => void toggleAudio()}
+              setCarrier={setCarrier}
+              setBeat={setBeat}
+              setWobbleRate={setWobbleRate}
             />
           )}
 
