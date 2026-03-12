@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import type {
   NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
-  AudioGraph, AutomationLanes, AutomationPoint, SessionPreset, JournalEntry, PadSynthGraph,
+  AudioGraph, AutomationLanes, SessionPreset, JournalEntry, PadSynthGraph,
 } from './types'
 import { createAudioGraph, stopAudioGraph, reconnectLfo, scaledLfoDepth } from './engine/audioGraph'
 import { createNoiseBuffer } from './engine/noiseGen'
@@ -945,8 +945,8 @@ function App() {
                 <div className="dash-recent">
                   {journalEntries.slice(0, 3).map(entry => (
                     <div key={entry.id} className="dash-recent-row">
-                      <span className="dash-recent-date">{new Date(entry.startedAt).toLocaleDateString()}</span>
-                      <span className="dash-recent-note">{entry.notes?.slice(0, 60) || `${entry.carrier?.toFixed(0)} Hz · ${entry.beat?.toFixed(1)} Hz beat`}</span>
+                      <span className="dash-recent-date">{new Date(entry.date).toLocaleDateString()}</span>
+                      <span className="dash-recent-note">{entry.notes?.slice(0, 60) || entry.presetName}</span>
                     </div>
                   ))}
                 </div>

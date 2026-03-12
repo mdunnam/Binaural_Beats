@@ -49,8 +49,12 @@ function startSource(
   }
 
   let src: AudioBufferSourceNode
+  let alreadyStarted = false
+
   if (layerData.useNoise || !layerData.buffer) {
+    // createNoiseBuffer already calls source.start() internally — do not start again
     src = createNoiseSourceForLayer(player.context, layer)
+    alreadyStarted = true
   } else {
     src = player.context.createBufferSource()
     src.buffer = layerData.buffer
@@ -58,7 +62,9 @@ function startSource(
   }
 
   src.connect(layerData.gainNode)
-  src.start()
+  if (!alreadyStarted) {
+    src.start()
+  }
   layerData.source = src
 }
 

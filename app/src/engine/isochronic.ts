@@ -70,7 +70,7 @@ export function stopIsochronicTone(graph: IsochronicGraph): void {
 }
 
 export function updateIsochronicParams(
-  graph: IsochronicGraph,
+  _graph: IsochronicGraph,
   _params: Partial<IsochronicParams>,
 ): void {
   // No-op: caller should stopIsochronicTone + createIsochronicTone for param changes

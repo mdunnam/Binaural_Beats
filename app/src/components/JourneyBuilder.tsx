@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { Journey, JourneyStage } from '../engine/journeyEngine'
-import { BRAINWAVE_COLORS, beatToColor } from '../engine/journeyEngine'
+import { beatToColor } from '../engine/journeyEngine'
 import { SOUNDSCAPE_SCENES } from '../engine/soundscapeMixer'
 import { generateJourney } from '../ai/journeyComposer'
-import type { JourneyIntent } from '../ai/journeyComposer'
+import type { JourneyIntent as _JourneyIntent } from '../ai/journeyComposer'
 
 export const BUILT_IN_JOURNEYS: Journey[] = [
   {
