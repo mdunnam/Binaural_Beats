@@ -19,7 +19,7 @@ export type SamplePlayer = {
 }
 
 async function loadLayerBuffer(context: AudioContext, layer: SoundLayer): Promise<AudioBuffer | 'noise'> {
-  for (const ext of ['ogg', 'mp3']) {
+  for (const ext of ['ogg', 'mp3', 'mp4']) {
     try {
       const resp = await fetch(`/sounds/${layer.id}.${ext}`)
       if (resp.ok) {

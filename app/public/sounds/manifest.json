@@ -1,0 +1,50 @@
+{
+  "rain": {
+    "file": "rain.mp4",
+    "tags": "nature, rain, plant, water, garden, live wallpaper",
+    "duration": 26,
+    "kb": "1486"
+  },
+  "thunder": {
+    "file": "thunder.mp4",
+    "tags": "storm, rain, clouds, sky, nature, thunder, lightning, hurricane, thunderstorm, landscape",
+    "duration": 10,
+    "kb": "588"
+  },
+  "wind": {
+    "file": "wind.mp4",
+    "tags": "blooms, tree blossoms, spring, branch, wind, blooming branch, nature, live wallpaper, slow motion",
+    "duration": 25,
+    "kb": "2391"
+  },
+  "waves": {
+    "file": "waves.mp4",
+    "tags": "sea, beach, waves",
+    "duration": 43,
+    "kb": "16990"
+  },
+  "fire": {
+    "file": "fire.mp4",
+    "tags": "fireplace, fire, flames, warmth, warm, heat, glowing, burning, hearth, cosy, campfire, camping",
+    "duration": 10,
+    "kb": "1073"
+  },
+  "forest": {
+    "file": "forest.mp4",
+    "tags": "birds, flowers, forest, animals, trees, sky, woods, nature",
+    "duration": 14,
+    "kb": "1273"
+  },
+  "space": {
+    "file": "space.mp4",
+    "tags": "night sky, stars, milky way, camp, astronomy, heaven, camping, to travel, night, starry sky, universe, space, galaxy",
+    "duration": 11,
+    "kb": "799"
+  },
+  "cave": {
+    "file": "cave.mp4",
+    "tags": "stream, river, water, water flow",
+    "duration": 45,
+    "kb": "5417"
+  }
+}
