@@ -124,6 +124,7 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
     <div className="onboarding-overlay">
       {step === 'pick' && (
         <>
+          <p className="onboarding-app-name">✦ Liminal</p>
           <h1 className="onboarding-title">What do you want to achieve?</h1>
           <p className="onboarding-subtitle">Pick a goal and we'll configure everything for you.</p>
           <div className="onboarding-grid">

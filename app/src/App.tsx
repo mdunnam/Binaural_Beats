@@ -843,10 +843,10 @@ function App() {
       )}
     <main className="app-shell">
       <section className="hero" style={{ position: 'relative' }}>
-        <p className="eyebrow">Solfeggio + Binaural Beats</p>
-        <h1>Binaural Engine</h1>
+        <p className="eyebrow">Binaural Beats · Brainwave Journeys · Soundscapes</p>
+        <h1>Liminal</h1>
         <p className="subtitle">
-          Tune any carrier frequency, shape beat difference, and add wobble modulation. Headphones recommended.
+          Shift your mental state. Choose a goal, tune your frequencies, and drift into focus, calm, or sleep.
         </p>
         <button
           className="theme-toggle"
