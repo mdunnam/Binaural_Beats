@@ -22,6 +22,8 @@ import { AiMeditationPanel } from './components/AiMeditationPanel'
 import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
 import { TabNav } from './components/TabNav'
+import { createMasterBus, setMasterVolume } from './engine/masterBus'
+import type { MasterBus } from './engine/masterBus'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -183,6 +185,7 @@ function App() {
   const [aiApiKey, setAiApiKey] = useState<string>('')
   const [showApiSettings, setShowApiSettings] = useState(false)
 
+  const masterBusRef = useRef<MasterBus | null>(null)
   const graphRef = useRef<AudioGraph | null>(null)
   const padRef = useRef<PadSynthGraph | null>(null)
   const voiceBusRef = useRef<VoiceBus | null>(null)
@@ -251,22 +254,35 @@ function App() {
       pendingAiObjectUrlRef.current = null
     }
 
-    if (fadeOut <= 0) {
+    const doStop = (): void => {
       stopAudioGraph(graph)
       graphRef.current = null
+      // Close the shared AudioContext owned by masterBus
+      void masterBusRef.current?.context.close()
+      masterBusRef.current = null
       setIsRunning(false)
       if (withChime) playEndChime()
+    }
+
+    if (fadeOut <= 0) {
+      doStop()
       return
     }
-    const currentGain = graph.masterGain.gain.value
-    graph.masterGain.gain.cancelScheduledValues(now)
-    graph.masterGain.gain.setValueAtTime(currentGain, now)
-    graph.masterGain.gain.linearRampToValueAtTime(0.0001, now + fadeOut)
+    const bus = masterBusRef.current
+    if (bus) {
+      const masterNow = bus.context.currentTime
+      const currentGain = bus.masterGain.gain.value
+      bus.masterGain.gain.cancelScheduledValues(masterNow)
+      bus.masterGain.gain.setValueAtTime(currentGain, masterNow)
+      bus.masterGain.gain.linearRampToValueAtTime(0.0001, masterNow + fadeOut)
+    } else {
+      const currentGain = graph.masterGain.gain.value
+      graph.masterGain.gain.cancelScheduledValues(now)
+      graph.masterGain.gain.setValueAtTime(currentGain, now)
+      graph.masterGain.gain.linearRampToValueAtTime(0.0001, now + fadeOut)
+    }
     fadeStopTimeoutRef.current = window.setTimeout(() => {
-      stopAudioGraph(graphRef.current)
-      graphRef.current = null
-      setIsRunning(false)
-      if (withChime) playEndChime()
+      doStop()
       fadeStopTimeoutRef.current = null
     }, Math.ceil(fadeOut * 1000))
   }, [fadeOutSeconds])
@@ -344,40 +360,46 @@ function App() {
     const activeNoiseType = aiConfig ? aiConfig.noiseType : noiseType
     const activeNoiseVolume = aiConfig ? aiConfig.noiseVolume : noiseVolume
 
+    // 1. Create master bus (owns the AudioContext)
+    const bus = createMasterBus(volume)
+    masterBusRef.current = bus
+
+    if (bus.context.state !== 'running') await bus.context.resume()
+
+    // 2. Create audio graph (binaural), share context, connect to binauralBus
     const graph = createAudioGraph({
       leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
       wobbleWaveform, wobbleTarget, phaseOffset, volume, binauralVolume,
       noiseType: activeNoiseType, noiseVolume: activeNoiseVolume, filterType, filterFrequency, filterQ,
-    })
+    }, bus.context, bus.binauralBus)
 
-    if (graph.context.state !== 'running') await graph.context.resume()
-
-    const now = graph.context.currentTime
+    const now = bus.context.currentTime
     sessionStartTimeRef.current = now
     const safeVolume = Math.max(0.0001, volume)
     if (fadeInSeconds > 0) {
-      graph.masterGain.gain.setValueAtTime(0.0001, now)
-      graph.masterGain.gain.linearRampToValueAtTime(safeVolume, now + fadeInSeconds)
+      bus.masterGain.gain.setValueAtTime(0.0001, now)
+      bus.masterGain.gain.linearRampToValueAtTime(safeVolume, now + fadeInSeconds)
     } else {
-      graph.masterGain.gain.setValueAtTime(safeVolume, now)
+      bus.masterGain.gain.setValueAtTime(safeVolume, now)
     }
 
     graphRef.current = graph
 
-    // Start soundscape mixer
-    const mixerNodes = createSoundscapeMixer(graph.context, graph.masterGain, layerGains)
+    // 3. Create soundscape player, connect to soundscapeBus
+    const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGains)
     mixerNodesRef.current = mixerNodes
 
     if (padEnabled) {
-      const pad = createPadSynth(graph.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, graph.masterGain)
+      const pad = createPadSynth(bus.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, bus.masterGain)
       padRef.current = pad
     }
 
+    // 4. Voice bus created when AI session starts, connects to bus.voiceBus
     if (pendingAiSessionRef.current) {
-      const aiConfig = pendingAiSessionRef.current
+      const pendingConfig = pendingAiSessionRef.current
       pendingAiSessionRef.current = null
-      createVoiceBus(graph.context, aiConfig.audioBlob, graph.masterGain, voiceVolume).then((bus) => {
-        voiceBusRef.current = bus
+      createVoiceBus(bus.context, pendingConfig.audioBlob, bus.voiceBus, voiceVolume).then((vb) => {
+        voiceBusRef.current = vb
       }).catch((err) => {
         console.error('Voice bus failed:', err)
       })
@@ -589,9 +611,9 @@ function App() {
   }, [wobbleTarget]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const graph = graphRef.current
-    if (!graph) return
-    graph.masterGain.gain.setTargetAtTime(Math.max(0.0001, volume), graph.context.currentTime, 0.05)
+    const bus = masterBusRef.current
+    if (!bus) return
+    setMasterVolume(bus, volume)
   }, [volume])
 
   useEffect(() => {
@@ -681,6 +703,8 @@ function App() {
       clearSessionTimers()
       stopAudioGraph(graphRef.current)
       graphRef.current = null
+      void masterBusRef.current?.context.close()
+      masterBusRef.current = null
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

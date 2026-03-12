@@ -1,4 +1,5 @@
-import { createNoiseBuffer } from './noiseGen'
+import { createSamplePlayer, setLayerGain as sampleSetLayerGain, stopSamplePlayer } from './samplePlayer'
+import type { SamplePlayer } from './samplePlayer'
 
 export type SoundLayerId = 'rain' | 'thunder' | 'wind' | 'waves' | 'fire' | 'forest' | 'space' | 'cave'
 
@@ -48,9 +49,10 @@ export const DEFAULT_GAINS: LayerGains = {
   rain: 0, thunder: 0, wind: 0, waves: 0, fire: 0, forest: 0, space: 0, cave: 0,
 }
 
+// SoundscapeMixerNodes wraps SamplePlayer — same external API
 export type SoundscapeMixerNodes = {
-  layers: Map<SoundLayerId, { source: AudioBufferSourceNode; filter: BiquadFilterNode | null; gainNode: GainNode }>
-  masterGain: GainNode
+  _player: SamplePlayer
+  // keep masterGain for API compat (unused internally now, but not referenced externally either)
 }
 
 export function createSoundscapeMixer(
@@ -58,52 +60,14 @@ export function createSoundscapeMixer(
   destination: AudioNode,
   gains: LayerGains,
 ): SoundscapeMixerNodes {
-  const masterGain = context.createGain()
-  masterGain.gain.value = 1
-  masterGain.connect(destination)
-
-  const layers = new Map<SoundLayerId, { source: AudioBufferSourceNode; filter: BiquadFilterNode | null; gainNode: GainNode }>()
-
-  for (const layer of SOUND_LAYERS) {
-    const source = createNoiseBuffer(context, layer.noiseType)
-    let filter: BiquadFilterNode | null = null
-
-    if (layer.filterType !== 'none') {
-      filter = context.createBiquadFilter()
-      filter.type = layer.filterType as BiquadFilterType
-      filter.frequency.value = layer.filterFreq
-      filter.Q.value = layer.filterQ
-    }
-
-    const gainNode = context.createGain()
-    gainNode.gain.value = gains[layer.id]
-
-    if (filter) {
-      source.connect(filter)
-      filter.connect(gainNode)
-    } else {
-      source.connect(gainNode)
-    }
-    gainNode.connect(masterGain)
-
-    layers.set(layer.id, { source, filter, gainNode })
-  }
-
-  return { layers, masterGain }
+  const player = createSamplePlayer(context, destination, gains)
+  return { _player: player }
 }
 
 export function updateLayerGain(nodes: SoundscapeMixerNodes, id: SoundLayerId, gain: number): void {
-  const layer = nodes.layers.get(id)
-  if (!layer) return
-  layer.gainNode.gain.setTargetAtTime(Math.max(0, gain), layer.gainNode.context.currentTime, 0.05)
+  sampleSetLayerGain(nodes._player, id, gain).catch(console.error)
 }
 
 export function stopSoundscapeMixer(nodes: SoundscapeMixerNodes): void {
-  for (const [, layer] of nodes.layers) {
-    try { layer.source.stop() } catch { /* ignore */ }
-    layer.source.disconnect()
-    if (layer.filter) layer.filter.disconnect()
-    layer.gainNode.disconnect()
-  }
-  nodes.masterGain.disconnect()
+  stopSamplePlayer(nodes._player)
 }

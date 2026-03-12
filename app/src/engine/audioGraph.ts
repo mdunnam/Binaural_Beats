@@ -37,10 +37,13 @@ export function applyFilterType(node: BiquadFilterNode, type: FilterType): void 
   } else if (type === 'highpass') {
     node.type = 'highpass'
   }
-  // 'off' handled by gain bypass in graph
 }
 
-export function createAudioGraph(params: GraphParams): AudioGraph {
+export function createAudioGraph(
+  params: GraphParams,
+  sharedContext?: AudioContext,
+  binauralDestination?: AudioNode,
+): AudioGraph {
   const {
     leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
     wobbleWaveform, wobbleTarget, phaseOffset,
@@ -48,7 +51,7 @@ export function createAudioGraph(params: GraphParams): AudioGraph {
     filterType, filterFrequency, filterQ,
   } = params
 
-  const context = new AudioContext()
+  const context = sharedContext ?? new AudioContext()
   const now = context.currentTime
 
   const leftOsc = context.createOscillator()
@@ -72,19 +75,24 @@ export function createAudioGraph(params: GraphParams): AudioGraph {
   if (filterType !== 'off') {
     filterNode.type = filterType === 'lowpass' ? 'lowpass' : 'highpass'
   } else {
-    filterNode.type = 'allpass' // effectively transparent bypass
+    filterNode.type = 'allpass'
   }
   filterNode.frequency.value = filterFrequency
   filterNode.Q.value = filterType !== 'off' ? filterQ : 0
 
-  // Automation gain (controlled by automation lane)
+  // Automation gain
   const automationGain = context.createGain()
   automationGain.gain.value = 1
 
   const masterGain = context.createGain()
-  masterGain.gain.value = volume
+  masterGain.gain.value = sharedContext ? 1 : volume
 
-  // Signal path: oscs → per-ch gain → merger → amGain → filter → automationGain → masterGain → out
+  // Determine output destination:
+  // If a binauralDestination (binauralBus) is provided, route there.
+  // Otherwise fall back to context.destination (backward compat).
+  const outputDestination: AudioNode = binauralDestination ?? context.destination
+
+  // Signal path: oscs → per-ch gain → merger → amGain → filter → automationGain → masterGain → outputDestination
   leftOsc.connect(leftGain)
   rightOsc.connect(rightGain)
   leftGain.connect(merger, 0, 0)
@@ -93,7 +101,7 @@ export function createAudioGraph(params: GraphParams): AudioGraph {
   amGain.connect(filterNode)
   filterNode.connect(automationGain)
   automationGain.connect(masterGain)
-  masterGain.connect(context.destination)
+  masterGain.connect(outputDestination)
 
   const lfo = context.createOscillator()
   lfo.type = wobbleWaveform
@@ -119,7 +127,7 @@ export function createAudioGraph(params: GraphParams): AudioGraph {
 
   const noiseGain = context.createGain()
   noiseGain.gain.value = noiseType !== 'none' ? noiseVolume : 0
-  // Noise bypasses filter — goes directly to masterGain
+  // Noise goes to same outputDestination as binaural (via masterGain chain) — or directly if standalone
   noiseGain.connect(masterGain)
 
   let noiseSource: AudioBufferSourceNode | null = null
@@ -153,5 +161,5 @@ export function stopAudioGraph(graph: AudioGraph | null): void {
   try { graph.lfo.stop() } catch { /* ignore */ }
   try { graph.leftOsc.stop() } catch { /* ignore */ }
   try { graph.rightOsc.stop() } catch { /* ignore */ }
-  void graph.context.close()
+  // Only close context if we own it (no shared context) — App.tsx handles context.close()
 }
