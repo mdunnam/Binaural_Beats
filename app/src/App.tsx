@@ -500,8 +500,8 @@ function App() {
 
     setIsRunning(true)
     if (isoEnabled) {
-      // Mute binaural oscillators — isochronic replaces them
-      bus.binauralBus.gain.setValueAtTime(0, bus.context.currentTime)
+      // Mute the binaural graph's own output — isochronic replaces it
+      graph.masterGain.gain.setValueAtTime(0, bus.context.currentTime)
       isoGraphRef.current = createIsochronicTone({
         carrier,
         beatFrequency: beat,
@@ -813,24 +813,24 @@ function App() {
   // Live-update isochronic tone when its own params change
   useEffect(() => {
     const bus = masterBusRef.current
-    if (!isRunning || !bus) return
+    const graph = graphRef.current
+    if (!isRunning || !bus || !graph) return
     const now = bus.context.currentTime
     if (!isoEnabled) {
-      // Disable: stop isochronic, restore binaural bus
+      // Disable: stop isochronic, restore binaural graph output
       if (isoGraphRef.current) {
         stopIsochronicTone(isoGraphRef.current)
         isoGraphRef.current = null
       }
-      // Restore binaural oscillators
-      bus.binauralBus.gain.cancelScheduledValues(now)
-      bus.binauralBus.gain.setValueAtTime(bus.binauralBus.gain.value, now)
-      bus.binauralBus.gain.linearRampToValueAtTime(1, now + 0.1)
+      graph.masterGain.gain.cancelScheduledValues(now)
+      graph.masterGain.gain.setValueAtTime(graph.masterGain.gain.value, now)
+      graph.masterGain.gain.linearRampToValueAtTime(1, now + 0.1)
       return
     }
-    // Enable or param change: mute binaural oscillators, start/restart isochronic
-    bus.binauralBus.gain.cancelScheduledValues(now)
-    bus.binauralBus.gain.setValueAtTime(bus.binauralBus.gain.value, now)
-    bus.binauralBus.gain.linearRampToValueAtTime(0, now + 0.1)
+    // Enable or param change: mute binaural graph output, start/restart isochronic
+    graph.masterGain.gain.cancelScheduledValues(now)
+    graph.masterGain.gain.setValueAtTime(graph.masterGain.gain.value, now)
+    graph.masterGain.gain.linearRampToValueAtTime(0, now + 0.1)
     if (isoGraphRef.current) stopIsochronicTone(isoGraphRef.current)
     isoGraphRef.current = createIsochronicTone({
       carrier, beatFrequency: beat, volume: isoVolume,
