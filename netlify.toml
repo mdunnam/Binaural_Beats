@@ -1,0 +1,18 @@
+[build]
+  command = "cd app && npx vite build && cd .. && cp -r landing/. dist/ && mkdir -p dist/app && cp -r app/dist/. dist/app/"
+  publish = "dist"
+
+# React app — client-side routing
+[[redirects]]
+  from = "/app/*"
+  to = "/app/index.html"
+  status = 200
+
+# Sounds and other public assets served from /app/sounds/
+# (vite copies public/ into dist/ automatically)
+
+# Root — landing page
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
