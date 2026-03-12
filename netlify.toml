@@ -1,5 +1,5 @@
 [build]
-  command = "cd app && npx vite build && cd .. && cp -r landing/. dist/ && mkdir -p dist/app && cp -r app/dist/. dist/app/"
+  command = "cd app && npm install && npx vite build && cd .. && cp -r landing/. dist/ && mkdir -p dist/app && cp -r app/dist/. dist/app/"
   publish = "dist"
 
 # React app — client-side routing
