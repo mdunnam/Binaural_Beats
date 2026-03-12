@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import type { Journey, JourneyStage } from '../engine/journeyEngine'
 import { BRAINWAVE_COLORS, beatToColor } from '../engine/journeyEngine'
 import { SOUNDSCAPE_SCENES } from '../engine/soundscapeMixer'
+import { generateJourney } from '../ai/journeyComposer'
+import type { JourneyIntent } from '../ai/journeyComposer'
 
 export const BUILT_IN_JOURNEYS: Journey[] = [
   {
@@ -55,6 +57,7 @@ type JourneyBuilderProps = {
   setBeat: (v: number) => void
   setWobbleRate: (v: number) => void
   setSoundsceneId: (id: string) => void
+  apiKey: string
 }
 
 function newStage(): JourneyStage {
@@ -79,12 +82,41 @@ export function JourneyBuilder({
   setBeat,
   setWobbleRate,
   setSoundsceneId,
+  apiKey,
 }: JourneyBuilderProps) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [presetsOpen, setPresetsOpen] = useState(true)
 
+  // AI panel state
+  const [aiGoal, setAiGoal] = useState('')
+  const [aiDuration, setAiDuration] = useState(30)
+  const [aiStages, setAiStages] = useState(4)
+  const [aiStyle, setAiStyle] = useState<'gentle' | 'balanced' | 'deep'>('balanced')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiOpen, setAiOpen] = useState(true)
+
   const stages = journey?.stages ?? []
   const totalMinutes = stages.reduce((s, st) => s + st.durationMinutes, 0)
+
+  const handleGenerateJourney = async () => {
+    if (!aiGoal.trim() || !apiKey) return
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const generated = await generateJourney(
+        { goal: aiGoal, durationMinutes: aiDuration, stageCount: aiStages, style: aiStyle },
+        apiKey,
+      )
+      setJourney(generated)
+      setSelectedIdx(null)
+      setAiGoal('')
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Generation failed')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const updateStage = (idx: number, patch: Partial<JourneyStage>) => {
     if (!journey) return
@@ -248,6 +280,98 @@ export function JourneyBuilder({
           )}
         </div>
       )}
+
+      {/* AI Journey Designer */}
+      <div className="journey-ai-panel">
+        <button
+          className="journey-ai-header"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', padding: 0 }}
+          onClick={() => setAiOpen(o => !o)}
+        >
+          <span className="journey-ai-title">✨ AI Journey Designer</span>
+          <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#5a7a6e' }}>{aiOpen ? '▾' : '▸'}</span>
+        </button>
+        {aiOpen && (
+          <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1e4a36', gap: '0.35rem' }}>
+              What do you want to achieve?
+              <textarea
+                className="journey-ai-textarea"
+                value={aiGoal}
+                onChange={(e) => setAiGoal(e.target.value)}
+                placeholder={'e.g. "Fall into deep sleep", "Focus for a coding session"'}
+                rows={2}
+              />
+            </label>
+
+            <div className="journey-ai-options">
+              <label style={{ fontWeight: 600, fontSize: '0.78rem', color: '#3a5a4e', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                Duration
+                <select
+                  className="text-input"
+                  value={aiDuration}
+                  onChange={(e) => setAiDuration(Number(e.target.value))}
+                >
+                  {[10, 20, 30, 45, 60].map(m => (
+                    <option key={m} value={m}>{m} min</option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ fontWeight: 600, fontSize: '0.78rem', color: '#3a5a4e', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                Stages
+                <select
+                  className="text-input"
+                  value={aiStages}
+                  onChange={(e) => setAiStages(Number(e.target.value))}
+                >
+                  {[3, 4, 5, 6].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.78rem', color: '#3a5a4e' }}>Style</span>
+                <div className="seg-control">
+                  {(['gentle', 'balanced', 'deep'] as const).map(s => (
+                    <button
+                      key={s}
+                      className={aiStyle === s ? 'active' : ''}
+                      onClick={() => setAiStyle(s)}
+                      type="button"
+                    >
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {!apiKey && (
+              <p className="journey-ai-no-key">Add your OpenAI API key in Settings to use AI generation</p>
+            )}
+
+            {aiLoading ? (
+              <div className="journey-ai-loading">
+                <span className="ai-step-ellipsis">⋯</span>
+                <span>Designing your journey…</span>
+              </div>
+            ) : (
+              <button
+                className="journey-ai-generate-btn"
+                onClick={handleGenerateJourney}
+                disabled={!aiGoal.trim() || !apiKey || aiLoading}
+                type="button"
+              >
+                ✨ Generate Journey
+              </button>
+            )}
+
+            {aiError && (
+              <div className="journey-ai-error">{aiError}</div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Presets */}
       <div style={{ marginTop: '0.75rem' }}>

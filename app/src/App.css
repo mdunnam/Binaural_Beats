@@ -1907,3 +1907,92 @@ input[type='range'] {
   background: #d0eadb;
   border-color: #3e8f72;
 }
+
+/* ── AI Journey Designer Panel ── */
+.journey-ai-panel {
+  background: linear-gradient(135deg, #f0f8f4, #e8f3fe);
+  border: 1px solid #b8d8ee;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.journey-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.journey-ai-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #2a4e6e;
+}
+
+.journey-ai-textarea {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+  margin-top: 0.3rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #b0c8d8;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.journey-ai-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.journey-ai-generate-btn {
+  background: linear-gradient(135deg, #2e7d52 0%, #4caf85 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  align-self: flex-start;
+}
+
+.journey-ai-generate-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.journey-ai-generate-btn:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+.journey-ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #3f5f53;
+  font-style: italic;
+}
+
+.journey-ai-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.88rem;
+}
+
+.journey-ai-no-key {
+  font-size: 0.78rem;
+  color: #7a8f87;
+  margin: 0;
+  font-style: italic;
+}

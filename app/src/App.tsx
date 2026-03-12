@@ -1090,6 +1090,7 @@ function App() {
               setBeat={setBeat}
               setWobbleRate={setWobbleRate}
               setSoundsceneId={setSoundsceneId}
+              apiKey={localStorage.getItem('binaural-openai-key') ?? ''}
             />
           )}
 
