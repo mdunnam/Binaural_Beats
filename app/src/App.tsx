@@ -26,8 +26,8 @@ import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
-import { PlayerTab } from './components/PlayerTab'
 import { VisualTab } from './components/VisualTab'
+import { MiniPlayer } from './components/MiniPlayer'
 import { JourneyBuilder, BUILT_IN_JOURNEYS } from './components/JourneyBuilder'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import type { OnboardingConfig } from './components/OnboardingFlow'
@@ -43,8 +43,6 @@ const TABS = [
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
   { id: 'session',   icon: '⏱',  label: 'Session'  },
   { id: 'journey',   icon: '🗺',  label: 'Journey'  },
-  { id: 'player',   icon: '🎛',  label: 'Player'   },
-  { id: 'visual',   icon: '👁',  label: 'Visual'   },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
 ]
@@ -125,6 +123,7 @@ function defaultLanes(): AutomationLanes {
 function App() {
   // Tab navigation
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [playerExpanded, setPlayerExpanded] = useState(false)
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => {
@@ -258,7 +257,7 @@ function App() {
     }
     localStorage.setItem('binaural-onboarded', '1')
     setShowOnboarding(false)
-    setActiveTab('player')
+    setActiveTab('dashboard')
   }, [])
 
   const handleOnboardingSkip = useCallback(() => {
@@ -860,12 +859,8 @@ function App() {
   // ---------------------------------------------------------------------------
   // Derived
   // ---------------------------------------------------------------------------
-  const beatDifference = rightFrequency - leftFrequency
   const progressFraction = sessionTotalSeconds > 0 && remainingSeconds > 0
     ? 1 - remainingSeconds / sessionTotalSeconds : 0
-  const timerDisplay = remainingSeconds > 0
-    ? `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`
-    : '00:00'
   const wobbleDepthLabel = wobbleTarget === 'amplitude'
     ? `${Math.round((wobbleDepth / 60) * 100)}% AM depth`
     : `${wobbleDepth.toFixed(1)} cents`
@@ -899,26 +894,11 @@ function App() {
       </section>
 
       <section className="panel">
-        {/* ── Readout ── */}
-        <div className="readout">
-          <div><span>Left</span><strong>{leftFrequency.toFixed(2)} Hz</strong></div>
-          <div><span>Right</span><strong>{rightFrequency.toFixed(2)} Hz</strong></div>
-          <div><span>Beat</span><strong>{beatDifference.toFixed(2)} Hz</strong></div>
-          <div><span>Timer</span><strong>{timerDisplay}</strong></div>
-        </div>
-
         {isRunning && sessionTotalSeconds > 0 && (
           <div className="progress-bar-track">
             <div className="progress-bar-fill" style={{ width: `${Math.min(1, progressFraction) * 100}%` }} />
           </div>
         )}
-
-        {/* ── Session start/stop — always visible ── */}
-        <div className="session-start-row">
-          <button className="start-button" onClick={() => void toggleAudio()}>
-            {isRunning ? 'Stop Session (Fade Out)' : 'Start Session'}
-          </button>
-        </div>
 
         {/* ── Tab navigation ── */}
         <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
@@ -1252,34 +1232,6 @@ function App() {
             />
           )}
 
-          {/* ──────────────── PLAYER TAB ──────────────── */}
-          {activeTab === 'player' && (
-            <PlayerTab
-              isRunning={isRunning}
-              carrier={carrier}
-              beat={beat}
-              remainingSeconds={remainingSeconds}
-              sessionTotalSeconds={sessionTotalSeconds}
-              soundsceneId={soundsceneId}
-              volume={volume}
-              setVolume={setVolume}
-              binauralVolume={binauralVolume}
-              setBinauralVolume={setBinauralVolume}
-              noiseVolume={soundscapeVolume}
-              setNoiseVolume={setSoundscapeVolume}
-              voiceVolume={voiceVolume}
-              setVoiceVolume={setVoiceVolume}
-              voiceReverb={voiceReverb}
-              setVoiceReverb={setVoiceReverb}
-              analyserNode={masterBusRef.current?.analyser ?? null}
-              voiceObjectUrl={pendingAiObjectUrlRef.current}
-              onToggle={() => void toggleAudio()}
-              setCarrier={setCarrier}
-              setBeat={setBeat}
-              setWobbleRate={setWobbleRate}
-            />
-          )}
-
           {/* ──────────────── VISUAL TAB ──────────────── */}
           {activeTab === 'visual' && (
             <VisualTab
@@ -1337,6 +1289,36 @@ function App() {
         Safety: keep volume low at session start. Use headphones for full binaural effect. Avoid therapeutic claims.
       </p>
     </main>
+
+    {/* ── Persistent Mini Player Bar ── */}
+    <MiniPlayer
+      isRunning={isRunning}
+      carrier={carrier}
+      beat={beat}
+      remainingSeconds={remainingSeconds}
+      sessionTotalSeconds={sessionTotalSeconds}
+      soundsceneId={soundsceneId}
+      volume={volume}
+      setVolume={setVolume}
+      binauralVolume={binauralVolume}
+      setBinauralVolume={setBinauralVolume}
+      noiseVolume={soundscapeVolume}
+      setNoiseVolume={setSoundscapeVolume}
+      voiceVolume={voiceVolume}
+      setVoiceVolume={setVoiceVolume}
+      voiceReverb={voiceReverb}
+      setVoiceReverb={setVoiceReverb}
+      analyserNode={masterBusRef.current?.analyser ?? null}
+      voiceObjectUrl={pendingAiObjectUrlRef.current}
+      onToggle={() => void toggleAudio()}
+      setCarrier={setCarrier}
+      setBeat={setBeat}
+      setWobbleRate={setWobbleRate}
+      isExpanded={playerExpanded}
+      onToggleExpand={() => setPlayerExpanded(v => !v)}
+      onOpenVisual={() => { setActiveTab('visual'); setPlayerExpanded(false) }}
+    />
+    
     </>
   )
 }

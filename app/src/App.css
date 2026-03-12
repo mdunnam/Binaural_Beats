@@ -2349,3 +2349,219 @@ input[type='range'] {
   transform: scale(1.1);
   background: var(--accent-light);
 }
+
+/* ══════════════════════════════════════════════
+   MINI PLAYER BAR
+══════════════════════════════════════════════ */
+
+/* Add bottom padding to app-shell so content is not hidden behind the mini-player */
+.app-shell {
+  padding-bottom: 80px;
+}
+
+@media (max-width: 599px) {
+  .app-shell {
+    padding-bottom: 120px;
+  }
+}
+
+.mini-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-card);
+  box-shadow: 0 -4px 20px var(--shadow-panel);
+  max-height: 64px;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.mini-player--expanded {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ── Collapsed bar ── */
+.mini-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 1rem;
+  height: 64px;
+  min-height: 64px;
+  flex-shrink: 0;
+}
+
+.mini-player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mini-player-hz {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-player-sep {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.mini-player-state {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.mini-player-timer {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-player-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border-section);
+  background: var(--bg-card);
+  color: var(--accent);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.mini-player-play-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.mini-player-play-btn--active {
+  background: #7a3030;
+  border-color: #a03a3a;
+  color: #fff;
+}
+
+.mini-player-vol-wrap {
+  width: 100px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.mini-player-vol-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border-section);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.mini-player-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+.mini-player-vol-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+.mini-player-expand-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-section);
+  border-radius: 6px;
+  background: var(--bg-section);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.mini-player-expand-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* ── Expanded content ── */
+.mini-player-expanded-content {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--border-section);
+}
+
+.mini-player-visualize-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.mini-player-visualize-btn {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border-section);
+  border-radius: 20px;
+  background: var(--bg-section);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.mini-player-visualize-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+@media (max-width: 599px) {
+  .mini-player-info {
+    gap: 0.25rem;
+  }
+
+  .mini-player-hz,
+  .mini-player-state,
+  .mini-player-timer {
+    font-size: 0.72rem;
+  }
+
+  .mini-player-vol-wrap {
+    width: 60px;
+  }
+
+  /* On mobile the tab-nav is also fixed at bottom — shift mini-player above it */
+  .mini-player {
+    bottom: 56px;
+  }
+}
