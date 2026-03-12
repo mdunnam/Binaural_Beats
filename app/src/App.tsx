@@ -437,6 +437,7 @@ function App() {
 
     // 1. Create master bus (owns the AudioContext)
     const bus = createMasterBus(volume)
+    bus.soundscapeBus.gain.value = Math.max(0.0001, soundscapeVolume)
     masterBusRef.current = bus
 
     if (bus.context.state !== 'running') await bus.context.resume()
