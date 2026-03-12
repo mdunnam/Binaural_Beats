@@ -69,10 +69,10 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
     if (!analyserNode) {
       // Static OFF display
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = '#0d1f0d'
+      ctx.fillStyle = '#dbe4dd'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = '#1a4a1a'
-      ctx.font = '9px Courier New'
+      ctx.fillStyle = '#9ab5aa'
+      ctx.font = '9px system-ui'
       ctx.textBaseline = 'middle'
       ctx.fillText('OFF', 6, canvas.height / 2)
       return
@@ -93,21 +93,21 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
       const w = canvas.width
       const h = canvas.height
       ctx.clearRect(0, 0, w, h)
-      ctx.fillStyle = '#0a150a'
+      ctx.fillStyle = '#e8f4ee'
       ctx.fillRect(0, 0, w, h)
 
       // Gradient bar
       const fillW = Math.round(avg * w)
       const grad = ctx.createLinearGradient(0, 0, w, 0)
-      grad.addColorStop(0, '#00cc66')
-      grad.addColorStop(0.65, '#aacc00')
-      grad.addColorStop(0.85, '#ffaa00')
-      grad.addColorStop(1.0, '#ff3300')
+      grad.addColorStop(0, '#3e8f72')
+      grad.addColorStop(0.65, '#7ac96e')
+      grad.addColorStop(0.85, '#e8b84b')
+      grad.addColorStop(1.0, '#e05a3a')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, fillW, h)
 
       // Segmented lines
-      ctx.fillStyle = '#0a150a'
+      ctx.fillStyle = '#e8f4ee'
       for (let i = 1; i < 20; i++) {
         const x = Math.round((i / 20) * w)
         ctx.fillRect(x, 0, 1, h)
@@ -157,9 +157,9 @@ function VoiceWaveform({ objectUrl }: { objectUrl: string }) {
         const mid = h / 2
 
         ctx.clearRect(0, 0, w, h)
-        ctx.fillStyle = '#061006'
+        ctx.fillStyle = '#f0f8f4'
         ctx.fillRect(0, 0, w, h)
-        ctx.strokeStyle = '#00cc66'
+        ctx.strokeStyle = '#3e8f72'
         ctx.lineWidth = 1
         ctx.beginPath()
 
@@ -308,6 +308,7 @@ export function PlayerTab(props: PlayerTabProps) {
 
       {/* ── Volume sliders ── */}
       <div className="player-vol-section">
+        <div className="player-vol-section-label">Volume</div>
         <VolRow label="MASTER" value={volume} onChange={setVolume} />
         <VolRow label="TONES" value={binauralVolume} onChange={setBinauralVolume} />
         <VolRow label="SOUNDS" value={noiseVolume} onChange={setNoiseVolume} />
