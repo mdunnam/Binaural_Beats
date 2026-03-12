@@ -500,6 +500,8 @@ function App() {
 
     setIsRunning(true)
     if (isoEnabled) {
+      // Mute binaural oscillators — isochronic replaces them
+      bus.binauralBus.gain.setValueAtTime(0, bus.context.currentTime)
       isoGraphRef.current = createIsochronicTone({
         carrier,
         beatFrequency: beat,
@@ -810,21 +812,30 @@ function App() {
 
   // Live-update isochronic tone when its own params change
   useEffect(() => {
-    if (!isRunning || !masterBusRef.current) return
+    const bus = masterBusRef.current
+    if (!isRunning || !bus) return
+    const now = bus.context.currentTime
     if (!isoEnabled) {
-      // Disable: stop if running
+      // Disable: stop isochronic, restore binaural bus
       if (isoGraphRef.current) {
         stopIsochronicTone(isoGraphRef.current)
         isoGraphRef.current = null
       }
+      // Restore binaural oscillators
+      bus.binauralBus.gain.cancelScheduledValues(now)
+      bus.binauralBus.gain.setValueAtTime(bus.binauralBus.gain.value, now)
+      bus.binauralBus.gain.linearRampToValueAtTime(1, now + 0.1)
       return
     }
-    // Enable or param change: restart
+    // Enable or param change: mute binaural oscillators, start/restart isochronic
+    bus.binauralBus.gain.cancelScheduledValues(now)
+    bus.binauralBus.gain.setValueAtTime(bus.binauralBus.gain.value, now)
+    bus.binauralBus.gain.linearRampToValueAtTime(0, now + 0.1)
     if (isoGraphRef.current) stopIsochronicTone(isoGraphRef.current)
     isoGraphRef.current = createIsochronicTone({
       carrier, beatFrequency: beat, volume: isoVolume,
       waveform: isoWaveform, dutyCycle: isoDutyCycle, rampMs: 20,
-    }, masterBusRef.current)
+    }, bus)
   }, [isoEnabled, isoVolume, isoWaveform, isoDutyCycle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live-update soundscape layer gains
