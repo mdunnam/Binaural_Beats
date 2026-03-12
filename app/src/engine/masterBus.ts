@@ -6,6 +6,7 @@ export type MasterBus = {
   soundscapeBus: GainNode  // soundscape connects here
   voiceBus: GainNode       // voice connects here
   musicBus: GainNode       // future music connects here
+  analyser: AnalyserNode   // post-limiter analyser for VU meter
 }
 
 export function createMasterBus(initialVolume: number): MasterBus {
@@ -40,9 +41,14 @@ export function createMasterBus(initialVolume: number): MasterBus {
   voiceBus.connect(masterGain)
   musicBus.connect(masterGain)
   masterGain.connect(limiter)
-  limiter.connect(context.destination)
 
-  return { context, masterGain, limiter, binauralBus, soundscapeBus, voiceBus, musicBus }
+  const analyser = context.createAnalyser()
+  analyser.fftSize = 256
+  analyser.smoothingTimeConstant = 0.8
+  limiter.connect(analyser)
+  analyser.connect(context.destination)
+
+  return { context, masterGain, limiter, binauralBus, soundscapeBus, voiceBus, musicBus, analyser }
 }
 
 export function setMasterVolume(bus: MasterBus, volume: number): void {

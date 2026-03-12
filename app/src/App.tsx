@@ -24,6 +24,7 @@ import { ApiKeySettings } from './components/ApiKeySettings'
 import { TabNav } from './components/TabNav'
 import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
+import { PlayerTab } from './components/PlayerTab'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -33,6 +34,7 @@ const TABS = [
   { id: 'tones',     icon: '🎵', label: 'Tones'     },
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
   { id: 'session',   icon: '⏱',  label: 'Session'  },
+  { id: 'player',   icon: '🎛',  label: 'Player'   },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
 ]
@@ -990,27 +992,6 @@ function App() {
                 onSceneChange={(sceneId) => setSoundsceneId(sceneId)}
                 disabled={false}
               />
-
-              {/* Volume controls */}
-              <div className="section-label">Volume</div>
-              <label>Output Volume ({Math.round(volume * 100)}%)
-                <input type="range" min={0} max={1} step={0.01} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
-              </label>
-              <label>Binaural Volume ({Math.round(binauralVolume * 100)}%)
-                <small className="control-hint">Level of the binaural tones</small>
-                <input type="range" min={0} max={1} step={0.01} value={binauralVolume} onChange={(e) => setBinauralVolume(Number(e.target.value))} />
-              </label>
-              <label>Background Volume ({Math.round(noiseVolume * 100)}%)
-                <small className="control-hint">Ambient noise / soundscape level</small>
-                <input type="range" min={0} max={1} step={0.01} value={noiseVolume} onChange={(e) => setNoiseVolume(Number(e.target.value))} />
-              </label>
-              <label>Voice Volume ({Math.round(voiceVolume * 100)}%)
-                <small className="control-hint">AI meditation voice level</small>
-                <input type="range" min={0} max={1} step={0.01} value={voiceVolume} onChange={(e) => setVoiceVolume(Number(e.target.value))} />
-              </label>
-              <label>Voice Reverb ({Math.round(voiceReverb * 100)}%)
-                <input type="range" min={0} max={1} step={0.01} value={voiceReverb} onChange={(e) => setVoiceReverb(Number(e.target.value))} />
-              </label>
             </div>
           )}
 
@@ -1065,9 +1046,33 @@ function App() {
             </div>
           )}
 
+          {/* ──────────────── PLAYER TAB ──────────────── */}
+          {activeTab === 'player' && (
+            <PlayerTab
+              isRunning={isRunning}
+              carrier={carrier}
+              beat={beat}
+              remainingSeconds={remainingSeconds}
+              sessionTotalSeconds={sessionTotalSeconds}
+              soundsceneId={soundsceneId}
+              volume={volume}
+              setVolume={setVolume}
+              binauralVolume={binauralVolume}
+              setBinauralVolume={setBinauralVolume}
+              noiseVolume={noiseVolume}
+              setNoiseVolume={setNoiseVolume}
+              voiceVolume={voiceVolume}
+              setVoiceVolume={setVoiceVolume}
+              voiceReverb={voiceReverb}
+              setVoiceReverb={setVoiceReverb}
+              analyserNode={masterBusRef.current?.analyser ?? null}
+              voiceObjectUrl={pendingAiObjectUrlRef.current}
+              onToggle={() => void toggleAudio()}
+            />
+          )}
+
           {/* ──────────────── AI TAB ──────────────── */}
-          {activeTab === 'ai' && (
-            <AiMeditationPanel
+          {activeTab === 'ai' && (            <AiMeditationPanel
               onSessionReady={handleAiSessionReady}
               apiKey={aiApiKey}
               onOpenSettings={() => setShowApiSettings(true)}
