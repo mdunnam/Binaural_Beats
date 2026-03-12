@@ -27,6 +27,7 @@ import type { MasterBus } from './engine/masterBus'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
 import { PlayerTab } from './components/PlayerTab'
+import { VisualTab } from './components/VisualTab'
 import { JourneyBuilder } from './components/JourneyBuilder'
 import type { Journey, ActiveJourney } from './engine/journeyEngine'
 import { startJourney, stopJourney } from './engine/journeyEngine'
@@ -41,6 +42,7 @@ const TABS = [
   { id: 'session',   icon: '⏱',  label: 'Session'  },
   { id: 'journey',   icon: '🗺',  label: 'Journey'  },
   { id: 'player',   icon: '🎛',  label: 'Player'   },
+  { id: 'visual',   icon: '👁',  label: 'Visual'   },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
 ]
@@ -1181,6 +1183,16 @@ function App() {
               setCarrier={setCarrier}
               setBeat={setBeat}
               setWobbleRate={setWobbleRate}
+            />
+          )}
+
+          {/* ──────────────── VISUAL TAB ──────────────── */}
+          {activeTab === 'visual' && (
+            <VisualTab
+              carrier={carrier}
+              beat={beat}
+              isRunning={isRunning}
+              analyser={masterBusRef.current?.analyser ?? null}
             />
           )}
 

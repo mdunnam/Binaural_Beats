@@ -2044,3 +2044,58 @@ input[type='range'] {
   font-weight: 600;
   margin-left: 0.4rem;
 }
+
+/* ── Visual Resonance Tab ── */
+.visual-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.visual-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.visual-canvas-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 480px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5faf7;
+  border: 1px solid #c8ddd5;
+}
+
+.visual-canvas-wrap:fullscreen {
+  max-height: 100vh;
+  border-radius: 0;
+  background: #0a0a0a;
+}
+
+.visual-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.visual-info-bar {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #6e8f7d;
+  padding: 0.25rem;
+}
+
+.visual-idle-msg {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6e8f7d;
+  padding: 0.5rem;
+  background: #eaf4ee;
+  border-radius: 8px;
+}
