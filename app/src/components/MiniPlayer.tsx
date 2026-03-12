@@ -133,6 +133,14 @@ export function MiniPlayer(props: MiniPlayerProps) {
             >
               Visualize 👁
             </button>
+            <button
+              className="mini-player-collapse-top"
+              onClick={onToggleExpand}
+              aria-label="Collapse player"
+              title="Collapse player"
+            >
+              ▼ Close
+            </button>
           </div>
           <PlayerTab {...playerTabProps} />
         </div>

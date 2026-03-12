@@ -2388,8 +2388,16 @@ input[type='range'] {
 }
 
 .mini-player--expanded {
-  max-height: 90vh;
+  max-height: 80vh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+@media (max-width: 599px) {
+  .mini-player--expanded {
+    max-height: 75vh;
+  }
 }
 
 /* ── Collapsed bar ── */
@@ -2532,8 +2540,25 @@ input[type='range'] {
 
 .mini-player-visualize-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.5rem 0 0.25rem;
+}
+
+.mini-player-collapse-top {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border-section);
+  border-radius: 20px;
+  background: var(--bg-section);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mini-player-collapse-top:hover {
+  background: var(--bg-hover);
 }
 
 .mini-player-visualize-btn {
