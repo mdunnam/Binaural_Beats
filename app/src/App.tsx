@@ -25,6 +25,9 @@ import { TabNav } from './components/TabNav'
 import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
 import { PlayerTab } from './components/PlayerTab'
+import { JourneyBuilder } from './components/JourneyBuilder'
+import type { Journey, ActiveJourney } from './engine/journeyEngine'
+import { startJourney, stopJourney } from './engine/journeyEngine'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -34,6 +37,7 @@ const TABS = [
   { id: 'tones',     icon: '🎵', label: 'Tones'     },
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
   { id: 'session',   icon: '⏱',  label: 'Session'  },
+  { id: 'journey',   icon: '🗺',  label: 'Journey'  },
   { id: 'player',   icon: '🎛',  label: 'Player'   },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
@@ -198,6 +202,11 @@ function App() {
   const sessionEndTimeoutRef = useRef<number | null>(null)
   const sessionStartTimeRef = useRef<number>(0)
 
+  // Journey
+  const [journey, setJourney] = useState<Journey | null>(null)
+  const [activeStageIndex, setActiveStageIndex] = useState(-1)
+  const activeJourneyRef = useRef<ActiveJourney | null>(null)
+
   // Stable refs for use in closures
   const sessionMinutesRef = useRef(sessionMinutes)
   const presetNameRef = useRef(presetName)
@@ -218,6 +227,13 @@ function App() {
     if (!graph) return
     clearSessionTimers()
     setRemainingSeconds(0)
+
+    // Stop journey if running
+    if (activeJourneyRef.current) {
+      stopJourney(activeJourneyRef.current)
+      activeJourneyRef.current = null
+      setActiveStageIndex(-1)
+    }
     const now = graph.context.currentTime
     const fadeOut = useFade ? Math.max(0, fadeOutSeconds) : 0
 
@@ -386,6 +402,23 @@ function App() {
     }
 
     graphRef.current = graph
+
+    // If a journey is loaded, start it
+    if (journey && graphRef.current) {
+      const activeJourney = startJourney(
+        journey,
+        graphRef.current,
+        30,
+        (stageIndex, stage) => {
+          setActiveStageIndex(stageIndex)
+          setCarrier(stage.carrier)
+          setBeat(stage.beat)
+          setWobbleRate(stage.wobbleRate)
+          setSoundsceneId(stage.soundsceneId)
+        },
+      )
+      activeJourneyRef.current = activeJourney
+    }
 
     // 3. Create soundscape player, connect to soundscapeBus
     const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGains)
@@ -1044,6 +1077,20 @@ function App() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ──────────────── JOURNEY TAB ──────────────── */}
+          {activeTab === 'journey' && (
+            <JourneyBuilder
+              isRunning={isRunning}
+              journey={journey}
+              setJourney={setJourney}
+              activeStageIndex={activeStageIndex}
+              setCarrier={setCarrier}
+              setBeat={setBeat}
+              setWobbleRate={setWobbleRate}
+              setSoundsceneId={setSoundsceneId}
+            />
           )}
 
           {/* ──────────────── PLAYER TAB ──────────────── */}
