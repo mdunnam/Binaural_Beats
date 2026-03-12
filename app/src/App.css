@@ -2389,9 +2389,9 @@ input[type='range'] {
 
 .mini-player--expanded {
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
 }
 
 @media (max-width: 599px) {
@@ -2536,6 +2536,19 @@ input[type='range'] {
 .mini-player-expanded-content {
   padding: 0 1rem 1rem;
   border-top: 1px solid var(--border-section);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Bar stays pinned at bottom inside expanded player */
+.mini-player--expanded .mini-player-bar {
+  order: 2;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-section);
+}
+
+.mini-player--expanded .mini-player-expanded-content {
+  order: 1;
 }
 
 .mini-player-visualize-row {
