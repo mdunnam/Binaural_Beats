@@ -28,7 +28,9 @@ import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
 import { PlayerTab } from './components/PlayerTab'
 import { VisualTab } from './components/VisualTab'
-import { JourneyBuilder } from './components/JourneyBuilder'
+import { JourneyBuilder, BUILT_IN_JOURNEYS } from './components/JourneyBuilder'
+import { OnboardingFlow } from './components/OnboardingFlow'
+import type { OnboardingConfig } from './components/OnboardingFlow'
 import type { Journey, ActiveJourney } from './engine/journeyEngine'
 import { startJourney, stopJourney } from './engine/journeyEngine'
 
@@ -218,11 +220,39 @@ function App() {
   const [activeStageIndex, setActiveStageIndex] = useState(-1)
   const activeJourneyRef = useRef<ActiveJourney | null>(null)
 
+  // Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('binaural-onboarded')
+  })
+
   // Stable refs for use in closures
   const sessionMinutesRef = useRef(sessionMinutes)
   const presetNameRef = useRef(presetName)
   useEffect(() => { sessionMinutesRef.current = sessionMinutes }, [sessionMinutes])
   useEffect(() => { presetNameRef.current = presetName }, [presetName])
+
+  // ---------------------------------------------------------------------------
+  // Onboarding handlers
+  // ---------------------------------------------------------------------------
+  const handleOnboardingComplete = useCallback((config: OnboardingConfig) => {
+    setCarrier(config.carrier)
+    setBeat(config.beat)
+    setWobbleRate(config.wobbleRate)
+    setSoundsceneId(config.soundsceneId)
+    setSessionMinutes(config.sessionMinutes)
+    if (config.journeyId) {
+      const j = BUILT_IN_JOURNEYS.find(j => j.id === config.journeyId)
+      if (j) setJourney({ ...j })
+    }
+    localStorage.setItem('binaural-onboarded', '1')
+    setShowOnboarding(false)
+    setActiveTab('player')
+  }, [])
+
+  const handleOnboardingSkip = useCallback(() => {
+    localStorage.setItem('binaural-onboarded', '1')
+    setShowOnboarding(false)
+  }, [])
 
   // ---------------------------------------------------------------------------
   // Timer helpers
@@ -795,6 +825,13 @@ function App() {
   // Render
   // ---------------------------------------------------------------------------
   return (
+    <>
+      {showOnboarding && (
+        <OnboardingFlow
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
     <main className="app-shell">
       <section className="hero">
         <p className="eyebrow">Solfeggio + Binaural Beats</p>
@@ -1243,6 +1280,7 @@ function App() {
         Safety: keep volume low at session start. Use headphones for full binaural effect. Avoid therapeutic claims.
       </p>
     </main>
+    </>
   )
 }
 
