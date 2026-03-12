@@ -33,6 +33,8 @@ import { OnboardingFlow } from './components/OnboardingFlow'
 import type { OnboardingConfig } from './components/OnboardingFlow'
 import type { Journey, ActiveJourney } from './engine/journeyEngine'
 import { startJourney, stopJourney } from './engine/journeyEngine'
+import type { AmbientPlayer } from './engine/ambientPlayer'
+import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -235,6 +237,10 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('binaural-onboarded')
   })
+
+  // Ambient mode
+  const [ambientRunning, setAmbientRunning] = useState(false)
+  const ambientPlayerRef = useRef<AmbientPlayer | null>(null)
 
   // Stable refs for use in closures
   const sessionMinutesRef = useRef(sessionMinutes)
@@ -448,6 +454,13 @@ function App() {
     if (graphRef.current) { stopSession(true); return }
     clearSessionTimers()
 
+    // Stop ambient if running
+    if (ambientPlayerRef.current) {
+      stopAmbientPlayer(ambientPlayerRef.current)
+      ambientPlayerRef.current = null
+      setAmbientRunning(false)
+    }
+
     const aiConfig = pendingAiSessionRef.current
     const activeNoiseType = aiConfig ? aiConfig.noiseType : noiseType
     const activeNoiseVolume = aiConfig ? aiConfig.noiseVolume : noiseVolume
@@ -529,6 +542,28 @@ function App() {
       }, bus)
     }
     startSessionTimers(graph, automationLanes)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Toggle ambient playback
+  // ---------------------------------------------------------------------------
+  const toggleAmbient = async (): Promise<void> => {
+    if (ambientRunning) {
+      if (ambientPlayerRef.current) {
+        stopAmbientPlayer(ambientPlayerRef.current)
+        ambientPlayerRef.current = null
+      }
+      setAmbientRunning(false)
+      return
+    }
+    // Stop session if running
+    if (graphRef.current) {
+      stopSession(true)
+    }
+    const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, layerGains)
+    if (player.context.state !== 'running') await player.context.resume()
+    ambientPlayerRef.current = player
+    setAmbientRunning(true)
   }
 
   // ---------------------------------------------------------------------------
@@ -864,6 +899,33 @@ function App() {
     })
   }, [layerGains])
 
+  // Ambient live-updates
+  useEffect(() => {
+    const player = ambientPlayerRef.current
+    if (!player || !ambientRunning) return
+    setAmbientNoiseType(player, noiseType, noiseVolume)
+  }, [noiseType]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const player = ambientPlayerRef.current
+    if (!player || !ambientRunning) return
+    setAmbientNoiseVolume(player, noiseVolume)
+  }, [noiseVolume, ambientRunning])
+
+  useEffect(() => {
+    const player = ambientPlayerRef.current
+    if (!player || !ambientRunning) return
+    SOUND_LAYERS.forEach(layer => {
+      setAmbientLayerGain(player, layer.id, layerGains[layer.id])
+    })
+  }, [layerGains, ambientRunning])
+
+  useEffect(() => {
+    const player = ambientPlayerRef.current
+    if (!player || !ambientRunning) return
+    setAmbientMasterVolume(player, soundscapeVolume)
+  }, [soundscapeVolume, ambientRunning])
+
   useEffect(() => {
     return () => {
       clearSessionTimers()
@@ -871,6 +933,10 @@ function App() {
       graphRef.current = null
       void masterBusRef.current?.context.close()
       masterBusRef.current = null
+      if (ambientPlayerRef.current) {
+        stopAmbientPlayer(ambientPlayerRef.current)
+        ambientPlayerRef.current = null
+      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1138,6 +1204,43 @@ function App() {
           {/* ──────────────── SOUND TAB ──────────────── */}
           {activeTab === 'sound' && (
             <div className="grid">
+              {/* Colored Noise */}
+              <div className="section-label">Colored Noise</div>
+              <div className="seg-control">
+                {(['none', 'white', 'pink', 'brown', 'blue', 'violet'] as NoiseType[]).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={noiseType === type ? 'active' : ''}
+                    onClick={() => setNoiseType(type)}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+              {noiseType !== 'none' && (
+                <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={noiseVolume}
+                    onChange={(e) => setNoiseVolume(Number(e.target.value))}
+                  />
+                </label>
+              )}
+
+              {/* Ambient Playback */}
+              <div className="section-label">Ambient Playback</div>
+              <p className="control-hint">Play soundscapes and noise without starting a binaural session.</p>
+              <button
+                className="start-button"
+                onClick={() => void toggleAmbient()}
+              >
+                {ambientRunning ? 'Stop Ambient' : 'Play Ambient'}
+              </button>
+
               {/* Pad Synth */}
               <div className="section-label">Pad Synth Underlay</div>
               <label className="toggle-row">
@@ -1310,6 +1413,7 @@ function App() {
       {/* ── Persistent Mini Player Bar — inside main for iOS gesture trust ── */}
       <MiniPlayer
         isRunning={isRunning}
+        ambientRunning={ambientRunning}
         carrier={carrier}
         beat={beat}
       remainingSeconds={remainingSeconds}

@@ -1,4 +1,4 @@
-export type NoiseType = 'none' | 'white' | 'pink' | 'brown'
+export type NoiseType = 'none' | 'white' | 'pink' | 'brown' | 'blue' | 'violet'
 export type IsochronicWaveform = 'sine' | 'square' | 'sawtooth' | 'triangle'
 export type LfoWaveform = 'sine' | 'triangle' | 'square' | 'sawtooth'
 export type LfoTarget = 'detune' | 'amplitude' | 'beat'

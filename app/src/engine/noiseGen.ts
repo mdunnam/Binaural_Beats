@@ -25,6 +25,22 @@ export function createNoiseBuffer(
       data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11
       b6 = w * 0.115926
     }
+  } else if (type === 'blue') {
+    let last = 0
+    for (let i = 0; i < bufferSize; i++) {
+      const w = Math.random() * 2 - 1
+      data[i] = (w - last) * 0.5
+      last = w
+    }
+  } else if (type === 'violet') {
+    let last = 0, prev = 0
+    for (let i = 0; i < bufferSize; i++) {
+      const w = Math.random() * 2 - 1
+      const blue = w - last
+      data[i] = (blue - prev) * 0.25
+      prev = blue
+      last = w
+    }
   } else {
     let last = 0
     for (let i = 0; i < bufferSize; i++) {

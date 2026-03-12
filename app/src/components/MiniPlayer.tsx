@@ -5,6 +5,7 @@ import { PlayerTab } from './PlayerTab'
 // ---------------------------------------------------------------------------
 interface MiniPlayerProps {
   isRunning: boolean
+  ambientRunning: boolean
   carrier: number
   beat: number
   remainingSeconds: number
@@ -48,7 +49,7 @@ function formatTimer(seconds: number): string {
 export function MiniPlayer(props: MiniPlayerProps) {
   const {
     isExpanded, onToggleExpand, onOpenVisual,
-    isRunning, carrier, beat, remainingSeconds, volume, setVolume, onToggle,
+    isRunning, ambientRunning, carrier, beat, remainingSeconds, volume, setVolume, onToggle,
     sessionTotalSeconds, soundsceneId,
     binauralVolume, setBinauralVolume,
     noiseVolume, setNoiseVolume,
@@ -98,13 +99,19 @@ export function MiniPlayer(props: MiniPlayerProps) {
       {/* Bar always at bottom */}
       <div className="mini-player-bar">
         <div className="mini-player-info">
-          <span className="mini-player-hz">{carrier.toFixed(0)} Hz</span>
-          <span className="mini-player-sep">·</span>
-          <span className="mini-player-hz">{beat.toFixed(1)} Hz</span>
-          <span className="mini-player-sep">·</span>
-          <span className="mini-player-state">{brainwaveLabel}</span>
-          <span className="mini-player-sep">·</span>
-          <span className="mini-player-timer">{timerDisplay}</span>
+          {ambientRunning && !isRunning ? (
+            <span className="mini-player-hz">🌊 Ambient</span>
+          ) : (
+            <>
+              <span className="mini-player-hz">{carrier.toFixed(0)} Hz</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-hz">{beat.toFixed(1)} Hz</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-state">{brainwaveLabel}</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-timer">{timerDisplay}</span>
+            </>
+          )}
         </div>
 
         <button
