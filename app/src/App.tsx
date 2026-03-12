@@ -126,6 +126,15 @@ function App() {
   // Tab navigation
   const [activeTab, setActiveTab] = useState('dashboard')
 
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('binaural-theme') === 'dark'
+  })
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+    localStorage.setItem('binaural-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+
   // Frequency
   const [useIndependentTuning, setUseIndependentTuning] = useState(false)
   const [carrier, setCarrier] = useState(432)
@@ -833,12 +842,20 @@ function App() {
         />
       )}
     <main className="app-shell">
-      <section className="hero">
+      <section className="hero" style={{ position: 'relative' }}>
         <p className="eyebrow">Solfeggio + Binaural Beats</p>
         <h1>Binaural Engine</h1>
         <p className="subtitle">
           Tune any carrier frequency, shape beat difference, and add wobble modulation. Headphones recommended.
         </p>
+        <button
+          className="theme-toggle"
+          onClick={() => setDarkMode(d => !d)}
+          title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? '☀️' : '🌙'}
+        </button>
       </section>
 
       <section className="panel">
