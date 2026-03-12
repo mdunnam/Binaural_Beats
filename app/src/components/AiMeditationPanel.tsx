@@ -193,6 +193,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
         script: result.script,
       }
       onSessionReady(config)
+      setStep('idle')
       // Save session
       await saveSession(prompt, { voice, intensity, soundscape, durationMinutes: duration }, result)
     } catch (err) {
@@ -216,6 +217,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
       script: session.script,
     }
     onSessionReady(config)
+    setShowSaved(false)
   }
 
   const handleDeleteSaved = (id: string) => {
