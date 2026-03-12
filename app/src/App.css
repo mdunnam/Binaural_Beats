@@ -2535,20 +2535,10 @@ input[type='range'] {
 /* ── Expanded content ── */
 .mini-player-expanded-content {
   padding: 0 1rem 1rem;
-  border-top: 1px solid var(--border-section);
+  border-bottom: 1px solid var(--border-section);
   overflow-y: auto;
   flex: 1;
-}
-
-/* Bar stays pinned at bottom inside expanded player */
-.mini-player--expanded .mini-player-bar {
-  order: 2;
-  flex-shrink: 0;
-  border-top: 1px solid var(--border-section);
-}
-
-.mini-player--expanded .mini-player-expanded-content {
-  order: 1;
+  min-height: 0;
 }
 
 .mini-player-visualize-row {

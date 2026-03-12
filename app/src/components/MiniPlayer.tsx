@@ -4,7 +4,6 @@ import { PlayerTab } from './PlayerTab'
 // Props
 // ---------------------------------------------------------------------------
 interface MiniPlayerProps {
-  // All PlayerTab props
   isRunning: boolean
   carrier: number
   beat: number
@@ -27,15 +26,11 @@ interface MiniPlayerProps {
   setCarrier: (v: number) => void
   setBeat: (v: number) => void
   setWobbleRate: (v: number) => void
-  // MiniPlayer-specific
   isExpanded: boolean
   onToggleExpand: () => void
   onOpenVisual: () => void
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 function getBrainwaveLabel(beat: number): string {
   if (beat < 4) return 'Delta'
   if (beat < 8) return 'Theta'
@@ -50,9 +45,6 @@ function formatTimer(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-// ---------------------------------------------------------------------------
-// MiniPlayer
-// ---------------------------------------------------------------------------
 export function MiniPlayer(props: MiniPlayerProps) {
   const {
     isExpanded, onToggleExpand, onOpenVisual,
@@ -79,7 +71,31 @@ export function MiniPlayer(props: MiniPlayerProps) {
 
   return (
     <div className={`mini-player${isExpanded ? ' mini-player--expanded' : ''}`}>
-      {/* ── Always-visible collapsed bar ── */}
+
+      {/* Expanded content comes first in DOM so the bar doesn't overlap it */}
+      {isExpanded && (
+        <div className="mini-player-expanded-content">
+          <div className="mini-player-visualize-row">
+            <button
+              className="mini-player-collapse-top"
+              onClick={onToggleExpand}
+              aria-label="Collapse player"
+              title="Collapse player"
+            >
+              ▼ Close
+            </button>
+            <button
+              className="mini-player-visualize-btn"
+              onClick={onOpenVisual}
+            >
+              Visualize 👁
+            </button>
+          </div>
+          <PlayerTab {...playerTabProps} />
+        </div>
+      )}
+
+      {/* Bar always at bottom */}
       <div className="mini-player-bar">
         <div className="mini-player-info">
           <span className="mini-player-hz">{carrier.toFixed(0)} Hz</span>
@@ -123,28 +139,6 @@ export function MiniPlayer(props: MiniPlayerProps) {
         </button>
       </div>
 
-      {/* ── Expanded full-player content ── */}
-      {isExpanded && (
-        <div className="mini-player-expanded-content">
-          <div className="mini-player-visualize-row">
-            <button
-              className="mini-player-visualize-btn"
-              onClick={onOpenVisual}
-            >
-              Visualize 👁
-            </button>
-            <button
-              className="mini-player-collapse-top"
-              onClick={onToggleExpand}
-              aria-label="Collapse player"
-              title="Collapse player"
-            >
-              ▼ Close
-            </button>
-          </div>
-          <PlayerTab {...playerTabProps} />
-        </div>
-      )}
     </div>
   )
 }
