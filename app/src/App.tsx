@@ -268,6 +268,24 @@ function App() {
   // ---------------------------------------------------------------------------
   // Timer helpers
   // ---------------------------------------------------------------------------
+  // iOS AudioContext unlock — Safari requires a user gesture before any audio
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const unlock = () => {
+      const ctx = new AudioContext()
+      ctx.resume().then(() => ctx.close()).catch(() => {})
+      document.removeEventListener('touchstart', unlock)
+      document.removeEventListener('touchend', unlock)
+    }
+    document.addEventListener('touchstart', unlock, { once: true, passive: true })
+    document.addEventListener('touchend', unlock, { once: true, passive: true })
+    return () => {
+      document.removeEventListener('touchstart', unlock)
+      document.removeEventListener('touchend', unlock)
+    }
+  }, [])
+
+  // ---------------------------------------------------------------------------
   const clearSessionTimers = (): void => {
     if (fadeStopTimeoutRef.current !== null) { window.clearTimeout(fadeStopTimeoutRef.current); fadeStopTimeoutRef.current = null }
     if (countdownIntervalRef.current !== null) { window.clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null }
@@ -1288,13 +1306,12 @@ function App() {
       <p className="footnote">
         Safety: keep volume low at session start. Use headphones for full binaural effect. Avoid therapeutic claims.
       </p>
-    </main>
 
-    {/* ── Persistent Mini Player Bar ── */}
-    <MiniPlayer
-      isRunning={isRunning}
-      carrier={carrier}
-      beat={beat}
+      {/* ── Persistent Mini Player Bar — inside main for iOS gesture trust ── */}
+      <MiniPlayer
+        isRunning={isRunning}
+        carrier={carrier}
+        beat={beat}
       remainingSeconds={remainingSeconds}
       sessionTotalSeconds={sessionTotalSeconds}
       soundsceneId={soundsceneId}
@@ -1318,7 +1335,8 @@ function App() {
       onToggleExpand={() => setPlayerExpanded(v => !v)}
       onOpenVisual={() => { setActiveTab('visual'); setPlayerExpanded(false) }}
     />
-    
+    </main>
+
     </>
   )
 }
