@@ -1771,6 +1771,8 @@ input[type='range']:not(.player-mood-slider)::-moz-range-track {
   border-radius: 8px;
   padding: 0.5rem 0.4rem;
   overflow: hidden;
+  position: relative;
+  isolation: isolate;
 }
 
 .player-mood-col {
@@ -1780,6 +1782,7 @@ input[type='range']:not(.player-mood-slider)::-moz-range-track {
   gap: 0.25rem;
   min-width: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .player-mood-label {
@@ -1802,6 +1805,18 @@ input[type='range']:not(.player-mood-slider)::-moz-range-track {
   cursor: pointer;
   accent-color: #3e8f72;
   flex-shrink: 0;
+  display: block;
+}
+
+.player-mood-slider-wrap {
+  width: 24px;
+  height: 120px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-mood-hint {

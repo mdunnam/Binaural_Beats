@@ -559,15 +559,17 @@ function MoodEqualizer({
         {MOOD_META.map(m => (
           <div key={m.key} className="player-mood-col">
             <span className="player-mood-label" style={{ color: m.color }}>{m.label}</span>
-            <input
-              type="range"
-              className="player-mood-slider"
-              min={0}
-              max={1}
-              step={0.01}
-              value={sliders[m.key]}
-              onChange={e => onChange(m.key, Number(e.target.value))}
-            />
+            <div className="player-mood-slider-wrap">
+              <input
+                type="range"
+                className="player-mood-slider"
+                min={0}
+                max={1}
+                step={0.01}
+                value={sliders[m.key]}
+                onChange={e => onChange(m.key, Number(e.target.value))}
+              />
+            </div>
             <span className="player-mood-hint">{m.hint}</span>
           </div>
         ))}
