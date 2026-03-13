@@ -101,8 +101,6 @@ function applyMoodSliders(
   sliders: MoodSliders,
   setCarrier: (v: number) => void,
   setBeat: (v: number) => void,
-  setNoiseVolume: (v: number) => void,
-  setBinauralVolume: (v: number) => void,
   setWobbleRate: (v: number) => void,
 ): void {
   let carrierTarget = 0, carrierWeight = 0
@@ -124,10 +122,6 @@ function applyMoodSliders(
   if (sliders.focus > 0.05)  wobbleRate = Math.max(wobbleRate, 0.6  * sliders.focus)
   if (sliders.dream > 0.05)  wobbleRate = Math.min(wobbleRate, 0.08 + (1 - sliders.dream) * 0.4)
   setWobbleRate(Math.max(0.05, Math.min(4, wobbleRate)))
-
-  if (sliders.relax > 0.05) setNoiseVolume(Math.min(1, 0.15 + sliders.relax * 0.4))
-  if (sliders.focus > 0.05 || sliders.ascend > 0.05)
-    setBinauralVolume(Math.min(1, 0.15 + Math.max(sliders.focus, sliders.ascend) * 0.3))
 }
 
 // ---------------------------------------------------------------------------
@@ -666,7 +660,7 @@ export function PlayerTab(props: PlayerTabProps) {
     const next = { ...moodSliders, [k]: v }
     setMoodSliders(next)
     setActivePill(null)
-    applyMoodSliders(next, setCarrier, setBeat, setNoiseVolume, setBinauralVolume, setWobbleRate)
+    applyMoodSliders(next, setCarrier, setBeat, setWobbleRate)
   }
 
   const handlePill = (pill: typeof QUICK_PILLS[number]) => {
@@ -674,7 +668,7 @@ export function PlayerTab(props: PlayerTabProps) {
     setMoodSliders(pill.mood)
     setCarrier(pill.carrier)
     setBeat(pill.beat)
-    applyMoodSliders(pill.mood, setCarrier, setBeat, setNoiseVolume, setBinauralVolume, setWobbleRate)
+    applyMoodSliders(pill.mood, setCarrier, setBeat, setWobbleRate)
   }
 
   return (
