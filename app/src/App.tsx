@@ -676,6 +676,7 @@ function App() {
 
   const stopSession = useCallback((useFade: boolean, withChime = false, natural = false): void => {
     const graph = graphRef.current
+    audioStartingRef.current = false
     if (!graph) return
     clearSessionTimers()
     setRemainingSeconds(0)
@@ -837,8 +838,11 @@ function App() {
   // ---------------------------------------------------------------------------
   // Toggle session
   // ---------------------------------------------------------------------------
+  const audioStartingRef = useRef(false)
   const toggleAudio = async (): Promise<void> => {
     if (graphRef.current) { stopSession(true); return }
+    if (audioStartingRef.current) return
+    audioStartingRef.current = true
     clearSessionTimers()
 
     // Stop ambient if running
@@ -933,6 +937,7 @@ function App() {
     }
 
     setIsRunning(true)
+    audioStartingRef.current = false
     if (isoEnabledRef.current) {
       // Mute the binaural graph's own output — isochronic replaces it
       graph.masterGain.gain.setValueAtTime(0, bus.context.currentTime)
