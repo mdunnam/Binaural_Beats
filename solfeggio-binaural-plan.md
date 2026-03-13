@@ -969,25 +969,103 @@ Required to keep users coming back.
 ✅ Done:   WAV export
 ✅ Done:   Session journal
 ✅ Done:   Solfeggio + brainwave presets
+✅ Done:   Isochronic tone generator (with live param updates)
+✅ Done:   Mood EQ (5-slider blend: Ground/Relax/Focus/Dream/Ascend)
+✅ Done:   Anti-Mood EQ (5-slider: Angry/Anxious/Sad/Scattered/Exhausted → healing frequency recipes)
+✅ Done:   Layered soundscape mixer (8 layers, 7 scene presets)
+✅ Done:   Ambient mode (standalone soundscape + noise without binaural session)
+✅ Done:   Colored noise (blue + violet added to white/pink/brown)
+✅ Done:   Music player (Music tab, 13 CC0 tracks, shuffle, volume)
+✅ Done:   Music EQ (5-band: Sub/Bass/Mid/Presence/Air, ±12dB)
+✅ Done:   Music seek bar (scrub with 250ms position updates, cached buffer)
+✅ Done:   Pad synth standalone mode (runs without a binaural session)
+✅ Done:   Mini-player bar (persistent bottom bar, replaces Player/Visual tabs)
+✅ Done:   AI Guided Meditation (GPT-4o-mini + OpenAI TTS, voice bus, saved sessions)
+✅ Done:   Vercel deployment (auto-deploy on push to main)
+
+In Progress:
+→  Session Planner (Phase 1 — form-based layer composer, see below)
 
 Next:
-→  Isochronic tone generator
+→  Session Planner Phase 2 — timeline canvas with drag-and-drop blocks
 →  Master limiter + VU meter
 →  Stereo width (mid/side) control
-→  Stage sequencer (brainwave journey builder)
-→  Pre-built guided journeys (8 journeys)
-→  Soundscape layers (bundled audio files)
+→  Pre-built guided journeys (8 journeys, wired to session planner)
 →  Breath synchronization guide
 →  Visual resonance interface (Canvas Lissajous first)
 →  Ritual / dark mode
 →  Daily state tracking (mood log)
 →  Sleep mode + Focus mode + Lucid dream mode
-→  AI frequency composer (template system first)
 →  Song overlay + BPM sync
 →  Auto BPM detection (Meyda)
 →  Hardware integration (HRV/EEG)
 →  Content platform + marketplace
+→  Goal-based onboarding (Moongate parity)
+→  Auth + subscription layer (Stripe)
+→  Background playback (Media Session API + Wake Lock)
 ```
+
+---
+
+## Session Planner
+
+### Vision
+A layer-based session composer. The user builds a full multi-layer audio experience of any length — choosing music tracks, soundscapes, binaural frequencies, noise types, pad synth, and solfeggio tones — and the engine plays it all back with automatic crossfading between segments.
+
+### Architecture: Layer-Based (DAW-lite, not nodal)
+Nodal (Max/MSP style) is too complex for wellness users. Layer-based is the right UX — think GarageBand's track lanes, simplified for non-engineers.
+
+```
+Session: 45 min
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎵 Music     [Lofi Beat ──────╳──── Chill Piano ──────]
+🌊 Sound     [Rain ─────────────────────────────────── ]
+🧠 Binaural  [Alpha 10Hz ──────────╳──── Theta 6Hz ── ]
+📢 Noise     [─────────── Pink ──────────────────────  ]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       0min        15min       30min       45min
+```
+
+- Each layer has its own volume
+- `╳` = crossfade transition point
+- Layers can be enabled/disabled
+- Total duration is user-set
+
+### Phase 1 — Form-Based Planner (Building Now)
+No timeline canvas yet — just a well-structured form that builds a playback schedule.
+
+**Layers configurable:**
+- 🎵 **Music** — select track(s), crossfade time, loop or advance
+- 🌊 **Soundscape** — select scene or per-layer mix, duration
+- 🧠 **Binaural** — carrier Hz, beat Hz (or brainwave preset), optional stage transition (start beat → end beat over session)
+- 📢 **Noise** — type (white/pink/brown/blue/violet), volume
+- 🎹 **Pad Synth** — on/off, volume, reverb, waveform
+- 🔔 **Solfeggio** — select frequency, apply to carrier
+
+**Session settings:**
+- Total duration (5–180 min)
+- Crossfade length (0–60 sec, default 10s)
+- Fade in / fade out (already in engine)
+- End chime on/off
+
+**Output:**
+- Saves as a named preset (JSON, localStorage)
+- One-tap "Play Session" launches it
+- Pre-built templates: Deep Sleep, Morning Activation, Focus Sprint, Meditation, Creative Flow
+
+### Phase 2 — Timeline Canvas (Future)
+- Drag-and-drop blocks on horizontal timeline
+- Visual crossfade zones between blocks
+- Per-block parameter editing
+- Multiple music/sound blocks in sequence on the same layer
+- Zoom in/out on timeline
+
+### Crossfade Engine
+When the planner runs:
+1. At session start, schedule all audio events using Web Audio clock
+2. For each layer transition: `linearRampToValueAtTime` to fade out current block, new source starts
+3. Binaural transitions use `setTargetAtTime` for smooth Hz ramps
+4. All scheduling done upfront using Web Audio timeline (sample-accurate, no JS timer drift)
 
 ---
 
