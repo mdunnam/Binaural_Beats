@@ -101,6 +101,40 @@ export type PadParams = {
   padBreatheRate: number
 }
 
+export type SessionPlan = {
+  name: string
+  totalMinutes: number
+  crossfadeSec: number
+  fadeInSec: number
+  fadeOutSec: number
+  music: {
+    enabled: boolean
+    trackIds: string[]
+    volume: number
+  }
+  soundscape: {
+    enabled: boolean
+    sceneId: string
+    volume: number
+  }
+  binaural: {
+    enabled: boolean
+    carrier: number
+    beatStart: number
+    beatEnd: number
+    volume: number
+  }
+  noise: {
+    enabled: boolean
+    type: string
+    volume: number
+  }
+  pad: {
+    enabled: boolean
+    volume: number
+  }
+}
+
 export type VoiceBus = {
   context: AudioContext
   source: AudioBufferSourceNode | null

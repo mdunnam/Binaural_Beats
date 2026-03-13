@@ -37,6 +37,8 @@ import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
+import { SessionPlanner } from './components/SessionPlanner'
+import type { SessionPlan } from './types'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
@@ -1829,17 +1831,87 @@ function App() {
 
           {/* ──────────────── JOURNEY TAB ──────────────── */}
           {activeTab === 'journey' && (
-            <JourneyBuilder
-              isRunning={isRunning}
-              journey={journey}
-              setJourney={setJourney}
-              activeStageIndex={activeStageIndex}
-              setCarrier={setCarrier}
-              setBeat={setBeat}
-              setWobbleRate={setWobbleRate}
-              setSoundsceneId={setSoundsceneId}
-              apiKey={localStorage.getItem('binaural-openai-key') ?? ''}
-            />
+            <div>
+              <SessionPlanner
+                carrier={carrier}
+                beat={beat}
+                noiseType={noiseType}
+                noiseVolume={noiseVolume}
+                soundsceneId={soundsceneId}
+                padEnabled={padEnabled}
+                padVolume={padVolume}
+                musicTrackId={musicTrackId}
+                musicVolume={musicVolume}
+                musicTracks={MUSIC_TRACKS}
+                soundscapeScenes={[
+                  { id: 'off', label: 'Off' },
+                  { id: 'storm', label: 'Thunderstorm' },
+                  { id: 'ocean', label: 'Ocean' },
+                  { id: 'forest', label: 'Forest Rain' },
+                  { id: 'fire', label: 'Fireplace' },
+                  { id: 'space', label: 'Deep Space' },
+                  { id: 'cave', label: 'Cave Drip' },
+                ]}
+                brainwavePresets={[
+                  { label: 'Delta 1Hz', beat: 1, carrier: 174 },
+                  { label: 'Delta 2Hz', beat: 2, carrier: 174 },
+                  { label: 'Theta 4Hz', beat: 4, carrier: 285 },
+                  { label: 'Theta 6Hz', beat: 6, carrier: 432 },
+                  { label: 'Alpha 8Hz', beat: 8, carrier: 432 },
+                  { label: 'Alpha 10Hz', beat: 10, carrier: 432 },
+                  { label: 'Beta 14Hz', beat: 14, carrier: 528 },
+                  { label: 'Beta 18Hz', beat: 18, carrier: 528 },
+                  { label: 'Gamma 40Hz', beat: 40, carrier: 741 },
+                ]}
+                onPlay={(plan: SessionPlan) => {
+                  if (graphRef.current) stopSession(false)
+                  if (plan.binaural.enabled) {
+                    setCarrier(plan.binaural.carrier)
+                    setBeat(plan.binaural.beatStart)
+                  }
+                  setNoiseType(plan.noise.enabled ? (plan.noise.type as import('./types').NoiseType) : 'none')
+                  setNoiseVolume(plan.noise.volume)
+                  setSoundsceneId(plan.soundscape.enabled ? plan.soundscape.sceneId : 'off')
+                  setPadEnabled(plan.pad.enabled)
+                  setPadVolume(plan.pad.volume)
+                  if (plan.music.enabled && plan.music.trackIds[0]) {
+                    const track = MUSIC_TRACKS.find(t => t.id === plan.music.trackIds[0])
+                    if (track) void playMusicTrack(track)
+                  }
+                  setSessionMinutes(plan.totalMinutes)
+                  setFadeInSeconds(plan.fadeInSec)
+                  setFadeOutSeconds(plan.fadeOutSec)
+                  window.setTimeout(() => {
+                    if (!graphRef.current) void toggleAudio()
+                  }, 100)
+                }}
+                onSave={(plan: SessionPlan) => {
+                  const existing: SessionPlan[] = (() => {
+                    try { return JSON.parse(localStorage.getItem('liminal-session-plans') ?? '[]') as SessionPlan[] } catch { return [] }
+                  })()
+                  const idx = existing.findIndex(p => p.name === plan.name)
+                  const updated = [...existing]
+                  if (idx >= 0) updated[idx] = plan; else updated.push(plan)
+                  localStorage.setItem('liminal-session-plans', JSON.stringify(updated))
+                }}
+              />
+              <details style={{ marginTop: '1.5rem' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 600, opacity: 0.65, fontSize: '0.85rem' }}>
+                  🗺 Advanced: Journey Builder
+                </summary>
+                <JourneyBuilder
+                  isRunning={isRunning}
+                  journey={journey}
+                  setJourney={setJourney}
+                  activeStageIndex={activeStageIndex}
+                  setCarrier={setCarrier}
+                  setBeat={setBeat}
+                  setWobbleRate={setWobbleRate}
+                  setSoundsceneId={setSoundsceneId}
+                  apiKey={localStorage.getItem('binaural-openai-key') ?? ''}
+                />
+              </details>
+            </div>
           )}
 
           {/* ──────────────── VISUAL TAB ──────────────── */}
