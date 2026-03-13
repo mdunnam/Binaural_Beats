@@ -446,6 +446,72 @@ function App() {
   useEffect(() => { sessionMinutesRef.current = sessionMinutes }, [sessionMinutes])
   useEffect(() => { presetNameRef.current = presetName }, [presetName])
 
+  // Live refs so toggleAudio always reads fresh state even when called from
+  // a stale closure (e.g. after SessionPlanner applies a plan and sets state)
+  const noiseTypeRef = useRef(noiseType)
+  const noiseVolumeRef = useRef(noiseVolume)
+  const leftFrequencyRef = useRef(leftFrequency)
+  const rightFrequencyRef = useRef(rightFrequency)
+  const wobbleRateRef = useRef(wobbleRate)
+  const wobbleDepthRef = useRef(wobbleDepth)
+  const wobbleWaveformRef = useRef(wobbleWaveform)
+  const wobbleTargetRef = useRef(wobbleTarget)
+  const phaseOffsetRef = useRef(phaseOffset)
+  const volumeRef = useRef(volume)
+  const binauralVolumeRef = useRef(binauralVolume)
+  const soundscapeVolumeRef = useRef(soundscapeVolume)
+  const layerGainsRef = useRef(layerGains)
+  const filterTypeRef = useRef(filterType)
+  const filterFrequencyRef = useRef(filterFrequency)
+  const filterQRef = useRef(filterQ)
+  const padEnabledRef = useRef(padEnabled)
+  const padVolumeRef = useRef(padVolume)
+  const padReverbMixRef = useRef(padReverbMix)
+  const padWaveformRef = useRef(padWaveform)
+  const padBreatheRateRef = useRef(padBreatheRate)
+  const carrierRef = useRef(carrier)
+  const beatRef = useRef(beat)
+  const isoEnabledRef = useRef(isoEnabled)
+  const isoVolumeRef = useRef(isoVolume)
+  const isoWaveformRef = useRef(isoWaveform)
+  const isoDutyCycleRef = useRef(isoDutyCycle)
+  const automationLanesRef = useRef(automationLanes)
+  const journeyRef = useRef(journey)
+  const voiceVolumeRef = useRef(voiceVolume)
+  const fadeInSecondsRef = useRef(fadeInSeconds)
+
+  useEffect(() => { noiseTypeRef.current = noiseType }, [noiseType])
+  useEffect(() => { noiseVolumeRef.current = noiseVolume }, [noiseVolume])
+  useEffect(() => { leftFrequencyRef.current = leftFrequency }, [leftFrequency])
+  useEffect(() => { rightFrequencyRef.current = rightFrequency }, [rightFrequency])
+  useEffect(() => { wobbleRateRef.current = wobbleRate }, [wobbleRate])
+  useEffect(() => { wobbleDepthRef.current = wobbleDepth }, [wobbleDepth])
+  useEffect(() => { wobbleWaveformRef.current = wobbleWaveform }, [wobbleWaveform])
+  useEffect(() => { wobbleTargetRef.current = wobbleTarget }, [wobbleTarget])
+  useEffect(() => { phaseOffsetRef.current = phaseOffset }, [phaseOffset])
+  useEffect(() => { volumeRef.current = volume }, [volume])
+  useEffect(() => { binauralVolumeRef.current = binauralVolume }, [binauralVolume])
+  useEffect(() => { soundscapeVolumeRef.current = soundscapeVolume }, [soundscapeVolume])
+  useEffect(() => { layerGainsRef.current = layerGains }, [layerGains])
+  useEffect(() => { filterTypeRef.current = filterType }, [filterType])
+  useEffect(() => { filterFrequencyRef.current = filterFrequency }, [filterFrequency])
+  useEffect(() => { filterQRef.current = filterQ }, [filterQ])
+  useEffect(() => { padEnabledRef.current = padEnabled }, [padEnabled])
+  useEffect(() => { padVolumeRef.current = padVolume }, [padVolume])
+  useEffect(() => { padReverbMixRef.current = padReverbMix }, [padReverbMix])
+  useEffect(() => { padWaveformRef.current = padWaveform }, [padWaveform])
+  useEffect(() => { padBreatheRateRef.current = padBreatheRate }, [padBreatheRate])
+  useEffect(() => { carrierRef.current = carrier }, [carrier])
+  useEffect(() => { beatRef.current = beat }, [beat])
+  useEffect(() => { isoEnabledRef.current = isoEnabled }, [isoEnabled])
+  useEffect(() => { isoVolumeRef.current = isoVolume }, [isoVolume])
+  useEffect(() => { isoWaveformRef.current = isoWaveform }, [isoWaveform])
+  useEffect(() => { isoDutyCycleRef.current = isoDutyCycle }, [isoDutyCycle])
+  useEffect(() => { automationLanesRef.current = automationLanes }, [automationLanes])
+  useEffect(() => { journeyRef.current = journey }, [journey])
+  useEffect(() => { voiceVolumeRef.current = voiceVolume }, [voiceVolume])
+  useEffect(() => { fadeInSecondsRef.current = fadeInSeconds }, [fadeInSeconds])
+
   // ---------------------------------------------------------------------------
   // Music player helpers
   // ---------------------------------------------------------------------------
@@ -782,30 +848,38 @@ function App() {
       setAmbientRunning(false)
     }
 
+    // Read all audio params from refs so we always get the latest state,
+    // even when called from a stale closure (e.g. after SessionPlanner sets state)
     const aiConfig = pendingAiSessionRef.current
-    const activeNoiseType = aiConfig ? aiConfig.noiseType : noiseType
-    const activeNoiseVolume = aiConfig ? aiConfig.noiseVolume : noiseVolume
+    const activeNoiseType = aiConfig ? aiConfig.noiseType : noiseTypeRef.current
+    const activeNoiseVolume = aiConfig ? aiConfig.noiseVolume : noiseVolumeRef.current
+    const curVolume = volumeRef.current
+    const curSoundscapeVolume = soundscapeVolumeRef.current
+    const curFadeInSeconds = fadeInSecondsRef.current
 
     // 1. Create master bus (owns the AudioContext)
-    const bus = createMasterBus(volume)
-    bus.soundscapeBus.gain.value = Math.max(0.0001, soundscapeVolume)
+    const bus = createMasterBus(curVolume)
+    bus.soundscapeBus.gain.value = Math.max(0.0001, curSoundscapeVolume)
     masterBusRef.current = bus
 
     if (bus.context.state !== 'running') await bus.context.resume()
 
     // 2. Create audio graph (binaural), share context, connect to binauralBus
     const graph = createAudioGraph({
-      leftFrequency, rightFrequency, wobbleRate, wobbleDepth,
-      wobbleWaveform, wobbleTarget, phaseOffset, volume, binauralVolume,
-      noiseType: activeNoiseType, noiseVolume: activeNoiseVolume, filterType, filterFrequency, filterQ,
+      leftFrequency: leftFrequencyRef.current, rightFrequency: rightFrequencyRef.current,
+      wobbleRate: wobbleRateRef.current, wobbleDepth: wobbleDepthRef.current,
+      wobbleWaveform: wobbleWaveformRef.current, wobbleTarget: wobbleTargetRef.current,
+      phaseOffset: phaseOffsetRef.current, volume: curVolume, binauralVolume: binauralVolumeRef.current,
+      noiseType: activeNoiseType, noiseVolume: activeNoiseVolume,
+      filterType: filterTypeRef.current, filterFrequency: filterFrequencyRef.current, filterQ: filterQRef.current,
     }, bus.context, bus.binauralBus)
 
     const now = bus.context.currentTime
     sessionStartTimeRef.current = now
-    const safeVolume = Math.max(0.0001, volume)
-    if (fadeInSeconds > 0) {
+    const safeVolume = Math.max(0.0001, curVolume)
+    if (curFadeInSeconds > 0) {
       bus.masterGain.gain.setValueAtTime(0.0001, now)
-      bus.masterGain.gain.linearRampToValueAtTime(safeVolume, now + fadeInSeconds)
+      bus.masterGain.gain.linearRampToValueAtTime(safeVolume, now + curFadeInSeconds)
     } else {
       bus.masterGain.gain.setValueAtTime(safeVolume, now)
     }
@@ -813,9 +887,9 @@ function App() {
     graphRef.current = graph
 
     // If a journey is loaded, start it
-    if (journey && graphRef.current) {
+    if (journeyRef.current && graphRef.current) {
       const activeJourney = startJourney(
-        journey,
+        journeyRef.current,
         graphRef.current,
         30,
         (stageIndex, stage) => {
@@ -830,10 +904,10 @@ function App() {
     }
 
     // 3. Create soundscape player, connect to soundscapeBus
-    const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGains)
+    const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGainsRef.current)
     mixerNodesRef.current = mixerNodes
 
-    if (padEnabled) {
+    if (padEnabledRef.current) {
       // Stop standalone pad if running — session takes over
       if (padRef.current) {
         void stopPadSynth(padRef.current, 0.1)
@@ -843,7 +917,7 @@ function App() {
         void padStandaloneCtxRef.current.close()
         padStandaloneCtxRef.current = null
       }
-      const pad = createPadSynth(bus.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, bus.masterGain)
+      const pad = createPadSynth(bus.context, carrierRef.current, padVolumeRef.current, padReverbMixRef.current, padWaveformRef.current, padBreatheRateRef.current, bus.masterGain)
       padRef.current = pad
     }
 
@@ -851,7 +925,7 @@ function App() {
     if (pendingAiSessionRef.current) {
       const pendingConfig = pendingAiSessionRef.current
       pendingAiSessionRef.current = null
-      createVoiceBus(bus.context, pendingConfig.audioBlob, bus.voiceBus, voiceVolume).then((vb) => {
+      createVoiceBus(bus.context, pendingConfig.audioBlob, bus.voiceBus, voiceVolumeRef.current).then((vb) => {
         voiceBusRef.current = vb
       }).catch((err) => {
         console.error('Voice bus failed:', err)
@@ -859,19 +933,19 @@ function App() {
     }
 
     setIsRunning(true)
-    if (isoEnabled) {
+    if (isoEnabledRef.current) {
       // Mute the binaural graph's own output — isochronic replaces it
       graph.masterGain.gain.setValueAtTime(0, bus.context.currentTime)
       isoGraphRef.current = createIsochronicTone({
-        carrier,
-        beatFrequency: beat,
-        volume: isoVolume,
-        waveform: isoWaveform,
-        dutyCycle: isoDutyCycle,
+        carrier: carrierRef.current,
+        beatFrequency: beatRef.current,
+        volume: isoVolumeRef.current,
+        waveform: isoWaveformRef.current,
+        dutyCycle: isoDutyCycleRef.current,
         rampMs: 20,
       }, bus)
     }
-    startSessionTimers(graph, automationLanes)
+    startSessionTimers(graph, automationLanesRef.current)
   }
 
   // ---------------------------------------------------------------------------
@@ -1868,22 +1942,48 @@ function App() {
                   if (plan.binaural.enabled) {
                     setCarrier(plan.binaural.carrier)
                     setBeat(plan.binaural.beatStart)
+                    carrierRef.current = plan.binaural.carrier
+                    beatRef.current = plan.binaural.beatStart
+                    setLeftFrequency(plan.binaural.carrier)
+                    setRightFrequency(plan.binaural.carrier + plan.binaural.beatStart)
+                    leftFrequencyRef.current = plan.binaural.carrier
+                    rightFrequencyRef.current = plan.binaural.carrier + plan.binaural.beatStart
                   }
-                  setNoiseType(plan.noise.enabled ? (plan.noise.type as import('./types').NoiseType) : 'none')
+                  const resolvedNoiseType = plan.noise.enabled ? (plan.noise.type as import('./types').NoiseType) : 'none'
+                  setNoiseType(resolvedNoiseType)
                   setNoiseVolume(plan.noise.volume)
-                  setSoundsceneId(plan.soundscape.enabled ? plan.soundscape.sceneId : 'off')
+                  noiseTypeRef.current = resolvedNoiseType
+                  noiseVolumeRef.current = plan.noise.volume
+                  // Apply soundscape scene so layerGains get updated too
+                  if (plan.soundscape.enabled) {
+                    applySoundscapeScene(plan.soundscape.sceneId)
+                    const scene = SOUNDSCAPE_SCENES.find(s => s.id === plan.soundscape.sceneId)
+                    if (scene) {
+                      const gains = { ...DEFAULT_GAINS }
+                      Object.entries(scene.gains).forEach(([id, value]) => { (gains as Record<string, number>)[id] = value as number })
+                      layerGainsRef.current = gains
+                    }
+                  } else {
+                    setSoundsceneId('off')
+                  }
                   setPadEnabled(plan.pad.enabled)
                   setPadVolume(plan.pad.volume)
+                  padEnabledRef.current = plan.pad.enabled
+                  padVolumeRef.current = plan.pad.volume
+                  setSessionMinutes(plan.totalMinutes)
+                  setFadeInSeconds(plan.fadeInSec)
+                  setFadeOutSeconds(plan.fadeOutSec)
+                  fadeInSecondsRef.current = plan.fadeInSec
                   if (plan.music.enabled && plan.music.trackIds[0]) {
                     const track = MUSIC_TRACKS.find(t => t.id === plan.music.trackIds[0])
                     if (track) void playMusicTrack(track)
                   }
-                  setSessionMinutes(plan.totalMinutes)
-                  setFadeInSeconds(plan.fadeInSec)
-                  setFadeOutSeconds(plan.fadeOutSec)
-                  window.setTimeout(() => {
-                    if (!graphRef.current) void toggleAudio()
-                  }, 100)
+                  // Use rAF to let React flush state before starting audio
+                  window.requestAnimationFrame(() => {
+                    window.requestAnimationFrame(() => {
+                      if (!graphRef.current) void toggleAudio()
+                    })
+                  })
                 }}
                 onSave={(plan: SessionPlan) => {
                   const existing: SessionPlan[] = (() => {
