@@ -141,6 +141,11 @@ function applyAntiMoodSliders(
     setCarrier(Math.round(carrierTarget / totalWeight))
     setBeat(Math.round((beatTarget / totalWeight) * 10) / 10)
     setWobbleRate(Math.max(0.05, Math.min(4, wobbleTarget / totalWeight)))
+  } else {
+    // All sliders zeroed — reset to neutral defaults
+    setCarrier(432)
+    setBeat(10.0)
+    setWobbleRate(0.4)
   }
 }
 
