@@ -145,15 +145,15 @@ label {
   color: #244336;
 }
 
-/* Global horizontal range inputs — excludes vertical mood EQ sliders */
-input[type='range']:not(.player-mood-slider) {
+/* Global horizontal range inputs — excludes vertical mood EQ sliders and mini-player vol */
+input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   width: 100%;
   height: 28px;
   cursor: pointer;
   accent-color: var(--accent);
 }
 
-input[type='range']:not(.player-mood-slider)::-webkit-slider-thumb {
+input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider)::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 22px;
@@ -165,7 +165,7 @@ input[type='range']:not(.player-mood-slider)::-webkit-slider-thumb {
   cursor: pointer;
 }
 
-input[type='range']:not(.player-mood-slider)::-moz-range-thumb {
+input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider)::-moz-range-thumb {
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -175,13 +175,13 @@ input[type='range']:not(.player-mood-slider)::-moz-range-thumb {
   cursor: pointer;
 }
 
-input[type='range']:not(.player-mood-slider)::-webkit-slider-runnable-track {
+input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider)::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
   background: var(--border-section);
 }
 
-input[type='range']:not(.player-mood-slider)::-moz-range-track {
+input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider)::-moz-range-track {
   height: 4px;
   border-radius: 2px;
   background: var(--border-section);
