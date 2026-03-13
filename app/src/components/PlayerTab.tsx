@@ -94,6 +94,56 @@ const MOOD_META = [
   { key: 'ascend' as const, label: 'ASCEND', hint: 'γ 40Hz',  color: '#e05a3a' },
 ]
 
+// Anti-Mood metadata — negative states that map to healing frequencies
+type AntiMoodKey = 'angry' | 'anxious' | 'sad' | 'scattered' | 'exhausted'
+type AntiMoodSliders = Record<AntiMoodKey, number>
+
+const ANTI_MOOD_META: { key: AntiMoodKey; label: string; hint: string; color: string; fixLabel: string }[] = [
+  { key: 'angry',     label: 'ANGRY',     hint: '→ calm',    color: '#e05a3a', fixLabel: 'Calm' },
+  { key: 'anxious',   label: 'ANXIOUS',   hint: '→ ground',  color: '#7b68ee', fixLabel: 'Ground' },
+  { key: 'sad',       label: 'SAD',       hint: '→ uplift',  color: '#5b9bd5', fixLabel: 'Uplift' },
+  { key: 'scattered', label: 'SCATTERED', hint: '→ focus',   color: '#e8b84b', fixLabel: 'Focus' },
+  { key: 'exhausted', label: 'EXHAUSTED', hint: '→ energize',color: '#3e8f72', fixLabel: 'Energize' },
+]
+
+function applyAntiMoodSliders(
+  sliders: AntiMoodSliders,
+  setCarrier: (v: number) => void,
+  setBeat: (v: number) => void,
+  setWobbleRate: (v: number) => void,
+): void {
+  // Each anti-mood drives toward its healing recipe
+  // angry → theta 6Hz + 396Hz (release tension)
+  // anxious → delta 2Hz + 174Hz (deep grounding)
+  // sad → alpha/beta 10Hz + 528Hz (heart opening)
+  // scattered → low beta 14Hz + 852Hz (mental clarity)
+  // exhausted → mid beta 18Hz + 396Hz (activation)
+  const recipes: Record<AntiMoodKey, { carrier: number; beat: number; wobble: number }> = {
+    angry:     { carrier: 396, beat: 6.0,  wobble: 0.15 },
+    anxious:   { carrier: 174, beat: 2.0,  wobble: 0.08 },
+    sad:       { carrier: 528, beat: 10.0, wobble: 0.3  },
+    scattered: { carrier: 852, beat: 14.0, wobble: 0.6  },
+    exhausted: { carrier: 396, beat: 18.0, wobble: 0.5  },
+  }
+
+  let carrierTarget = 0, beatTarget = 0, wobbleTarget = 0, totalWeight = 0
+  for (const [k, recipe] of Object.entries(recipes) as [AntiMoodKey, typeof recipes[AntiMoodKey]][]) {
+    const w = sliders[k]
+    if (w > 0.05) {
+      carrierTarget += recipe.carrier * w
+      beatTarget    += recipe.beat    * w
+      wobbleTarget  += recipe.wobble  * w
+      totalWeight   += w
+    }
+  }
+
+  if (totalWeight > 0) {
+    setCarrier(Math.round(carrierTarget / totalWeight))
+    setBeat(Math.round((beatTarget / totalWeight) * 10) / 10)
+    setWobbleRate(Math.max(0.05, Math.min(4, wobbleTarget / totalWeight)))
+  }
+}
+
 // ---------------------------------------------------------------------------
 // applyMoodSliders
 // ---------------------------------------------------------------------------
@@ -537,37 +587,75 @@ function SessionRing({
 }
 
 // ---------------------------------------------------------------------------
-// Mood Equalizer
+// ---------------------------------------------------------------------------
+// Mood Equalizer (Mood + Anti-Mood modes)
 // ---------------------------------------------------------------------------
 function MoodEqualizer({
   sliders,
+  antiSliders,
+  mode,
+  onMode,
   onChange,
+  onAntiChange,
 }: {
   sliders: MoodSliders
+  antiSliders: AntiMoodSliders
+  mode: 'mood' | 'anti'
+  onMode: (m: 'mood' | 'anti') => void
   onChange: (k: keyof MoodSliders, v: number) => void
+  onAntiChange: (k: AntiMoodKey, v: number) => void
 }) {
   return (
     <div>
-      <div className="player-section-label">Mood EQ</div>
-      <div className="player-mood-eq">
-        {MOOD_META.map(m => (
-          <div key={m.key} className="player-mood-col">
-            <span className="player-mood-label" style={{ color: m.color }}>{m.label}</span>
-            <div className="player-mood-slider-wrap">
-              <input
-                type="range"
-                className="player-mood-slider"
-                min={0}
-                max={1}
-                step={0.01}
-                value={sliders[m.key]}
-                onChange={e => onChange(m.key, Number(e.target.value))}
-              />
-            </div>
-            <span className="player-mood-hint">{m.hint}</span>
-          </div>
-        ))}
+      {/* Tab toggle */}
+      <div className="mood-eq-tabs">
+        <button
+          className={`mood-eq-tab ${mode === 'mood' ? 'mood-eq-tab--active' : ''}`}
+          onClick={() => onMode('mood')}
+        >Mood EQ</button>
+        <button
+          className={`mood-eq-tab ${mode === 'anti' ? 'mood-eq-tab--active' : ''}`}
+          onClick={() => onMode('anti')}
+        >Anti-Mood</button>
       </div>
+
+      {mode === 'mood' ? (
+        <div className="player-mood-eq">
+          {MOOD_META.map(m => (
+            <div key={m.key} className="player-mood-col">
+              <span className="player-mood-label" style={{ color: m.color }}>{m.label}</span>
+              <div className="player-mood-slider-wrap">
+                <input
+                  type="range"
+                  className="player-mood-slider"
+                  min={0} max={1} step={0.01}
+                  value={sliders[m.key]}
+                  onChange={e => onChange(m.key, Number(e.target.value))}
+                />
+              </div>
+              <span className="player-mood-hint">{m.hint}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="player-mood-eq">
+          {ANTI_MOOD_META.map(m => (
+            <div key={m.key} className="player-mood-col">
+              <span className="player-mood-label" style={{ color: m.color }}>{m.label}</span>
+              <div className="player-mood-slider-wrap">
+                <input
+                  type="range"
+                  className="player-mood-slider"
+                  min={0} max={1} step={0.01}
+                  value={antiSliders[m.key]}
+                  onChange={e => onAntiChange(m.key, Number(e.target.value))}
+                />
+              </div>
+              <span className="player-mood-hint">{m.hint}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -648,6 +736,10 @@ export function PlayerTab(props: PlayerTabProps) {
     ground: 0, relax: 0, focus: 0, dream: 0, ascend: 0,
   })
   const [activePill, setActivePill] = useState<string | null>(null)
+  const [moodMode, setMoodMode] = useState<'mood' | 'anti'>('mood')
+  const [antiSliders, setAntiSliders] = useState<AntiMoodSliders>({
+    angry: 0, anxious: 0, sad: 0, scattered: 0, exhausted: 0,
+  })
 
   const brainwave = getBrainwaveName(beat)
   const timerDisplay = formatTime(remainingSeconds)
@@ -669,6 +761,12 @@ export function PlayerTab(props: PlayerTabProps) {
     setCarrier(pill.carrier)
     setBeat(pill.beat)
     applyMoodSliders(pill.mood, setCarrier, setBeat, setWobbleRate)
+  }
+
+  const handleAntiMoodChange = (k: AntiMoodKey, v: number) => {
+    const next = { ...antiSliders, [k]: v }
+    setAntiSliders(next)
+    applyAntiMoodSliders(next, setCarrier, setBeat, setWobbleRate)
   }
 
   return (
@@ -741,7 +839,14 @@ export function PlayerTab(props: PlayerTabProps) {
       <BrainwaveBand beat={beat} />
 
       {/* ── 8. Mood Equalizer ── */}
-      <MoodEqualizer sliders={moodSliders} onChange={handleMoodChange} />
+      <MoodEqualizer
+        sliders={moodSliders}
+        antiSliders={antiSliders}
+        mode={moodMode}
+        onMode={setMoodMode}
+        onChange={handleMoodChange}
+        onAntiChange={handleAntiMoodChange}
+      />
 
       {/* ── 9. Quick Preset Pills ── */}
       <QuickPills activePill={activePill} onPill={handlePill} />
