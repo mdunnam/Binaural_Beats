@@ -213,6 +213,7 @@ function App() {
   const masterBusRef = useRef<MasterBus | null>(null)
   const graphRef = useRef<AudioGraph | null>(null)
   const padRef = useRef<PadSynthGraph | null>(null)
+  const padStandaloneCtxRef = useRef<AudioContext | null>(null)
   const voiceBusRef = useRef<VoiceBus | null>(null)
   const isoGraphRef = useRef<IsochronicGraph | null>(null)
 
@@ -324,10 +325,21 @@ function App() {
       setShowJournalModal(true)
     }
 
-    // Fade pad out
-    if (padRef.current) {
+    // Fade pad out (session pad only — standalone pad keeps running)
+    if (padRef.current && masterBusRef.current) {
       void stopPadSynth(padRef.current, Math.max(1, fadeOut))
       padRef.current = null
+      // If pad is enabled, restart it in standalone mode after session ends
+      if (padEnabled) {
+        setTimeout(() => {
+          if (!padRef.current && !masterBusRef.current) {
+            const standalone = new AudioContext()
+            padStandaloneCtxRef.current = standalone
+            const pad = createPadSynth(standalone, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, standalone.destination)
+            padRef.current = pad
+          }
+        }, Math.max(1, fadeOut) * 1000 + 200)
+      }
     }
 
     // Stop soundscape mixer
@@ -513,6 +525,15 @@ function App() {
     mixerNodesRef.current = mixerNodes
 
     if (padEnabled) {
+      // Stop standalone pad if running — session takes over
+      if (padRef.current) {
+        void stopPadSynth(padRef.current, 0.1)
+        padRef.current = null
+      }
+      if (padStandaloneCtxRef.current) {
+        void padStandaloneCtxRef.current.close()
+        padStandaloneCtxRef.current = null
+      }
       const pad = createPadSynth(bus.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, bus.masterGain)
       padRef.current = pad
     }
@@ -852,18 +873,35 @@ function App() {
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadWaveform(pad, padWaveform) }, [padWaveform])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadRoot(pad, carrier) }, [carrier])
 
-  // Toggle pad synth mid-session
+  // Toggle pad synth mid-session (or standalone)
   useEffect(() => {
-    const bus = masterBusRef.current
-    if (!bus) return
     if (padEnabled) {
       if (!padRef.current) {
-        const pad = createPadSynth(bus.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, bus.masterGain)
+        // Use session context if available, otherwise create standalone
+        let ctx: AudioContext
+        let destination: AudioNode
+        if (masterBusRef.current) {
+          ctx = masterBusRef.current.context
+          destination = masterBusRef.current.masterGain
+        } else {
+          const standalone = new AudioContext()
+          padStandaloneCtxRef.current = standalone
+          ctx = standalone
+          destination = standalone.destination
+        }
+        if (ctx.state === 'suspended') void ctx.resume()
+        const pad = createPadSynth(ctx, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, destination)
         padRef.current = pad
       }
     } else {
       if (padRef.current) {
-        void stopPadSynth(padRef.current, 1.5)
+        void stopPadSynth(padRef.current, 1.5).then(() => {
+          // Close standalone context if we created one
+          if (padStandaloneCtxRef.current) {
+            void padStandaloneCtxRef.current.close()
+            padStandaloneCtxRef.current = null
+          }
+        })
         padRef.current = null
       }
     }
