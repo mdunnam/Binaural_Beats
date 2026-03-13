@@ -10,6 +10,7 @@ export type SamplePlayerLayer = {
   buffer: AudioBuffer | null
   loading: boolean
   useNoise: boolean
+  stopTimeoutId: ReturnType<typeof setTimeout> | undefined
 }
 
 export type SamplePlayer = {
@@ -89,6 +90,7 @@ export function createSamplePlayer(
       buffer: null,
       loading: false,
       useNoise: false,
+      stopTimeoutId: undefined,
     }
     layers.set(layer.id, layerData)
 
@@ -105,6 +107,7 @@ export async function setLayerGain(
   player: SamplePlayer,
   id: SoundLayerId,
   gain: number,
+  fadeSec = 0.08,  // fast default for slider interaction; callers can pass longer for scene switches
 ): Promise<void> {
   const layerData = player.layers.get(id)
   if (!layerData) return
@@ -113,32 +116,40 @@ export async function setLayerGain(
 
   const ctx = player.context
   const now = ctx.currentTime
-  const FADE = 2
+
+  // Cancel any pending stop-source timeout so rapid moves don't kill an active source
+  if (layerData.stopTimeoutId !== undefined) {
+    clearTimeout(layerData.stopTimeoutId)
+    layerData.stopTimeoutId = undefined
+  }
 
   if (gain <= 0) {
-    // Fade out
+    // Fade out then stop source
     layerData.gainNode.gain.cancelScheduledValues(now)
     layerData.gainNode.gain.setValueAtTime(layerData.gainNode.gain.value, now)
-    layerData.gainNode.gain.linearRampToValueAtTime(0, now + FADE)
-    setTimeout(() => {
-      if (layerData.source) {
-        try { layerData.source.stop() } catch { /* ignore */ }
-        try { layerData.source.disconnect() } catch { /* ignore */ }
-        layerData.source = null
+    layerData.gainNode.gain.linearRampToValueAtTime(0, now + fadeSec)
+    layerData.stopTimeoutId = setTimeout(() => {
+      layerData.stopTimeoutId = undefined
+      // Only stop if gain is still effectively zero (user didn't bring it back up)
+      if (layerData.gainNode.gain.value < 0.01) {
+        if (layerData.source) {
+          try { layerData.source.stop() } catch { /* ignore */ }
+          try { layerData.source.disconnect() } catch { /* ignore */ }
+          layerData.source = null
+        }
       }
-    }, Math.ceil(FADE * 1000) + 50)
+    }, Math.ceil(fadeSec * 1000) + 100)
     return
   }
 
   // gain > 0
   if (layerData.buffer !== null || layerData.useNoise) {
-    // Already loaded or noise fallback — source may or may not be running
     if (!layerData.source) {
       startSource(player, layerData, layer)
     }
     layerData.gainNode.gain.cancelScheduledValues(now)
     layerData.gainNode.gain.setValueAtTime(layerData.gainNode.gain.value, now)
-    layerData.gainNode.gain.linearRampToValueAtTime(gain, now + FADE)
+    layerData.gainNode.gain.linearRampToValueAtTime(gain, now + fadeSec)
     return
   }
 
@@ -165,7 +176,7 @@ export async function setLayerGain(
   const n = ctx.currentTime
   layerData.gainNode.gain.cancelScheduledValues(n)
   layerData.gainNode.gain.setValueAtTime(0, n)
-  layerData.gainNode.gain.linearRampToValueAtTime(gain, n + FADE)
+  layerData.gainNode.gain.linearRampToValueAtTime(gain, n + 1.5)  // gentle fade-in on first load
 }
 
 export function stopSamplePlayer(player: SamplePlayer): void {
