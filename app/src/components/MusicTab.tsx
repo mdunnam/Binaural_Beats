@@ -1,9 +1,15 @@
-import type { MusicTrack } from '../engine/musicPlayer'
+import type { MusicTrack, MusicEQBands } from '../engine/musicPlayer'
+import { DEFAULT_EQ } from '../engine/musicPlayer'
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60)
-  const s = seconds % 60
+  const s = Math.floor(seconds) % 60
   return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function formatEQValue(val: number): string {
+  if (val === 0) return '0 dB'
+  return `${val > 0 ? '+' : ''}${val.toFixed(1)} dB`
 }
 
 export type MusicTabProps = {
@@ -18,6 +24,11 @@ export type MusicTabProps = {
   onPrev: () => void
   shuffle: boolean
   onToggleShuffle: () => void
+  eq: MusicEQBands
+  onSetEQ: (bands: MusicEQBands) => void
+  position: number
+  duration: number
+  onSeek: (seconds: number) => void
 }
 
 export function MusicTab({
@@ -32,6 +43,11 @@ export function MusicTab({
   onPrev,
   shuffle,
   onToggleShuffle,
+  eq,
+  onSetEQ,
+  position,
+  duration,
+  onSeek,
 }: MusicTabProps) {
   const currentTrack = tracks.find(t => t.id === currentTrackId) ?? null
 
@@ -44,6 +60,14 @@ export function MusicTab({
       onPlay(tracks[0])
     }
   }
+
+  const EQ_BANDS: { key: keyof MusicEQBands; label: string }[] = [
+    { key: 'sub',      label: 'Sub' },
+    { key: 'bass',     label: 'Bass' },
+    { key: 'mid',      label: 'Mid' },
+    { key: 'presence', label: 'Pres' },
+    { key: 'air',      label: 'Air' },
+  ]
 
   return (
     <div className="music-tab">
@@ -60,6 +84,23 @@ export function MusicTab({
         ) : (
           <div className="music-now-playing-title music-now-playing-idle">Select a track to play</div>
         )}
+      </div>
+
+      {/* Seek Bar */}
+      <div className="music-seek-row">
+        <span className="music-seek-time">{formatDuration(position)}</span>
+        <input
+          type="range"
+          min={0}
+          max={duration > 0 ? duration : 1}
+          step={1}
+          value={position}
+          onChange={e => onSeek(Number(e.target.value))}
+          className="music-seek-slider"
+          aria-label="Seek"
+          disabled={duration === 0}
+        />
+        <span className="music-seek-time">{formatDuration(duration)}</span>
       </div>
 
       {/* Controls */}
@@ -95,6 +136,36 @@ export function MusicTab({
         <span className="music-volume-pct">{Math.round(volume * 100)}%</span>
       </div>
 
+      {/* EQ */}
+      <div className="music-eq-section">
+        <div className="music-eq-header">
+          <span className="music-eq-title">EQ</span>
+          <button
+            className="music-eq-reset"
+            onClick={() => onSetEQ({ ...DEFAULT_EQ })}
+            title="Reset EQ"
+          >
+            Reset
+          </button>
+        </div>
+        {EQ_BANDS.map(({ key, label }) => (
+          <div key={key} className="music-eq-row">
+            <span className="music-eq-label">{label}</span>
+            <input
+              type="range"
+              min={-12}
+              max={12}
+              step={0.1}
+              value={eq[key]}
+              onChange={e => onSetEQ({ ...eq, [key]: Number(e.target.value) })}
+              className="music-eq-slider"
+              aria-label={`${label} EQ`}
+            />
+            <span className="music-eq-value">{formatEQValue(eq[key])}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Track List */}
       <div className="music-track-list">
         {tracks.map(track => (
@@ -115,7 +186,7 @@ export function MusicTab({
       </div>
 
       {/* Attribution */}
-      <p className="music-attribution">Tracks by Seth_Makes_Sounds · CC0 via Freesound</p>
+      <p className="music-attribution">Tracks by Seth_Makes_Sounds & Andrewkn · CC0 via Freesound</p>
     </div>
   )
 }

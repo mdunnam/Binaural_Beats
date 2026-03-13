@@ -36,8 +36,8 @@ import { startJourney, stopJourney } from './engine/journeyEngine'
 import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
-import type { MusicPlayer, MusicTrack } from './engine/musicPlayer'
-import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume } from './engine/musicPlayer'
+import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
+import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -432,8 +432,11 @@ function App() {
   const [musicPlaying, setMusicPlaying] = useState(false)
   const [musicVolume, setMusicVolume] = useState(0.7)
   const [musicShuffle, setMusicShuffle] = useState(false)
+  const [musicEQ, setMusicEQ] = useState<MusicEQBands>(DEFAULT_EQ)
+  const [musicPosition, setMusicPosition] = useState(0)
   const musicPlayerRef = useRef<MusicPlayer | null>(null)
   const musicCtxRef = useRef<AudioContext | null>(null)
+  const musicPositionTimerRef = useRef<number | null>(null)
 
   // Stable refs for use in closures
   const sessionMinutesRef = useRef(sessionMinutes)
@@ -480,14 +483,26 @@ function App() {
     await playTrack(player, track, import.meta.env.BASE_URL, handleEnded)
     setMusicTrackId(track.id)
     setMusicPlaying(true)
+    // Start position tracker
+    if (musicPositionTimerRef.current !== null) window.clearInterval(musicPositionTimerRef.current)
+    musicPositionTimerRef.current = window.setInterval(() => {
+      if (musicPlayerRef.current) {
+        setMusicPosition(getMusicPosition(musicPlayerRef.current))
+      }
+    }, 250)
   }, [musicVolume]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopMusic = useCallback((): void => {
     if (musicPlayerRef.current) {
       stopMusicPlayer(musicPlayerRef.current)
     }
+    if (musicPositionTimerRef.current !== null) {
+      window.clearInterval(musicPositionTimerRef.current)
+      musicPositionTimerRef.current = null
+    }
     setMusicPlaying(false)
     setMusicTrackId(null)
+    setMusicPosition(0)
   }, [])
 
   const nextTrackRef = useRef<(() => void) | null>(null)
@@ -522,6 +537,24 @@ function App() {
       setMusicPlayerVolume(musicPlayerRef.current, musicVolume)
     }
   }, [musicVolume])
+
+  // Live-update music EQ
+  useEffect(() => {
+    if (musicPlayerRef.current) setMusicEQ_engine(musicPlayerRef.current, musicEQ)
+  }, [musicEQ])
+
+  const handleMusicSeek = async (seconds: number): Promise<void> => {
+    const player = musicPlayerRef.current
+    const track = MUSIC_TRACKS.find(t => t.id === musicTrackId)
+    if (!player || !track) return
+    await seekMusicTo(player, track, seconds, import.meta.env.BASE_URL, () => nextTrackRef.current?.())
+    setMusicPosition(seconds)
+    // Restart interval after seek
+    if (musicPositionTimerRef.current !== null) window.clearInterval(musicPositionTimerRef.current)
+    musicPositionTimerRef.current = window.setInterval(() => {
+      if (musicPlayerRef.current) setMusicPosition(getMusicPosition(musicPlayerRef.current))
+    }, 250)
+  }
 
   // ---------------------------------------------------------------------------
   // Onboarding handlers
@@ -1320,6 +1353,10 @@ function App() {
         stopAmbientPlayer(ambientPlayerRef.current)
         ambientPlayerRef.current = null
       }
+      if (musicPositionTimerRef.current !== null) {
+        window.clearInterval(musicPositionTimerRef.current)
+        musicPositionTimerRef.current = null
+      }
       if (musicPlayerRef.current) {
         stopMusicPlayer(musicPlayerRef.current, 0)
         musicPlayerRef.current = null
@@ -1847,6 +1884,11 @@ function App() {
               onPrev={prevTrack}
               shuffle={musicShuffle}
               onToggleShuffle={() => setMusicShuffle(s => !s)}
+              eq={musicEQ}
+              onSetEQ={setMusicEQ}
+              position={musicPosition}
+              duration={MUSIC_TRACKS.find(t => t.id === musicTrackId)?.duration ?? 0}
+              onSeek={(s) => void handleMusicSeek(s)}
             />
           )}
         </div>
