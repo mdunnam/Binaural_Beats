@@ -19,6 +19,19 @@ export type SamplePlayer = {
   destination: AudioNode
 }
 
+const LAYER_GAIN_TRIM: Partial<Record<SoundLayerId, number>> = {
+  // Rain samples/noise bed are perceived quieter than other layers at the same slider value.
+  rain: 2.2,
+}
+
+/**
+ * Converts UI gain into effective layer output gain with per-layer compensation.
+ */
+function toEffectiveLayerGain(id: SoundLayerId, gain: number): number {
+  const trim = LAYER_GAIN_TRIM[id] ?? 1
+  return Math.max(0, gain) * trim
+}
+
 async function loadLayerBuffer(context: AudioContext, layer: SoundLayer): Promise<AudioBuffer | 'noise'> {
   for (const ext of ['ogg', 'mp3', 'mp4']) {
     try {
@@ -116,6 +129,7 @@ export async function setLayerGain(
 
   const ctx = player.context
   const now = ctx.currentTime
+  const targetGain = toEffectiveLayerGain(id, gain)
 
   // Cancel any pending stop-source timeout so rapid moves don't kill an active source
   if (layerData.stopTimeoutId !== undefined) {
@@ -123,7 +137,7 @@ export async function setLayerGain(
     layerData.stopTimeoutId = undefined
   }
 
-  if (gain <= 0) {
+  if (targetGain <= 0) {
     // Fade out then stop source
     layerData.gainNode.gain.cancelScheduledValues(now)
     layerData.gainNode.gain.setValueAtTime(layerData.gainNode.gain.value, now)
@@ -149,7 +163,7 @@ export async function setLayerGain(
     }
     layerData.gainNode.gain.cancelScheduledValues(now)
     layerData.gainNode.gain.setValueAtTime(layerData.gainNode.gain.value, now)
-    layerData.gainNode.gain.linearRampToValueAtTime(gain, now + fadeSec)
+    layerData.gainNode.gain.linearRampToValueAtTime(targetGain, now + fadeSec)
     return
   }
 
@@ -176,7 +190,7 @@ export async function setLayerGain(
   const n = ctx.currentTime
   layerData.gainNode.gain.cancelScheduledValues(n)
   layerData.gainNode.gain.setValueAtTime(0, n)
-  layerData.gainNode.gain.linearRampToValueAtTime(gain, n + 1.5)  // gentle fade-in on first load
+  layerData.gainNode.gain.linearRampToValueAtTime(targetGain, n + 1.5)  // gentle fade-in on first load
 }
 
 export function stopSamplePlayer(player: SamplePlayer): void {

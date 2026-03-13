@@ -119,6 +119,185 @@ function defaultLanes(): AutomationLanes {
   return { volume: [], filterCutoff: [], beatFrequency: [] }
 }
 
+/**
+ * Returns true when the session audio path is currently playing a soundscape.
+ */
+function isSessionSoundscapeActive(isRunning: boolean, soundsceneId: string): boolean {
+  return isRunning && soundsceneId !== 'off'
+}
+
+type SessionPlanId = 'gentle-drift' | 'focus-ramp' | 'sleep-descent'
+
+type SessionPlanOption = {
+  id: SessionPlanId
+  label: string
+  description: string
+}
+
+type QuickPlaySessionPreset = {
+  id: string
+  emoji: string
+  label: string
+  description: string
+  carrier: number
+  beat: number
+  sessionMinutes: number
+  noiseType: NoiseType
+  noiseVolume: number
+  soundsceneId: string
+  wobbleRate: number
+  fadeInSeconds: number
+  fadeOutSeconds: number
+  planId: SessionPlanId
+}
+
+const SESSION_PLAN_OPTIONS: SessionPlanOption[] = [
+  { id: 'gentle-drift', label: 'Gentle Drift', description: 'Soft rise then settle for calm sessions.' },
+  { id: 'focus-ramp', label: 'Focus Ramp', description: 'Progressively sharper energy and clarity.' },
+  { id: 'sleep-descent', label: 'Sleep Descent', description: 'Slowly lowers intensity toward deep rest.' },
+]
+
+const QUICK_PLAY_SESSIONS: QuickPlaySessionPreset[] = [
+  {
+    id: 'sleep-rain',
+    emoji: '😴',
+    label: 'Deep Sleep Rain',
+    description: 'Delta drift with rain + cave bed.',
+    carrier: 174,
+    beat: 2,
+    sessionMinutes: 45,
+    noiseType: 'brown',
+    noiseVolume: 0.22,
+    soundsceneId: 'forest',
+    wobbleRate: 0.12,
+    fadeInSeconds: 10,
+    fadeOutSeconds: 20,
+    planId: 'sleep-descent',
+  },
+  {
+    id: 'focus-forest',
+    emoji: '🎯',
+    label: 'Focus Sprint',
+    description: 'Beta focus with a light forest bed.',
+    carrier: 396,
+    beat: 16,
+    sessionMinutes: 25,
+    noiseType: 'pink',
+    noiseVolume: 0.16,
+    soundsceneId: 'forest',
+    wobbleRate: 0.48,
+    fadeInSeconds: 4,
+    fadeOutSeconds: 6,
+    planId: 'focus-ramp',
+  },
+  {
+    id: 'theta-ocean',
+    emoji: '🧘',
+    label: 'Theta Reset',
+    description: 'Meditative theta with ocean wash.',
+    carrier: 528,
+    beat: 6,
+    sessionMinutes: 30,
+    noiseType: 'pink',
+    noiseVolume: 0.14,
+    soundsceneId: 'ocean',
+    wobbleRate: 0.22,
+    fadeInSeconds: 6,
+    fadeOutSeconds: 10,
+    planId: 'gentle-drift',
+  },
+  {
+    id: 'creative-storm',
+    emoji: '💡',
+    label: 'Creative Storm',
+    description: 'Alpha-to-beta lift with rain energy.',
+    carrier: 741,
+    beat: 10,
+    sessionMinutes: 35,
+    noiseType: 'white',
+    noiseVolume: 0.12,
+    soundsceneId: 'storm',
+    wobbleRate: 0.35,
+    fadeInSeconds: 5,
+    fadeOutSeconds: 8,
+    planId: 'focus-ramp',
+  },
+]
+
+/**
+ * Constrains a value into the provided numeric range.
+ */
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+/**
+ * Creates starter automation lanes from the selected session planning strategy.
+ */
+function buildAutomationPlan(planId: SessionPlanId, baseBeat: number): AutomationLanes {
+  const beatStart = clamp(baseBeat, 0, 40)
+  if (planId === 'focus-ramp') {
+    return {
+      volume: [
+        { time: 0, value: 0.72 },
+        { time: 0.35, value: 0.88 },
+        { time: 0.75, value: 0.98 },
+        { time: 1, value: 0.9 },
+      ],
+      filterCutoff: [
+        { time: 0, value: 1800 },
+        { time: 0.45, value: 3800 },
+        { time: 1, value: 6200 },
+      ],
+      beatFrequency: [
+        { time: 0, value: clamp(beatStart * 0.9, 0, 40) },
+        { time: 0.5, value: clamp(beatStart, 0, 40) },
+        { time: 1, value: clamp(beatStart * 1.2, 0, 40) },
+      ],
+    }
+  }
+
+  if (planId === 'sleep-descent') {
+    return {
+      volume: [
+        { time: 0, value: 0.78 },
+        { time: 0.35, value: 0.66 },
+        { time: 0.7, value: 0.54 },
+        { time: 1, value: 0.42 },
+      ],
+      filterCutoff: [
+        { time: 0, value: 1700 },
+        { time: 0.45, value: 950 },
+        { time: 1, value: 420 },
+      ],
+      beatFrequency: [
+        { time: 0, value: clamp(beatStart, 0, 40) },
+        { time: 0.5, value: clamp(beatStart * 0.75, 0, 40) },
+        { time: 1, value: clamp(beatStart * 0.5, 0, 40) },
+      ],
+    }
+  }
+
+  return {
+    volume: [
+      { time: 0, value: 0.68 },
+      { time: 0.25, value: 0.84 },
+      { time: 0.8, value: 0.8 },
+      { time: 1, value: 0.7 },
+    ],
+    filterCutoff: [
+      { time: 0, value: 1200 },
+      { time: 0.5, value: 1500 },
+      { time: 1, value: 950 },
+    ],
+    beatFrequency: [
+      { time: 0, value: clamp(beatStart * 0.9, 0, 40) },
+      { time: 0.55, value: clamp(beatStart, 0, 40) },
+      { time: 1, value: clamp(beatStart * 0.82, 0, 40) },
+    ],
+  }
+}
+
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
@@ -186,6 +365,7 @@ function App() {
 
   // Automation
   const [automationLanes, setAutomationLanes] = useState<AutomationLanes>(defaultLanes)
+  const [sessionPlanId, setSessionPlanId] = useState<SessionPlanId>('gentle-drift')
 
   // Presets
   const [presetName, setPresetName] = useState('My Session')
@@ -586,6 +766,52 @@ function App() {
     ambientPlayerRef.current = player
     setAmbientRunning(true)
   }
+
+  /**
+   * Applies a named soundscape scene by copying its layer gain map.
+   */
+  const applySoundscapeScene = useCallback((sceneId: string): void => {
+    const scene = SOUNDSCAPE_SCENES.find((s) => s.id === sceneId)
+    if (!scene) return
+    const gains = { ...DEFAULT_GAINS }
+    Object.entries(scene.gains).forEach(([id, value]) => {
+      (gains as Record<string, number>)[id] = value as number
+    })
+    setLayerGains(gains)
+    setSoundsceneId(sceneId)
+  }, [])
+
+  /**
+   * Seeds automation lanes from the selected planning template and current beat.
+   */
+  const applySessionPlanFromCurrent = useCallback((planId: SessionPlanId): void => {
+    setSessionPlanId(planId)
+    setAutomationLanes(buildAutomationPlan(planId, beat))
+  }, [beat])
+
+  /**
+   * Applies a complete quick-play preset and starts playback.
+   */
+  const runQuickPlaySession = useCallback((preset: QuickPlaySessionPreset): void => {
+    if (graphRef.current) {
+      stopSession(false)
+    }
+    setUseIndependentTuning(false)
+    setCarrier(preset.carrier)
+    setBeat(preset.beat)
+    setWobbleRate(preset.wobbleRate)
+    setNoiseType(preset.noiseType)
+    setNoiseVolume(preset.noiseVolume)
+    setSessionMinutes(preset.sessionMinutes)
+    setFadeInSeconds(preset.fadeInSeconds)
+    setFadeOutSeconds(preset.fadeOutSeconds)
+    applySoundscapeScene(preset.soundsceneId)
+    setSessionPlanId(preset.planId)
+    setAutomationLanes(buildAutomationPlan(preset.planId, preset.beat))
+    window.setTimeout(() => {
+      void toggleAudio()
+    }, 120)
+  }, [applySoundscapeScene, stopSession]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
   // Preset helpers
@@ -1011,6 +1237,14 @@ function App() {
   const wobbleDepthLabel = wobbleTarget === 'amplitude'
     ? `${Math.round((wobbleDepth / 60) * 100)}% AM depth`
     : `${wobbleDepth.toFixed(1)} cents`
+  const sessionSoundscapeActive = isSessionSoundscapeActive(isRunning, soundsceneId)
+  const ambientButtonActive = ambientRunning || sessionSoundscapeActive
+  const ambientButtonDisabled = isRunning && !ambientRunning
+  const ambientButtonLabel = ambientRunning
+    ? 'Stop Ambient'
+    : sessionSoundscapeActive
+      ? 'Use Soundscape Mixer Below'
+      : 'Play Ambient'
 
   // ---------------------------------------------------------------------------
   // Render
@@ -1296,12 +1530,18 @@ function App() {
 
               {/* Ambient Playback */}
               <div className="section-label">Ambient Playback</div>
-              <p className="control-hint">Play soundscapes and noise without starting a binaural session.</p>
+              <p className="control-hint">
+                {isRunning
+                  ? 'Session is active. Use the Soundscape mixer below to add or adjust rain/ocean/etc in-session.'
+                  : 'Play soundscapes and noise without starting a binaural session.'}
+              </p>
               <button
-                className="start-button"
+                className={`start-button${ambientButtonActive ? ' start-button--active' : ''}`}
                 onClick={() => void toggleAmbient()}
+                disabled={ambientButtonDisabled}
+                title={ambientButtonDisabled ? 'Disabled during session. Use the Soundscape mixer below.' : undefined}
               >
-                {ambientRunning ? 'Stop Ambient' : 'Play Ambient'}
+                {ambientButtonLabel}
               </button>
 
               {/* Pad Synth */}
@@ -1353,6 +1593,52 @@ function App() {
           {/* ──────────────── SESSION TAB ──────────────── */}
           {activeTab === 'session' && (
             <div className="grid">
+              <div className="section-label">Quick Play Sessions</div>
+              <p className="control-hint">One click applies frequencies, sounds, noise, and a starter plan, then starts playback.</p>
+              <div className="session-quick-grid">
+                {QUICK_PLAY_SESSIONS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className="session-quick-card"
+                    onClick={() => runQuickPlaySession(preset)}
+                  >
+                    <span className="session-quick-emoji">{preset.emoji}</span>
+                    <span className="session-quick-title">{preset.label}</span>
+                    <span className="session-quick-meta">{preset.carrier} Hz · {preset.beat} Hz · {preset.sessionMinutes}m</span>
+                    <span className="session-quick-desc">{preset.description}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="section-label">Session Planning</div>
+              <p className="control-hint">Choose a plan after setting your tones/sound/noise, then tweak points in Automation Lanes.</p>
+              <div className="session-plan-panel">
+                <div className="seg-control">
+                  {SESSION_PLAN_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={sessionPlanId === opt.id ? 'active' : ''}
+                      onClick={() => setSessionPlanId(opt.id)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="session-plan-desc">
+                  {SESSION_PLAN_OPTIONS.find((opt) => opt.id === sessionPlanId)?.description}
+                </p>
+                <div className="session-plan-actions">
+                  <button type="button" className="soft-button" onClick={() => applySessionPlanFromCurrent(sessionPlanId)}>
+                    Build Lanes From Current Setup
+                  </button>
+                  <button type="button" className="soft-button" onClick={() => setAutomationLanes(defaultLanes())}>
+                    Clear Lanes
+                  </button>
+                </div>
+              </div>
+
               <div className="section-label">Session</div>
               <label>Session Length ({sessionMinutes.toFixed(0)} min)
                 <input type="range" min={1} max={180} step={1} value={sessionMinutes} onChange={(e) => setSessionMinutes(Number(e.target.value))} />
@@ -1372,6 +1658,7 @@ function App() {
 
               {/* Automation */}
               <div className="section-label">Automation Lanes</div>
+              <p className="control-hint">Plan first, then drag points to dial in your exact progression.</p>
               <AutomationEditor
                 lanes={automationLanes}
                 onChange={setAutomationLanes}
