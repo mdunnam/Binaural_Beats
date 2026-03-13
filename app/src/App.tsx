@@ -746,6 +746,18 @@ function App() {
       // Close the shared AudioContext owned by masterBus
       void masterBusRef.current?.context.close()
       masterBusRef.current = null
+      // Stop music player
+      if (musicPlayerRef.current) {
+        stopMusicPlayer(musicPlayerRef.current)
+        musicPlayerRef.current = null
+      }
+      if (musicPositionTimerRef.current !== null) {
+        window.clearInterval(musicPositionTimerRef.current)
+        musicPositionTimerRef.current = null
+      }
+      setMusicPlaying(false)
+      setMusicTrackId(null)
+      setMusicPosition(0)
       setIsRunning(false)
       if (withChime) playEndChime()
     }
@@ -1942,7 +1954,8 @@ function App() {
                   { label: 'Beta 18Hz', beat: 18, carrier: 528 },
                   { label: 'Gamma 40Hz', beat: 40, carrier: 741 },
                 ]}
-                onPlay={(plan: SessionPlan) => {
+                isRunning={isRunning}
+                onPreview={(plan: SessionPlan) => {
                   if (graphRef.current) stopSession(false)
                   if (plan.binaural.enabled) {
                     setCarrier(plan.binaural.carrier)
@@ -1989,6 +2002,39 @@ function App() {
                       if (!graphRef.current) void toggleAudio()
                     })
                   })
+                }}
+                onStop={() => { stopSession(true) }}
+                onLiveUpdate={(plan: SessionPlan) => {
+                  // Binaural
+                  if (plan.binaural.enabled) {
+                    const c = plan.binaural.carrier
+                    const b = plan.binaural.beatStart
+                    setCarrier(c); carrierRef.current = c
+                    setBeat(b); beatRef.current = b
+                    setLeftFrequency(c); leftFrequencyRef.current = c
+                    setRightFrequency(c + b); rightFrequencyRef.current = c + b
+                  }
+                  // Noise
+                  const nt = plan.noise.enabled ? (plan.noise.type as import('./types').NoiseType) : 'none'
+                  setNoiseType(nt); noiseTypeRef.current = nt
+                  setNoiseVolume(plan.noise.volume); noiseVolumeRef.current = plan.noise.volume
+                  // Soundscape
+                  if (plan.soundscape.enabled) {
+                    applySoundscapeScene(plan.soundscape.sceneId)
+                    const scene = SOUNDSCAPE_SCENES.find(s => s.id === plan.soundscape.sceneId)
+                    if (scene) {
+                      const gains = { ...DEFAULT_GAINS }
+                      Object.entries(scene.gains).forEach(([id, v]) => { (gains as Record<string,number>)[id] = v as number })
+                      layerGainsRef.current = gains
+                    }
+                  } else {
+                    setSoundsceneId('off')
+                  }
+                  // Pad
+                  setPadEnabled(plan.pad.enabled); padEnabledRef.current = plan.pad.enabled
+                  setPadVolume(plan.pad.volume); padVolumeRef.current = plan.pad.volume
+                  // Music volume
+                  setMusicVolume(plan.music.volume)
                 }}
                 onSave={(plan: SessionPlan) => {
                   const existing: SessionPlan[] = (() => {

@@ -20,7 +20,10 @@ type SessionPlannerProps = {
   musicTracks: MusicTrackInfo[]
   soundscapeScenes: SoundscapeScene[]
   brainwavePresets: BrainwavePreset[]
-  onPlay: (plan: SessionPlan) => void
+  isRunning: boolean
+  onPreview: (plan: SessionPlan) => void
+  onStop: () => void
+  onLiveUpdate: (plan: SessionPlan) => void
   onSave: (plan: SessionPlan) => void
 }
 
@@ -100,7 +103,10 @@ export function SessionPlanner({
   musicTracks,
   soundscapeScenes,
   brainwavePresets,
-  onPlay,
+  isRunning,
+  onPreview,
+  onStop,
+  onLiveUpdate,
   onSave,
 }: SessionPlannerProps) {
   const [name, setName] = useState('My Session')
@@ -166,6 +172,8 @@ export function SessionPlanner({
     pad: { enabled: padEnabledLocal, volume: padVol },
   })
 
+  const [saved, setSaved] = useState(false)
+
   const handleSave = () => {
     const plan = buildPlan()
     const existing = loadSavedPlans()
@@ -175,11 +183,23 @@ export function SessionPlanner({
     savePlansToStorage(updated)
     setSavedPlans(updated)
     onSave(plan)
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 1500)
   }
 
   const handlePlay = () => {
-    onPlay(buildPlan())
+    onPreview(buildPlan())
   }
+
+  // Debounced live-update while session is running
+  useEffect(() => {
+    if (!isRunning) return
+    const id = window.setTimeout(() => onLiveUpdate(buildPlan()), 200)
+    return () => window.clearTimeout(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, musicEnabled, musicTrack, musicVol, soundscapeEnabled, sceneId, soundscapeVol,
+      binauralEnabled, binCarrier, beatStartIdx, beatEndIdx, binVol,
+      noiseEnabled, selectedNoise, noiseVol, padEnabledLocal, padVol])
 
   const loadPlan = (plan: SessionPlan) => {
     setName(plan.name)
@@ -217,6 +237,12 @@ export function SessionPlanner({
 
   return (
     <div className="session-planner">
+      {isRunning && (
+        <div className="sp-live-badge">
+          <span className="sp-live-dot" />
+          Live
+        </div>
+      )}
       {/* Section 1: Session Info */}
       <div className="sp-section">
         <div className="sp-section-title">📋 Session Info</div>
@@ -413,8 +439,17 @@ export function SessionPlanner({
 
       {/* Section 3: Action Buttons */}
       <div className="sp-actions">
-        <button className="soft-button" onClick={handleSave}>💾 Save Preset</button>
-        <button className="soft-button start-button" onClick={handlePlay}>▶ Play Session</button>
+        <button className="soft-button" onClick={handleSave}>
+          {saved ? '✓ Saved!' : '💾 Create Preset'}
+        </button>
+        {isRunning ? (
+          <>
+            <button className="soft-button" onClick={onStop}>■ Stop</button>
+            <button className="soft-button start-button" onClick={() => onLiveUpdate(buildPlan())}>↻ Apply</button>
+          </>
+        ) : (
+          <button className="soft-button start-button" onClick={handlePlay}>▶ Preview</button>
+        )}
       </div>
 
       {/* Section 4: Saved Presets */}

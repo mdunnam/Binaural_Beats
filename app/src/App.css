@@ -3241,3 +3241,30 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   padding: 0.3rem 0.5rem;
   font-size: 0.78rem;
 }
+
+.sp-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(91, 224, 160, 0.15);
+  color: #5be0a0;
+  border: 1px solid rgba(91, 224, 160, 0.3);
+  border-radius: 20px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.sp-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #5be0a0;
+  border-radius: 50%;
+  animation: sp-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
