@@ -852,6 +852,24 @@ function App() {
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadWaveform(pad, padWaveform) }, [padWaveform])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadRoot(pad, carrier) }, [carrier])
 
+  // Toggle pad synth mid-session
+  useEffect(() => {
+    const bus = masterBusRef.current
+    if (!bus) return
+    if (padEnabled) {
+      if (!padRef.current) {
+        const pad = createPadSynth(bus.context, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, bus.masterGain)
+        padRef.current = pad
+      }
+    } else {
+      if (padRef.current) {
+        void stopPadSynth(padRef.current, 1.5)
+        padRef.current = null
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [padEnabled])
+
   // When carrier/beat changes (e.g. from Mood EQ), sync to left/right frequencies if not using independent tuning
   useEffect(() => {
     if (useIndependentTuning) return
