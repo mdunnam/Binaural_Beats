@@ -129,7 +129,7 @@ function applyAntiMoodSliders(
   let carrierTarget = 0, beatTarget = 0, wobbleTarget = 0, totalWeight = 0
   for (const [k, recipe] of Object.entries(recipes) as [AntiMoodKey, typeof recipes[AntiMoodKey]][]) {
     const w = sliders[k]
-    if (w > 0.05) {
+    if (w > 0) {
       carrierTarget += recipe.carrier * w
       beatTarget    += recipe.beat    * w
       wobbleTarget  += recipe.wobble  * w
@@ -159,23 +159,25 @@ function applyMoodSliders(
   setWobbleRate: (v: number) => void,
 ): void {
   let carrierTarget = 0, carrierWeight = 0
-  if (sliders.ground > 0.05) { carrierTarget += 174 * sliders.ground; carrierWeight += sliders.ground }
-  if (sliders.dream > 0.05)  { carrierTarget += 528 * sliders.dream;  carrierWeight += sliders.dream }
-  if (sliders.ascend > 0.05) { carrierTarget += 852 * sliders.ascend; carrierWeight += sliders.ascend }
+  if (sliders.ground > 0) { carrierTarget += 174 * sliders.ground; carrierWeight += sliders.ground }
+  if (sliders.dream > 0)  { carrierTarget += 528 * sliders.dream;  carrierWeight += sliders.dream }
+  if (sliders.ascend > 0) { carrierTarget += 852 * sliders.ascend; carrierWeight += sliders.ascend }
   if (carrierWeight > 0) setCarrier(Math.round(carrierTarget / carrierWeight))
+  else setCarrier(432)
 
   let beatTarget = 0, beatWeight = 0
-  if (sliders.ground > 0.05) { beatTarget += 1.5  * sliders.ground; beatWeight += sliders.ground }
-  if (sliders.relax > 0.05)  { beatTarget += 9.0  * sliders.relax;  beatWeight += sliders.relax }
-  if (sliders.focus > 0.05)  { beatTarget += 18.0 * sliders.focus;  beatWeight += sliders.focus }
-  if (sliders.dream > 0.05)  { beatTarget += 6.0  * sliders.dream;  beatWeight += sliders.dream }
-  if (sliders.ascend > 0.05) { beatTarget += 40.0 * sliders.ascend; beatWeight += sliders.ascend }
+  if (sliders.ground > 0) { beatTarget += 1.5  * sliders.ground; beatWeight += sliders.ground }
+  if (sliders.relax > 0)  { beatTarget += 9.0  * sliders.relax;  beatWeight += sliders.relax }
+  if (sliders.focus > 0)  { beatTarget += 18.0 * sliders.focus;  beatWeight += sliders.focus }
+  if (sliders.dream > 0)  { beatTarget += 6.0  * sliders.dream;  beatWeight += sliders.dream }
+  if (sliders.ascend > 0) { beatTarget += 40.0 * sliders.ascend; beatWeight += sliders.ascend }
   if (beatWeight > 0) setBeat(Math.round(beatTarget / beatWeight * 10) / 10)
+  else setBeat(10.0)
 
   let wobbleRate = 0.4
-  if (sliders.relax > 0.05)  wobbleRate = Math.max(wobbleRate, 0.15 * sliders.relax)
-  if (sliders.focus > 0.05)  wobbleRate = Math.max(wobbleRate, 0.6  * sliders.focus)
-  if (sliders.dream > 0.05)  wobbleRate = Math.min(wobbleRate, 0.08 + (1 - sliders.dream) * 0.4)
+  if (sliders.relax > 0)  wobbleRate = Math.max(wobbleRate, 0.15 * sliders.relax)
+  if (sliders.focus > 0)  wobbleRate = Math.max(wobbleRate, 0.6  * sliders.focus)
+  if (sliders.dream > 0)  wobbleRate = Math.min(wobbleRate, 0.08 + (1 - sliders.dream) * 0.4)
   setWobbleRate(Math.max(0.05, Math.min(4, wobbleRate)))
 }
 
