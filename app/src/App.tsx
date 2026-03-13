@@ -852,6 +852,13 @@ function App() {
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadWaveform(pad, padWaveform) }, [padWaveform])
   useEffect(() => { const pad = padRef.current; if (!pad) return; updatePadRoot(pad, carrier) }, [carrier])
 
+  // When carrier/beat changes (e.g. from Mood EQ), sync to left/right frequencies if not using independent tuning
+  useEffect(() => {
+    if (useIndependentTuning) return
+    setLeftFrequency(carrier)
+    setRightFrequency(carrier + beat)
+  }, [carrier, beat, useIndependentTuning])
+
   // Live-update isochronic tone when carrier or beat changes
   useEffect(() => {
     if (!isRunning || !isoEnabled || !isoGraphRef.current || !masterBusRef.current) return
