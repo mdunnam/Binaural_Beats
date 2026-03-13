@@ -35,6 +35,9 @@ import type { Journey, ActiveJourney } from './engine/journeyEngine'
 import { startJourney, stopJourney } from './engine/journeyEngine'
 import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
+import { MusicTab } from './components/MusicTab'
+import type { MusicPlayer, MusicTrack } from './engine/musicPlayer'
+import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume } from './engine/musicPlayer'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
@@ -47,6 +50,7 @@ const TABS = [
   { id: 'journey',   icon: '🗺',  label: 'Journey'  },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
+  { id: 'music',     icon: '🎵', label: 'Music'     },
 ]
 
 // ---------------------------------------------------------------------------
@@ -423,11 +427,101 @@ function App() {
   const [ambientRunning, setAmbientRunning] = useState(false)
   const ambientPlayerRef = useRef<AmbientPlayer | null>(null)
 
+  // Music player
+  const [musicTrackId, setMusicTrackId] = useState<string | null>(null)
+  const [musicPlaying, setMusicPlaying] = useState(false)
+  const [musicVolume, setMusicVolume] = useState(0.7)
+  const [musicShuffle, setMusicShuffle] = useState(false)
+  const musicPlayerRef = useRef<MusicPlayer | null>(null)
+  const musicCtxRef = useRef<AudioContext | null>(null)
+
   // Stable refs for use in closures
   const sessionMinutesRef = useRef(sessionMinutes)
   const presetNameRef = useRef(presetName)
   useEffect(() => { sessionMinutesRef.current = sessionMinutes }, [sessionMinutes])
   useEffect(() => { presetNameRef.current = presetName }, [presetName])
+
+  // ---------------------------------------------------------------------------
+  // Music player helpers
+  // ---------------------------------------------------------------------------
+  const playMusicTrack = useCallback(async (track: MusicTrack): Promise<void> => {
+    // Determine AudioContext and destination
+    let ctx: AudioContext
+    let dest: AudioNode
+
+    if (masterBusRef.current) {
+      ctx = masterBusRef.current.context
+      dest = masterBusRef.current.musicBus
+    } else {
+      // Use or create standalone context
+      if (!musicCtxRef.current || musicCtxRef.current.state === 'closed') {
+        musicCtxRef.current = new AudioContext()
+      }
+      ctx = musicCtxRef.current
+      dest = ctx.destination
+    }
+
+    if (ctx.state === 'suspended') await ctx.resume()
+
+    // Create or reuse player
+    if (!musicPlayerRef.current || musicPlayerRef.current.context !== ctx) {
+      musicPlayerRef.current = await createMusicPlayer(dest, ctx, musicVolume)
+    }
+
+    const player = musicPlayerRef.current
+
+    const handleEnded = () => {
+      setMusicPlaying(false)
+      setMusicTrackId(null)
+      // Auto-advance to next track
+      nextTrackRef.current?.()
+    }
+
+    await playTrack(player, track, import.meta.env.BASE_URL, handleEnded)
+    setMusicTrackId(track.id)
+    setMusicPlaying(true)
+  }, [musicVolume]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stopMusic = useCallback((): void => {
+    if (musicPlayerRef.current) {
+      stopMusicPlayer(musicPlayerRef.current)
+    }
+    setMusicPlaying(false)
+    setMusicTrackId(null)
+  }, [])
+
+  const nextTrackRef = useRef<(() => void) | null>(null)
+
+  const nextTrack = useCallback((): void => {
+    if (MUSIC_TRACKS.length === 0) return
+    let nextIndex: number
+    if (musicShuffle) {
+      nextIndex = Math.floor(Math.random() * MUSIC_TRACKS.length)
+    } else {
+      const currentIndex = MUSIC_TRACKS.findIndex(t => t.id === musicTrackId)
+      nextIndex = (currentIndex + 1) % MUSIC_TRACKS.length
+    }
+    void playMusicTrack(MUSIC_TRACKS[nextIndex])
+  }, [musicTrackId, musicShuffle, playMusicTrack])
+
+  const prevTrack = useCallback((): void => {
+    if (MUSIC_TRACKS.length === 0) return
+    const currentIndex = MUSIC_TRACKS.findIndex(t => t.id === musicTrackId)
+    const prevIndex = (currentIndex - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length
+    void playMusicTrack(MUSIC_TRACKS[prevIndex])
+  }, [musicTrackId, playMusicTrack])
+
+  // Keep ref up to date for use in onEnded closure
+  useEffect(() => {
+    nextTrackRef.current = nextTrack
+  }, [nextTrack])
+
+  // Live-update music volume
+  useEffect(() => {
+    if (musicPlayerRef.current) {
+      setMusicPlayerVolume(musicPlayerRef.current, musicVolume)
+    }
+  }, [musicVolume])
 
   // ---------------------------------------------------------------------------
   // Onboarding handlers
@@ -1226,6 +1320,14 @@ function App() {
         stopAmbientPlayer(ambientPlayerRef.current)
         ambientPlayerRef.current = null
       }
+      if (musicPlayerRef.current) {
+        stopMusicPlayer(musicPlayerRef.current, 0)
+        musicPlayerRef.current = null
+      }
+      if (musicCtxRef.current) {
+        void musicCtxRef.current.close()
+        musicCtxRef.current = null
+      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1729,6 +1831,23 @@ function App() {
                 📓 Open Session Journal
               </button>
             </div>
+          )}
+
+          {/* ──────────────── MUSIC TAB ──────────────── */}
+          {activeTab === 'music' && (
+            <MusicTab
+              tracks={MUSIC_TRACKS}
+              currentTrackId={musicTrackId}
+              isPlaying={musicPlaying}
+              volume={musicVolume}
+              onSetVolume={setMusicVolume}
+              onPlay={(track) => void playMusicTrack(track)}
+              onStop={stopMusic}
+              onNext={nextTrack}
+              onPrev={prevTrack}
+              shuffle={musicShuffle}
+              onToggleShuffle={() => setMusicShuffle(s => !s)}
+            />
           )}
         </div>
       </section>
