@@ -1,8 +1,14 @@
 {
-  "buildCommand": "cd app && npm install && npx vite build && cd .. && cp -r landing/. dist/ && mkdir -p dist/app && cp -r app/dist/. dist/app/",
-  "outputDirectory": "dist",
+  "buildCommand": "cd app && npm install && npx vite build",
+  "outputDirectory": "app/dist",
+  "functions": {
+    "api/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
-    { "source": "/app/(.*)", "destination": "/app/index.html" },
-    { "source": "/",         "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/app/(.*)", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

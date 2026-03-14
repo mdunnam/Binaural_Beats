@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext'
+import { UpgradeModal } from './components/UpgradeModal'
+import { AuthModal } from './components/AuthModal'
 import type {
   NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
   AudioGraph, AutomationLanes, SessionPreset, JournalEntry, PadSynthGraph,
@@ -21,7 +25,6 @@ import { SessionJournal } from './components/SessionJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
 import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
-import { TabNav } from './components/TabNav'
 import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
@@ -511,7 +514,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
-function App() {
+function AppInner() {
   // Tab navigation
   const [activeTab, setActiveTab] = useState('dashboard')
   const [playerExpanded, setPlayerExpanded] = useState(false)
@@ -599,6 +602,28 @@ function App() {
   // AI Meditation
   const [aiApiKey, setAiApiKey] = useState<string>('')
   const [showApiSettings, setShowApiSettings] = useState(false)
+
+  // Auth / Subscription
+  const { user, isPro, signOut, refreshProfile } = useAuth()
+  const { openUpgradeModal } = useSubscription()
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [proToast, setProToast] = useState(false)
+
+  // Handle upgrade=success / cancelled URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('upgrade') === 'success') {
+      void refreshProfile().then(() => {
+        setProToast(true)
+        setTimeout(() => setProToast(false), 3000)
+      })
+      params.delete('upgrade')
+      window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''))
+    } else if (params.get('upgrade') === 'cancelled') {
+      params.delete('upgrade')
+      window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''))
+    }
+  }, [refreshProfile])
 
   const masterBusRef = useRef<MasterBus | null>(null)
   const graphRef = useRef<AudioGraph | null>(null)
@@ -1725,6 +1750,18 @@ function App() {
         >
           {darkMode ? '☀️' : '🌙'}
         </button>
+        {/* User / Auth button */}
+        {user ? (
+          <button className="user-btn" onClick={() => void signOut()} title="Sign out">
+            <span className="user-btn-avatar">{(user.email ?? 'U')[0].toUpperCase()}</span>
+            {isPro && <span className="pro-badge">PRO</span>}
+            <span>Sign out</span>
+          </button>
+        ) : (
+          <button className="user-btn" onClick={() => setShowAuthModal(true)}>
+            Sign In
+          </button>
+        )}
       </section>
 
       <section className="panel">
@@ -1735,7 +1772,33 @@ function App() {
         )}
 
         {/* ── Tab navigation ── */}
-        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+        {/* PRO_TABS: tabs that require Pro subscription */}
+        {(() => {
+          const PRO_TABS = new Set(['journey', 'studio', 'ai', 'journal', 'music'])
+          return (
+            <nav className="tab-nav" aria-label="Main navigation">
+              {TABS.map((tab) => {
+                const isLocked = PRO_TABS.has(tab.id) && !isPro
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`tab-btn${activeTab === tab.id ? ' tab-btn--active' : ''}${isLocked ? ' tab-btn--locked' : ''}`}
+                    onClick={() => {
+                      if (isLocked) { openUpgradeModal(tab.label); return }
+                      setActiveTab(tab.id)
+                    }}
+                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                  >
+                    <span className="tab-icon">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                    {isLocked && <span className="tab-lock-icon">🔒</span>}
+                  </button>
+                )
+              })}
+            </nav>
+          )
+        })()}
 
         <div className="tab-content">
           {/* ──────────────── DASHBOARD TAB ──────────────── */}
@@ -2037,9 +2100,25 @@ function App() {
                   )
                   setSoundsceneId(matchedScene?.id ?? 'custom')
                 }}
-                onSceneChange={(sceneId) => setSoundsceneId(sceneId)}
+                onSceneChange={(sceneId) => {
+                  // Free users: only first 2 scenes allowed (off + first scene)
+                  if (!isPro) {
+                    const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id) // off + 2 scenes
+                    if (!freeScenes.includes(sceneId)) {
+                      openUpgradeModal('All Soundscapes')
+                      return
+                    }
+                  }
+                  setSoundsceneId(sceneId)
+                }}
                 disabled={false}
               />
+              {!isPro && (
+                <div className="soundscape-unlock-row" onClick={() => openUpgradeModal('All Soundscapes')} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && openUpgradeModal('All Soundscapes')}>
+                  <span>🔒 Unlock all soundscapes with Pro</span>
+                  <span style={{ color: '#a78bfa', fontWeight: 600 }}>Upgrade ✨</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -2093,8 +2172,14 @@ function App() {
               </div>
 
               <div className="section-label">Session</div>
-              <label>Session Length ({sessionMinutes.toFixed(0)} min)
-                <input type="range" min={1} max={180} step={1} value={sessionMinutes} onChange={(e) => setSessionMinutes(Number(e.target.value))} />
+              <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for >15 min' : ''})
+                <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value)
+                    if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
+                    setSessionMinutes(val)
+                  }} />
+                {!isPro && <span className="control-hint">🔒 <button className="link-btn" onClick={() => openUpgradeModal('Sessions > 15 minutes')}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
               </label>
               <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
                 <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
@@ -2430,6 +2515,19 @@ function App() {
         />
       )}
 
+      {/* ── Auth Modal ── */}
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {/* ── Upgrade Modal ── */}
+      <UpgradeModal />
+
+      {/* ── Pro Toast ── */}
+      {proToast && (
+        <div className="pro-toast">Welcome to Pro! 🎉</div>
+      )}
+
       <p className="footnote">
         Safety: keep volume low at session start. Use headphones for full binaural effect. Avoid therapeutic claims.
       </p>
@@ -2506,4 +2604,17 @@ function JournalModal({
   )
 }
 
+function App() {
+  return (
+    <AuthProvider>
+      <SubscriptionProvider>
+        <AppInner />
+      </SubscriptionProvider>
+    </AuthProvider>
+  )
+}
+
 export default App
+
+
+
