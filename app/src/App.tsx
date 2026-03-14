@@ -2281,7 +2281,6 @@ function AppInner() {
             <div className="tab-sections">
               <div className="section-block">
                 <div className="section-title">Session Planner</div>
-                <div className="section-card" style={{ padding: 0, overflow: 'hidden' }}>
               <SessionPlanner
                 carrier={carrier}
                 beat={beat}
@@ -2407,11 +2406,9 @@ function AppInner() {
                   localStorage.setItem('liminal-session-plans', JSON.stringify(updated))
                 }}
               />
-                </div>
               </div>
               <div className="section-block">
                 <div className="section-title">Journey Builder</div>
-                <div className="section-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <JourneyBuilder
                   isRunning={isRunning}
                   journey={journey}
@@ -2423,7 +2420,6 @@ function AppInner() {
                   setSoundsceneId={setSoundsceneId}
                   apiKey={localStorage.getItem('binaural-openai-key') ?? ''}
                 />
-                </div>
               </div>
             </div>
           )}

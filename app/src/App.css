@@ -1432,7 +1432,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
    ═══════════════════════════════════════════════════════════════════ */
 
 .player-skin {
-  background: var(--bg-card);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 0.9rem;
@@ -3097,8 +3097,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .sp-section {
-  background: var(--bg-card);
-  border: 1px solid rgba(100, 160, 120, 0.15);
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
   border-radius: 12px;
   padding: 1rem 1.1rem;
 }
