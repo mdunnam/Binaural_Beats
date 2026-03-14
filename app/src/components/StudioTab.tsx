@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
+import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
 
@@ -20,8 +21,6 @@ const BRAINWAVE_PRESETS = [
   { label: 'Beta', hz: 18 },
   { label: 'Gamma', hz: 40 },
 ]
-const SOUNDSCAPE_OPTIONS = ['off', 'storm', 'ocean', 'forest', 'fire', 'space', 'cave']
-const SOUNDSCAPE_GAIN_LAYERS = ['rain', 'thunder', 'wind', 'fire', 'waves', 'birds', 'cave_drip', 'space_hum']
 const NOISE_TYPES = ['white', 'pink', 'brown', 'blue', 'violet']
 
 function uid() {
@@ -228,23 +227,32 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                     <label>
                       Scene
                       <select value={(layer.settings.sceneId as string) ?? 'forest'}
-                        onChange={e => updateSettings(layer.id, { sceneId: e.target.value })}>
-                        {SOUNDSCAPE_OPTIONS.map(s => (
-                          <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        onChange={e => {
+                          const sceneId = e.target.value
+                          // Auto-populate layerGains from the selected scene definition
+                          const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
+                          const gains: Record<string, number> = {}
+                          if (scene) {
+                            Object.entries(scene.gains).forEach(([id, v]) => { gains[id] = v as number })
+                          }
+                          updateSettings(layer.id, { sceneId, layerGains: gains })
+                        }}>
+                        {SOUNDSCAPE_SCENES.filter(s => s.id !== 'custom').map(s => (
+                          <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
                         ))}
                       </select>
                     </label>
-                    {SOUNDSCAPE_GAIN_LAYERS.map(gl => {
+                    {SOUND_LAYERS.map(sl => {
                       const gains = (layer.settings.layerGains as Record<string, number>) ?? {}
-                      const val = gains[gl] ?? 0
+                      const val = gains[sl.id] ?? 0
                       return (
-                        <label key={gl}>
-                          {gl.replace('_', ' ')} ({val.toFixed(2)})
+                        <label key={sl.id}>
+                          {sl.emoji} {sl.label} ({val.toFixed(2)})
                           <input type="range" min={0} max={1} step={0.01}
                             value={val}
                             onChange={e => {
                               const prev = (layer.settings.layerGains as Record<string, number>) ?? {}
-                              updateSettings(layer.id, { layerGains: { ...prev, [gl]: Number(e.target.value) } })
+                              updateSettings(layer.id, { layerGains: { ...prev, [sl.id]: Number(e.target.value) }, sceneId: 'custom' })
                             }}
                           />
                         </label>

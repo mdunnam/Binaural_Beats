@@ -15,7 +15,7 @@ import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
 import { SoundscapeMixer } from './components/SoundscapeMixer'
-import type { LayerGains, SoundscapeMixerNodes } from './engine/soundscapeMixer'
+import type { LayerGains, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
 import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
 import { SessionJournal } from './components/SessionJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
@@ -328,6 +328,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   setMusicVolume: (v: number) => void
   applySoundscapeScene: (id: string) => void
   setSoundsceneId: (id: string) => void
+  setLayerGains: (g: LayerGains) => void
   carrierRef: React.MutableRefObject<number>
   beatRef: React.MutableRefObject<number>
   noiseTypeRef: React.MutableRefObject<NoiseType>
@@ -341,21 +342,31 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   wobbleRateRef: React.MutableRefObject<number>
   binauralVolumeRef: React.MutableRefObject<number>
   soundscapeVolumeRef: React.MutableRefObject<number>
+  // Direct graph access for bypassing React state staleness
+  graphRef: React.MutableRefObject<AudioGraph | null>
+  masterBusRef: React.MutableRefObject<MasterBus | null>
+  mixerNodesRef: React.MutableRefObject<SoundscapeMixerNodes | null>
   SOUNDSCAPE_SCENES: typeof SOUNDSCAPE_SCENES
   DEFAULT_GAINS: typeof DEFAULT_GAINS
 }) {
-  // Track whether pad layer was present (disabled pad layer = turn pad off)
   let padPresent = false
+  let hasSoundscape = false
 
   for (const layer of layers) {
     const s = layer.settings
+
     if (layer.type === 'carrier') {
       const hz = (s.hz as number) ?? 432
       callbacks.setCarrier(hz)
       callbacks.carrierRef.current = hz
-      // Map carrier layer volume → binaural bus volume
       callbacks.setBinauralVolume(layer.volume)
       callbacks.binauralVolumeRef.current = layer.volume
+      // Direct graph update — bypasses React state batching
+      const graph = callbacks.graphRef.current
+      if (graph) {
+        graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, layer.volume), graph.context.currentTime, 0.05)
+        graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, layer.volume), graph.context.currentTime, 0.05)
+      }
     }
     if (layer.type === 'beat') {
       const hz = (s.hz as number) ?? 6
@@ -365,33 +376,64 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
         callbacks.beatRef.current = hz
         callbacks.setWobbleRate(wr)
         callbacks.wobbleRateRef.current = wr
+        // Direct graph update
+        const graph = callbacks.graphRef.current
+        if (graph) {
+          const leftHz = callbacks.leftFrequencyRef.current
+          graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+          graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+          graph.leftOsc.frequency.setValueAtTime(leftHz, graph.context.currentTime)
+          graph.rightOsc.frequency.setValueAtTime(leftHz + hz, graph.context.currentTime)
+          graph.lfo.frequency.setValueAtTime(wr, graph.context.currentTime)
+        }
       }
     }
     if (layer.type === 'noise') {
       const t = ((s.type as string) ?? 'pink') as NoiseType
       const v = layer.enabled ? layer.volume : 0
-      callbacks.setNoiseType(layer.enabled ? t : 'none')
-      callbacks.noiseTypeRef.current = layer.enabled ? t : 'none'
+      const resolvedType = layer.enabled ? t : 'none'
+      callbacks.setNoiseType(resolvedType)
+      callbacks.noiseTypeRef.current = resolvedType
       callbacks.setNoiseVolume(v)
       callbacks.noiseVolumeRef.current = v
+      // Direct graph update
+      const graph = callbacks.graphRef.current
+      if (graph) {
+        graph.noiseGain.gain.setTargetAtTime(layer.enabled ? Math.max(0.0001, v) : 0, graph.context.currentTime, 0.05)
+      }
     }
-    if (layer.type === 'soundscape') {
+    if (layer.type === 'soundscape' && layer.enabled) {
+      hasSoundscape = true
       const sceneId = (s.sceneId as string) ?? 'forest'
-      if (layer.enabled) {
-        callbacks.applySoundscapeScene(sceneId)
+      const layerGains = (s.layerGains as Record<string, number> | undefined)
+
+      // Build gains: prefer explicit layerGains from settings, fall back to scene definition
+      const gains = { ...DEFAULT_GAINS }
+      if (layerGains && Object.keys(layerGains).length > 0) {
+        Object.entries(layerGains).forEach(([id, v]) => { (gains as Record<string, number>)[id] = v })
+      } else {
         const scene = callbacks.SOUNDSCAPE_SCENES.find(sc => sc.id === sceneId)
         if (scene) {
-          const gains = { ...callbacks.DEFAULT_GAINS }
           Object.entries(scene.gains).forEach(([id, v]) => { (gains as Record<string, number>)[id] = v as number })
-          callbacks.layerGainsRef.current = gains
         }
-        // Map soundscape layer volume → soundscape bus volume
-        callbacks.setSoundscapeVolume(layer.volume)
-        callbacks.soundscapeVolumeRef.current = layer.volume
-      } else {
-        callbacks.setSoundsceneId('off')
-        callbacks.setSoundscapeVolume(0)
-        callbacks.soundscapeVolumeRef.current = 0
+      }
+
+      callbacks.setLayerGains(gains)
+      callbacks.layerGainsRef.current = gains
+      callbacks.setSoundsceneId(sceneId)
+      callbacks.setSoundscapeVolume(layer.volume)
+      callbacks.soundscapeVolumeRef.current = layer.volume
+
+      // Direct mixer update — update each layer gain immediately
+      const mixer = callbacks.mixerNodesRef.current
+      const bus = callbacks.masterBusRef.current
+      if (mixer) {
+        Object.entries(gains).forEach(([id, v]) => {
+          updateLayerGain(mixer, id as SoundLayerId, v)
+        })
+      }
+      if (bus) {
+        bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, layer.volume), bus.context.currentTime, 0.05)
       }
     }
     if (layer.type === 'pad') {
@@ -408,19 +450,42 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       callbacks.setMusicVolume(layer.volume)
     }
   }
-  // If no pad layer at all, disable pad
+
+  // No soundscape layer → silence it
+  if (!hasSoundscape) {
+    callbacks.setSoundsceneId('off')
+    callbacks.setSoundscapeVolume(0)
+    callbacks.soundscapeVolumeRef.current = 0
+    const bus = callbacks.masterBusRef.current
+    if (bus) {
+      bus.soundscapeBus.gain.setTargetAtTime(0, bus.context.currentTime, 0.05)
+    }
+    // Zero out all layer gains
+    const mixer = callbacks.mixerNodesRef.current
+    if (mixer) {
+      Object.keys(DEFAULT_GAINS).forEach(id => updateLayerGain(mixer, id as SoundLayerId, 0))
+    }
+  }
   if (!padPresent) {
     callbacks.setPadEnabled(false)
     callbacks.padEnabledRef.current = false
   }
 
-  // Sync left/right freq after carrier+beat are set
+  // Sync left/right freq from carrier + beat
   const c = callbacks.carrierRef.current
   const b = callbacks.beatRef.current
   callbacks.setLeftFrequency(c)
   callbacks.setRightFrequency(c + b)
   callbacks.leftFrequencyRef.current = c
   callbacks.rightFrequencyRef.current = c + b
+  // Direct graph update for carrier Hz
+  const graph = callbacks.graphRef.current
+  if (graph) {
+    graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+    graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+    graph.leftOsc.frequency.setValueAtTime(c, graph.context.currentTime)
+    graph.rightOsc.frequency.setValueAtTime(c + b, graph.context.currentTime)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -2208,12 +2273,13 @@ function App() {
                   setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
                   setLeftFrequency, setRightFrequency,
                   setMusicVolume,
-                  applySoundscapeScene, setSoundsceneId,
+                  applySoundscapeScene, setSoundsceneId, setLayerGains,
                   carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
                   padEnabledRef, padVolumeRef,
                   leftFrequencyRef, rightFrequencyRef,
                   layerGainsRef, fadeInSecondsRef, wobbleRateRef,
                   binauralVolumeRef, soundscapeVolumeRef,
+                  graphRef, masterBusRef, mixerNodesRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                 })
                 window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
@@ -2229,12 +2295,13 @@ function App() {
                   setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
                   setLeftFrequency, setRightFrequency,
                   setMusicVolume,
-                  applySoundscapeScene, setSoundsceneId,
+                  applySoundscapeScene, setSoundsceneId, setLayerGains,
                   carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
                   padEnabledRef, padVolumeRef,
                   leftFrequencyRef, rightFrequencyRef,
                   layerGainsRef, fadeInSecondsRef, wobbleRateRef,
                   binauralVolumeRef, soundscapeVolumeRef,
+                  graphRef, masterBusRef, mixerNodesRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                 })
               }}
