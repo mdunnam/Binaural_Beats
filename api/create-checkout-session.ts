@@ -24,7 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.json({ url: session.url })
   } catch (err) {
-    console.error('Checkout session error:', err)
-    return res.status(500).json({ error: 'Failed to create checkout session' })
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('Checkout session error:', message)
+    return res.status(500).json({ error: message })
   }
 }
