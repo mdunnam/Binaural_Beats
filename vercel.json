@@ -1,11 +1,6 @@
 {
   "buildCommand": "cd app && npm install && npx vite build",
   "outputDirectory": "app/dist",
-  "functions": {
-    "api/*.ts": {
-      "runtime": "@vercel/node@3.0.0"
-    }
-  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/app/(.*)", "destination": "/index.html" },
