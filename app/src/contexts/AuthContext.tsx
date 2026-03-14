@@ -44,14 +44,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[Auth] event:', event, '| user:', session?.user?.email ?? 'none')
       const u = session?.user ?? null
       setUser(u)
+      setLoading(false)
       if (u) {
-        const p = await fetchProfile(u)
-        console.log('[Auth] profile:', p)
-        setProfile(p)
+        // Defer profile fetch one tick so Supabase client has auth token committed
+        setTimeout(async () => {
+          const p = await fetchProfile(u)
+          console.log('[Auth] profile:', p)
+          setProfile(p)
+        }, 0)
       } else {
         setProfile(null)
       }
-      setLoading(false)
     })
     return () => subscription.unsubscribe()
   }, [fetchProfile])
