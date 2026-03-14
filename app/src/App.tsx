@@ -2313,8 +2313,8 @@ function App() {
               onPreview={(studioLayers) => {
                 if (graphRef.current) stopSession(false)
                 // Create AudioContext synchronously inside the user gesture
+                if (prewarmedContextRef.current) { void prewarmedContextRef.current.close() }
                 prewarmedContextRef.current = new AudioContext()
-                // Studio preview: no fade-in, long duration (60 min default)
                 fadeInSecondsRef.current = 0
                 sessionMinutesRef.current = 60
                 setSessionMinutes(60)
@@ -2340,7 +2340,7 @@ function App() {
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                 })
                 window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-                  if (!graphRef.current) void toggleAudio()
+                  if (!graphRef.current && !audioStartingRef.current) void toggleAudio()
                 }))
               }}
               onStop={() => stopSession(true)}
