@@ -30,6 +30,12 @@ export function AuthModal({ onClose }: Props) {
     onClose()
   }
 
+  const switchToSignIn = () => {
+    setTab('signin')
+    setSuccess(false)
+    setError(null)
+  }
+
   return (
     <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal-box auth-modal">
@@ -37,17 +43,21 @@ export function AuthModal({ onClose }: Props) {
         <h2 className="modal-title">Welcome to Liminal</h2>
 
         {success ? (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <p>📧 Check your email to confirm your account, then sign in!</p>
-            <button className="soft-button" style={{ marginTop: '1rem' }} onClick={() => setTab('signin')}>
+          <div style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📧</div>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Check your email!</p>
+            <p style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              We sent a confirmation link to <strong>{email}</strong>. Click it to verify your account, then come back and sign in.
+            </p>
+            <button className="start-button" onClick={switchToSignIn}>
               Sign In
             </button>
           </div>
         ) : (
           <>
             <div className="auth-tabs">
-              <button className={tab === 'signin' ? 'auth-tab active' : 'auth-tab'} onClick={() => setTab('signin')}>Sign In</button>
-              <button className={tab === 'signup' ? 'auth-tab active' : 'auth-tab'} onClick={() => setTab('signup')}>Sign Up</button>
+              <button className={tab === 'signin' ? 'auth-tab active' : 'auth-tab'} onClick={() => { setTab('signin'); setError(null) }}>Sign In</button>
+              <button className={tab === 'signup' ? 'auth-tab active' : 'auth-tab'} onClick={() => { setTab('signup'); setError(null) }}>Sign Up</button>
             </div>
             <div className="grid" style={{ gap: '0.75rem' }}>
               <input
@@ -61,7 +71,7 @@ export function AuthModal({ onClose }: Props) {
               <input
                 className="text-input"
                 type="password"
-                placeholder="Password"
+                placeholder="Password (min 6 characters)"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && void handle()}
@@ -71,6 +81,12 @@ export function AuthModal({ onClose }: Props) {
               <button className="start-button" onClick={() => void handle()} disabled={loading}>
                 {loading ? '⏳ Please wait…' : tab === 'signin' ? 'Sign In' : 'Create Account'}
               </button>
+              {tab === 'signin' && (
+                <p style={{ textAlign: 'center', fontSize: '0.85rem', opacity: 0.6 }}>
+                  Don't have an account?{' '}
+                  <button className="link-button" onClick={() => { setTab('signup'); setError(null) }}>Sign up free</button>
+                </p>
+              )}
             </div>
           </>
         )}
