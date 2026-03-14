@@ -43,9 +43,10 @@ interface LaneEditorProps {
   config: LaneConfig
   points: AutomationPoint[]
   onChange: (points: AutomationPoint[]) => void
+  sessionMinutes?: number
 }
 
-function LaneEditor({ config, points, onChange }: LaneEditorProps) {
+export function LaneEditor({ config, points, onChange, sessionMinutes: _sessionMinutes }: LaneEditorProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const draggingIdx = useRef<number | null>(null)
   const width = 800 // will be overridden by CSS width

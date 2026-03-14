@@ -147,6 +147,10 @@ export type StudioLayer = {
   volume: number
   label: string
   settings: Record<string, unknown>
+  automation?: {
+    beatFrequency?: AutomationPoint[]   // beat layer only
+    volume?: AutomationPoint[]          // all other layers
+  }
 }
 
 export type StudioScene = {

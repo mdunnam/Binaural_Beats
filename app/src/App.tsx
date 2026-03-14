@@ -350,6 +350,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   mixerNodesRef: React.MutableRefObject<SoundscapeMixerNodes | null>
   SOUNDSCAPE_SCENES: typeof SOUNDSCAPE_SCENES
   DEFAULT_GAINS: typeof DEFAULT_GAINS
+  setAutomationLanes: React.Dispatch<React.SetStateAction<AutomationLanes>>
 }) {
   let padPresent = false
   let hasSoundscape = false
@@ -388,6 +389,11 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
           graph.rightOsc.frequency.setValueAtTime(leftHz + hz, graph.context.currentTime)
           graph.lfo.frequency.setValueAtTime(wr, graph.context.currentTime)
         }
+      }
+      // Apply beat frequency automation lane if present
+      if (layer.automation?.beatFrequency && layer.automation.beatFrequency.length >= 2) {
+        const pts = layer.automation.beatFrequency
+        callbacks.setAutomationLanes(prev => ({ ...prev, beatFrequency: pts }))
       }
     }
     if (layer.type === 'noise') {
@@ -2325,6 +2331,7 @@ function App() {
                   binauralVolumeRef, soundscapeVolumeRef,
                   graphRef, masterBusRef, mixerNodesRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
+                  setAutomationLanes,
                 })
                 window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
                   if (!graphRef.current && !audioStartingRef.current) void toggleAudio()
@@ -2352,6 +2359,7 @@ function App() {
                   binauralVolumeRef, soundscapeVolumeRef,
                   graphRef, masterBusRef, mixerNodesRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
+                  setAutomationLanes,
                 })
               }}
             />

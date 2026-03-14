@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
 import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
+import { LaneEditor } from './AutomationEditor'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
 const STUDIO_JOURNEYS_KEY = 'liminal-studio-journeys'
@@ -134,6 +135,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     { id: '2', type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 6, wobbleRate: 0.4 } },
   ])
   const [expandedLayerId, setExpandedLayerId] = useState<string | null>(null)
+  const [expandedAdvancedId, setExpandedAdvancedId] = useState<string | null>(null)
   const [sceneName, setSceneName] = useState('My Scene')
   const [durationMinutes, setDurationMinutes] = useState(30)
   const [crossfadeSec, setCrossfadeSec] = useState(10)
@@ -264,6 +266,9 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   }
   function updateSettings(id: string, patch: Record<string, unknown>) {
     setLayers(ls => ls.map(l => l.id === id ? { ...l, settings: { ...l.settings, ...patch } } : l))
+  }
+  function updateLayerAutomation(id: string, patch: Partial<NonNullable<StudioLayer['automation']>>) {
+    setLayers(ls => ls.map(l => l.id === id ? { ...l, automation: { ...l.automation, ...patch } } : l))
   }
   function deleteLayer(id: string) {
     setLayers(ls => ls.filter(l => l.id !== id))
@@ -558,6 +563,32 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                       Shuffle
                     </label>
                   </>
+                )}
+                {/* Advanced automation lane */}
+                <button
+                  className="studio-advanced-toggle"
+                  onClick={() => setExpandedAdvancedId(id => id === layer.id ? null : layer.id)}
+                >
+                  Advanced {expandedAdvancedId === layer.id ? '▲' : '▾'}
+                </button>
+                {expandedAdvancedId === layer.id && (
+                  <div className="studio-advanced-panel">
+                    {layer.type === 'beat' ? (
+                      <LaneEditor
+                        config={{ key: 'beatFrequency', label: 'Beat Frequency over Session', min: 0, max: 40, unit: ' Hz' }}
+                        points={layer.automation?.beatFrequency ?? []}
+                        onChange={(pts) => updateLayerAutomation(layer.id, { beatFrequency: pts })}
+                        sessionMinutes={durationMinutes}
+                      />
+                    ) : (
+                      <LaneEditor
+                        config={{ key: 'volume', label: 'Volume over Session', min: 0, max: 1, unit: '' }}
+                        points={layer.automation?.volume ?? []}
+                        onChange={(pts) => updateLayerAutomation(layer.id, { volume: pts })}
+                        sessionMinutes={durationMinutes}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             )}
