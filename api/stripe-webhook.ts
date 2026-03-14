@@ -2,7 +2,7 @@ import Stripe from 'stripe'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia' })
 
 // NOTE: For production, use SUPABASE_SERVICE_ROLE_KEY instead of anon key
 // to bypass RLS. Add it in Vercel dashboard: Settings > Environment Variables
