@@ -2266,6 +2266,10 @@ function App() {
               musicTracks={MUSIC_TRACKS}
               onPreview={(studioLayers) => {
                 if (graphRef.current) stopSession(false)
+                // Studio preview: no fade-in, long duration (60 min default)
+                fadeInSecondsRef.current = 0
+                sessionMinutesRef.current = 60
+                setSessionMinutes(60)
                 applyStudioLayers(studioLayers, {
                   setCarrier, setBeat, setWobbleRate,
                   setNoiseType, setNoiseVolume,
