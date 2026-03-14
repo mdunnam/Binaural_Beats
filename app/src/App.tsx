@@ -316,6 +316,8 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   setWobbleRate: (v: number) => void
   setNoiseType: (v: NoiseType) => void
   setNoiseVolume: (v: number) => void
+  setBinauralVolume: (v: number) => void
+  setSoundscapeVolume: (v: number) => void
   setPadEnabled: (v: boolean) => void
   setPadVolume: (v: number) => void
   setPadWaveform: (v: PadWaveform) => void
@@ -337,46 +339,65 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   layerGainsRef: React.MutableRefObject<LayerGains>
   fadeInSecondsRef: React.MutableRefObject<number>
   wobbleRateRef: React.MutableRefObject<number>
+  binauralVolumeRef: React.MutableRefObject<number>
+  soundscapeVolumeRef: React.MutableRefObject<number>
   SOUNDSCAPE_SCENES: typeof SOUNDSCAPE_SCENES
   DEFAULT_GAINS: typeof DEFAULT_GAINS
 }) {
+  // Track whether pad layer was present (disabled pad layer = turn pad off)
+  let padPresent = false
+
   for (const layer of layers) {
-    if (!layer.enabled) continue
     const s = layer.settings
     if (layer.type === 'carrier') {
       const hz = (s.hz as number) ?? 432
       callbacks.setCarrier(hz)
       callbacks.carrierRef.current = hz
+      // Map carrier layer volume → binaural bus volume
+      callbacks.setBinauralVolume(layer.volume)
+      callbacks.binauralVolumeRef.current = layer.volume
     }
     if (layer.type === 'beat') {
       const hz = (s.hz as number) ?? 6
       const wr = (s.wobbleRate as number) ?? 0.4
-      callbacks.setBeat(hz)
-      callbacks.beatRef.current = hz
-      callbacks.setWobbleRate(wr)
-      callbacks.wobbleRateRef.current = wr
+      if (layer.enabled) {
+        callbacks.setBeat(hz)
+        callbacks.beatRef.current = hz
+        callbacks.setWobbleRate(wr)
+        callbacks.wobbleRateRef.current = wr
+      }
     }
     if (layer.type === 'noise') {
       const t = ((s.type as string) ?? 'pink') as NoiseType
-      const v = layer.volume
-      callbacks.setNoiseType(t)
-      callbacks.noiseTypeRef.current = t
+      const v = layer.enabled ? layer.volume : 0
+      callbacks.setNoiseType(layer.enabled ? t : 'none')
+      callbacks.noiseTypeRef.current = layer.enabled ? t : 'none'
       callbacks.setNoiseVolume(v)
       callbacks.noiseVolumeRef.current = v
     }
     if (layer.type === 'soundscape') {
       const sceneId = (s.sceneId as string) ?? 'forest'
-      callbacks.applySoundscapeScene(sceneId)
-      const scene = callbacks.SOUNDSCAPE_SCENES.find(sc => sc.id === sceneId)
-      if (scene) {
-        const gains = { ...callbacks.DEFAULT_GAINS }
-        Object.entries(scene.gains).forEach(([id, v]) => { (gains as Record<string, number>)[id] = v as number })
-        callbacks.layerGainsRef.current = gains
+      if (layer.enabled) {
+        callbacks.applySoundscapeScene(sceneId)
+        const scene = callbacks.SOUNDSCAPE_SCENES.find(sc => sc.id === sceneId)
+        if (scene) {
+          const gains = { ...callbacks.DEFAULT_GAINS }
+          Object.entries(scene.gains).forEach(([id, v]) => { (gains as Record<string, number>)[id] = v as number })
+          callbacks.layerGainsRef.current = gains
+        }
+        // Map soundscape layer volume → soundscape bus volume
+        callbacks.setSoundscapeVolume(layer.volume)
+        callbacks.soundscapeVolumeRef.current = layer.volume
+      } else {
+        callbacks.setSoundsceneId('off')
+        callbacks.setSoundscapeVolume(0)
+        callbacks.soundscapeVolumeRef.current = 0
       }
     }
     if (layer.type === 'pad') {
-      callbacks.setPadEnabled(true)
-      callbacks.padEnabledRef.current = true
+      padPresent = true
+      callbacks.setPadEnabled(layer.enabled)
+      callbacks.padEnabledRef.current = layer.enabled
       callbacks.setPadVolume(layer.volume)
       callbacks.padVolumeRef.current = layer.volume
       if (s.waveform) callbacks.setPadWaveform(s.waveform as PadWaveform)
@@ -387,6 +408,13 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       callbacks.setMusicVolume(layer.volume)
     }
   }
+  // If no pad layer at all, disable pad
+  if (!padPresent) {
+    callbacks.setPadEnabled(false)
+    callbacks.padEnabledRef.current = false
+  }
+
+  // Sync left/right freq after carrier+beat are set
   const c = callbacks.carrierRef.current
   const b = callbacks.beatRef.current
   callbacks.setLeftFrequency(c)
@@ -2176,6 +2204,7 @@ function App() {
                 applyStudioLayers(studioLayers, {
                   setCarrier, setBeat, setWobbleRate,
                   setNoiseType, setNoiseVolume,
+                  setBinauralVolume, setSoundscapeVolume,
                   setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
                   setLeftFrequency, setRightFrequency,
                   setMusicVolume,
@@ -2184,6 +2213,7 @@ function App() {
                   padEnabledRef, padVolumeRef,
                   leftFrequencyRef, rightFrequencyRef,
                   layerGainsRef, fadeInSecondsRef, wobbleRateRef,
+                  binauralVolumeRef, soundscapeVolumeRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                 })
                 window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
@@ -2195,6 +2225,7 @@ function App() {
                 applyStudioLayers(studioLayers, {
                   setCarrier, setBeat, setWobbleRate,
                   setNoiseType, setNoiseVolume,
+                  setBinauralVolume, setSoundscapeVolume,
                   setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
                   setLeftFrequency, setRightFrequency,
                   setMusicVolume,
@@ -2203,6 +2234,7 @@ function App() {
                   padEnabledRef, padVolumeRef,
                   leftFrequencyRef, rightFrequencyRef,
                   layerGainsRef, fadeInSecondsRef, wobbleRateRef,
+                  binauralVolumeRef, soundscapeVolumeRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                 })
               }}
