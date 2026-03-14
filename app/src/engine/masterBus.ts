@@ -9,8 +9,8 @@ export type MasterBus = {
   analyser: AnalyserNode   // post-limiter analyser for VU meter
 }
 
-export function createMasterBus(initialVolume: number): MasterBus {
-  const context = new AudioContext()
+export function createMasterBus(initialVolume: number, existingContext?: AudioContext): MasterBus {
+  const context = existingContext ?? new AudioContext()
 
   const masterGain = context.createGain()
   masterGain.gain.value = initialVolume

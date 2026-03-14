@@ -1035,6 +1035,10 @@ function App() {
   // Toggle session
   // ---------------------------------------------------------------------------
   const audioStartingRef = useRef(false)
+  // Pre-warmed AudioContext created synchronously inside a user gesture so
+  // the browser allows it to play. toggleAudio consumes it if present.
+  const prewarmedContextRef = useRef<AudioContext | null>(null)
+
   const toggleAudio = async (): Promise<void> => {
     if (graphRef.current) { stopSession(true); return }
     if (audioStartingRef.current) return
@@ -1057,8 +1061,11 @@ function App() {
     const curSoundscapeVolume = soundscapeVolumeRef.current
     const curFadeInSeconds = fadeInSecondsRef.current
 
-    // 1. Create master bus (owns the AudioContext)
-    const bus = createMasterBus(curVolume)
+    // 1. Create master bus — reuse pre-warmed context if available (created
+    //    synchronously inside the user gesture to satisfy browser autoplay policy)
+    const prewarmed = prewarmedContextRef.current
+    prewarmedContextRef.current = null
+    const bus = createMasterBus(curVolume, prewarmed ?? undefined)
     bus.soundscapeBus.gain.value = Math.max(0.0001, curSoundscapeVolume)
     masterBusRef.current = bus
 
@@ -2141,6 +2148,8 @@ function App() {
                 isRunning={isRunning}
                 onPreview={(plan: SessionPlan) => {
                   if (graphRef.current) stopSession(false)
+                  // Create AudioContext synchronously inside user gesture
+                  prewarmedContextRef.current = new AudioContext()
                   if (plan.binaural.enabled) {
                     setCarrier(plan.binaural.carrier)
                     setBeat(plan.binaural.beatStart)
@@ -2266,6 +2275,8 @@ function App() {
               musicTracks={MUSIC_TRACKS}
               onPreview={(studioLayers) => {
                 if (graphRef.current) stopSession(false)
+                // Create AudioContext synchronously inside the user gesture
+                prewarmedContextRef.current = new AudioContext()
                 // Studio preview: no fade-in, long duration (60 min default)
                 fadeInSecondsRef.current = 0
                 sessionMinutesRef.current = 60
