@@ -12,6 +12,7 @@ type AuthContextType = {
   signUp: (email: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  pollUntilPro: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -38,6 +39,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return
     const p = await fetchProfile(user.id)
     setProfile(p)
+  }, [user, fetchProfile])
+
+  const pollUntilPro = useCallback(async (maxAttempts = 10, intervalMs = 1500) => {
+    if (!user) return
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, intervalMs))
+      const p = await fetchProfile(user.id)
+      setProfile(p)
+      if (p?.is_pro) return
+    }
   }, [user, fetchProfile])
 
   useEffect(() => {
@@ -81,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isPro = profile?.is_pro ?? false
 
   return (
-    <AuthContext.Provider value={{ user, profile, isPro, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, isPro, loading, signIn, signUp, signOut, refreshProfile, pollUntilPro }}>
       {children}
     </AuthContext.Provider>
   )

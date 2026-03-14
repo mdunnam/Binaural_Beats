@@ -604,7 +604,7 @@ function AppInner() {
   const [showApiSettings, setShowApiSettings] = useState(false)
 
   // Auth / Subscription
-  const { user, isPro, signOut, refreshProfile } = useAuth()
+  const { user, isPro, signOut, pollUntilPro } = useAuth()
   const { openUpgradeModal } = useSubscription()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [proToast, setProToast] = useState(false)
@@ -613,7 +613,7 @@ function AppInner() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('upgrade') === 'success') {
-      void refreshProfile().then(() => {
+      void pollUntilPro().then(() => {
         setProToast(true)
         setTimeout(() => setProToast(false), 3000)
       })
@@ -623,7 +623,7 @@ function AppInner() {
       params.delete('upgrade')
       window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''))
     }
-  }, [refreshProfile])
+  }, [pollUntilPro])
 
   const masterBusRef = useRef<MasterBus | null>(null)
   const graphRef = useRef<AudioGraph | null>(null)
