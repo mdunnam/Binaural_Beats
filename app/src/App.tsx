@@ -1880,245 +1880,280 @@ function AppInner() {
 
           {/* ──────────────── TONES TAB ──────────────── */}
           {activeTab === 'tones' && (
-            <div className="grid">
-              {/* Solfeggio quick-select */}
-              <div className="preset-freq-section">
-                <div className="preset-freq-label">Solfeggio Frequencies</div>
-                <div className="solfeggio-grid">
-                  {SOLFEGGIO.map((s) => (
-                    <button key={s.hz} type="button" className="freq-preset-btn"
-                      onClick={() => {
-                        if (useIndependentTuning) { setLeftFrequency(s.hz) }
-                        else { setCarrier(s.hz) }
-                      }}>
-                      <span className="freq-preset-hz">{s.hz}</span>
-                      <span className="freq-preset-label">{s.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="preset-freq-label" style={{ marginTop: '0.6rem' }}>Brainwave Presets</div>
-                <div className="brainwave-grid">
-                  {BRAINWAVE_PRESETS.map((b) => (
-                    <button key={b.name} type="button" className="beat-preset-btn"
-                      onClick={() => setBeat(b.hz)}>
-                      <span className="beat-preset-name">{b.name}</span>
-                      <span className="beat-preset-hz">{b.hz} Hz</span>
-                      <span className="beat-preset-label">{b.label}</span>
-                    </button>
-                  ))}
+            <div className="tab-sections">
+              {/* Presets */}
+              <div className="section-block">
+                <div className="section-title">Presets</div>
+                <div className="section-card">
+                  <div className="section-label">Solfeggio Frequencies</div>
+                  <div className="solfeggio-grid">
+                    {SOLFEGGIO.map((s) => (
+                      <button key={s.hz} type="button" className="freq-preset-btn"
+                        onClick={() => {
+                          if (useIndependentTuning) { setLeftFrequency(s.hz) }
+                          else { setCarrier(s.hz) }
+                        }}>
+                        <span className="freq-preset-hz">{s.hz}</span>
+                        <span className="freq-preset-label">{s.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <hr className="section-divider" />
+                  <div className="section-label">Brainwave Presets</div>
+                  <div className="brainwave-grid">
+                    {BRAINWAVE_PRESETS.map((b) => (
+                      <button key={b.name} type="button" className="beat-preset-btn"
+                        onClick={() => setBeat(b.hz)}>
+                        <span className="beat-preset-name">{b.name}</span>
+                        <span className="beat-preset-hz">{b.hz} Hz</span>
+                        <span className="beat-preset-label">{b.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Frequency */}
-              <div className="section-label">Frequency</div>
-              <label className="toggle-row">
-                <input type="checkbox" checked={useIndependentTuning} onChange={(e) => setUseIndependentTuning(e.target.checked)} />
-                Independent Left / Right Tuning
-              </label>
-              {!useIndependentTuning && (<>
-                <label>Carrier Frequency ({carrier.toFixed(1)} Hz)
-                  <input type="range" min={40} max={1200} step={0.1} value={carrier} onChange={(e) => setCarrier(Number(e.target.value))} />
-                </label>
-                <label>Beat Difference ({beat.toFixed(2)} Hz)
-                  <input type="range" min={0} max={40} step={0.01} value={beat} onChange={(e) => setBeat(Number(e.target.value))} />
-                </label>
-              </>)}
-              {useIndependentTuning && (<>
-                <label>Left Frequency ({leftFrequency.toFixed(2)} Hz)
-                  <input type="range" min={40} max={1200} step={0.01} value={leftFrequency} onChange={(e) => setLeftFrequency(Number(e.target.value))} />
-                </label>
-                <label>Right Frequency ({rightFrequency.toFixed(2)} Hz)
-                  <input type="range" min={40} max={1200} step={0.01} value={rightFrequency} onChange={(e) => setRightFrequency(Number(e.target.value))} />
-                </label>
-              </>)}
-              <label>Phase Offset ({phaseOffset}°)
-                <small className="control-hint">Applied at session start — restart to hear change</small>
-                <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
-              </label>
+              <div className="section-block">
+                <div className="section-title">Frequency</div>
+                <div className="section-card">
+                  <label className="toggle-row">
+                    <input type="checkbox" checked={useIndependentTuning} onChange={(e) => setUseIndependentTuning(e.target.checked)} />
+                    Independent Left / Right Tuning
+                  </label>
+                  {!useIndependentTuning && (<>
+                    <label>Carrier Frequency ({carrier.toFixed(1)} Hz)
+                      <input type="range" min={40} max={1200} step={0.1} value={carrier} onChange={(e) => setCarrier(Number(e.target.value))} />
+                    </label>
+                    <label>Beat Difference ({beat.toFixed(2)} Hz)
+                      <input type="range" min={0} max={40} step={0.01} value={beat} onChange={(e) => setBeat(Number(e.target.value))} />
+                    </label>
+                  </>)}
+                  {useIndependentTuning && (<>
+                    <label>Left Frequency ({leftFrequency.toFixed(2)} Hz)
+                      <input type="range" min={40} max={1200} step={0.01} value={leftFrequency} onChange={(e) => setLeftFrequency(Number(e.target.value))} />
+                    </label>
+                    <label>Right Frequency ({rightFrequency.toFixed(2)} Hz)
+                      <input type="range" min={40} max={1200} step={0.01} value={rightFrequency} onChange={(e) => setRightFrequency(Number(e.target.value))} />
+                    </label>
+                  </>)}
+                  <label>Phase Offset ({phaseOffset}°)
+                    <small className="control-hint">Applied at session start — restart to hear change</small>
+                    <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
+                  </label>
+                </div>
+              </div>
 
               {/* Filter */}
-              <div className="section-label">Filter</div>
-              <label>Filter Type
-                <div className="seg-control">
-                  {(['off', 'lowpass', 'highpass'] as FilterType[]).map((ft) => (
-                    <button key={ft} type="button" className={filterType === ft ? 'active' : ''} onClick={() => setFilterType(ft)}>
-                      {ft === 'off' ? 'Off' : ft === 'lowpass' ? 'Lowpass' : 'Highpass'}
-                    </button>
-                  ))}
+              <div className="section-block">
+                <div className="section-title">Filter</div>
+                <div className="section-card">
+                  <label>Filter Type
+                    <div className="seg-control">
+                      {(['off', 'lowpass', 'highpass'] as FilterType[]).map((ft) => (
+                        <button key={ft} type="button" className={filterType === ft ? 'active' : ''} onClick={() => setFilterType(ft)}>
+                          {ft === 'off' ? 'Off' : ft === 'lowpass' ? 'Lowpass' : 'Highpass'}
+                        </button>
+                      ))}
+                    </div>
+                  </label>
+                  {filterType !== 'off' && (<>
+                    <label>Filter Frequency ({filterFrequency.toFixed(0)} Hz)
+                      <input type="range" min={20} max={20000} step={1} value={filterFrequency}
+                        onChange={(e) => setFilterFrequency(Number(e.target.value))} />
+                    </label>
+                    <label>Resonance / Q ({filterQ.toFixed(1)})
+                      <input type="range" min={0.1} max={20} step={0.1} value={filterQ}
+                        onChange={(e) => setFilterQ(Number(e.target.value))} />
+                    </label>
+                  </>)}
                 </div>
-              </label>
-              {filterType !== 'off' && (<>
-                <label>Filter Frequency ({filterFrequency.toFixed(0)} Hz)
-                  <input type="range" min={20} max={20000} step={1} value={filterFrequency}
-                    onChange={(e) => setFilterFrequency(Number(e.target.value))} />
-                </label>
-                <label>Resonance / Q ({filterQ.toFixed(1)})
-                  <input type="range" min={0.1} max={20} step={0.1} value={filterQ}
-                    onChange={(e) => setFilterQ(Number(e.target.value))} />
-                </label>
-              </>)}
+              </div>
 
               {/* Isochronic Tones */}
-              <div className="section-label">Isochronic Tones</div>
-              <div className="iso-section">
-                <label className="checkbox-label">
-                  <input type="checkbox" checked={isoEnabled} onChange={e => setIsoEnabled(e.target.checked)} />
-                  Enable isochronic tones (works without headphones)
-                </label>
-                {isoEnabled && (
-                  <>
-                    <label>Volume
-                      <input type="range" min={0} max={1} step={0.01} value={isoVolume}
-                        onChange={e => setIsoVolume(Number(e.target.value))} />
-                    </label>
-                    <label>Waveform
-                      <div className="seg-control">
-                        {(['sine', 'triangle', 'square', 'sawtooth'] as OscillatorType[]).map(w => (
-                          <button key={w} type="button" className={isoWaveform === w ? 'seg-btn seg-btn--active' : 'seg-btn'}
-                            onClick={() => setIsoWaveform(w)}>{w}</button>
-                        ))}
-                      </div>
-                    </label>
-                    <label>Duty Cycle <span className="value-badge">{Math.round(isoDutyCycle * 100)}%</span>
-                      <input type="range" min={0.1} max={0.9} step={0.05} value={isoDutyCycle}
-                        onChange={e => setIsoDutyCycle(Number(e.target.value))} />
-                      <span style={{fontSize:'0.75rem',color:'#6e8f7d'}}>Lower = sharper pulse. 50% = equal on/off.</span>
-                    </label>
-                  </>
-                )}
+              <div className="section-block">
+                <div className="section-title">Isochronic Tones</div>
+                <div className="section-card">
+                  <label className="checkbox-label">
+                    <input type="checkbox" checked={isoEnabled} onChange={e => setIsoEnabled(e.target.checked)} />
+                    Enable isochronic tones (works without headphones)
+                  </label>
+                  {isoEnabled && (
+                    <>
+                      <label>Volume
+                        <input type="range" min={0} max={1} step={0.01} value={isoVolume}
+                          onChange={e => setIsoVolume(Number(e.target.value))} />
+                      </label>
+                      <label>Waveform
+                        <div className="seg-control">
+                          {(['sine', 'triangle', 'square', 'sawtooth'] as OscillatorType[]).map(w => (
+                            <button key={w} type="button" className={isoWaveform === w ? 'seg-btn seg-btn--active' : 'seg-btn'}
+                              onClick={() => setIsoWaveform(w)}>{w}</button>
+                          ))}
+                        </div>
+                      </label>
+                      <label>Duty Cycle <span className="value-badge">{Math.round(isoDutyCycle * 100)}%</span>
+                        <input type="range" min={0.1} max={0.9} step={0.05} value={isoDutyCycle}
+                          onChange={e => setIsoDutyCycle(Number(e.target.value))} />
+                        <span style={{fontSize:'0.75rem',color:'#6e8f7d'}}>Lower = sharper pulse. 50% = equal on/off.</span>
+                      </label>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Wobble / LFO */}
-              <div className="section-label">Wobble / LFO</div>              <label>LFO Waveform
-                <div className="seg-control">
-                  {(['sine', 'triangle', 'square', 'sawtooth'] as LfoWaveform[]).map((w) => (
-                    <button key={w} type="button" className={wobbleWaveform === w ? 'active' : ''} onClick={() => setWobbleWaveform(w)}>
-                      {w.charAt(0).toUpperCase() + w.slice(1)}
-                    </button>
-                  ))}
+              <div className="section-block">
+                <div className="section-title">Wobble / LFO</div>
+                <div className="section-card">
+                  <label>LFO Waveform
+                    <div className="seg-control">
+                      {(['sine', 'triangle', 'square', 'sawtooth'] as LfoWaveform[]).map((w) => (
+                        <button key={w} type="button" className={wobbleWaveform === w ? 'active' : ''} onClick={() => setWobbleWaveform(w)}>
+                          {w.charAt(0).toUpperCase() + w.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </label>
+                  <label>LFO Target
+                    <div className="seg-control">
+                      {([['detune', 'Carrier Detune'], ['amplitude', 'Amplitude (AM)'], ['beat', 'Beat Freq']] as [LfoTarget, string][]).map(([val, lbl]) => (
+                        <button key={val} type="button" className={wobbleTarget === val ? 'active' : ''} onClick={() => setWobbleTarget(val)}>{lbl}</button>
+                      ))}
+                    </div>
+                  </label>
+                  <label>Wobble Rate ({wobbleRate.toFixed(2)} Hz)
+                    <input type="range" min={0} max={12} step={0.01} value={wobbleRate} onChange={(e) => setWobbleRate(Number(e.target.value))} />
+                  </label>
+                  <label>Wobble Depth ({wobbleDepthLabel})
+                    <input type="range" min={0} max={60} step={0.1} value={wobbleDepth} onChange={(e) => setWobbleDepth(Number(e.target.value))} />
+                  </label>
                 </div>
-              </label>
-              <label>LFO Target
-                <div className="seg-control">
-                  {([['detune', 'Carrier Detune'], ['amplitude', 'Amplitude (AM)'], ['beat', 'Beat Freq']] as [LfoTarget, string][]).map(([val, lbl]) => (
-                    <button key={val} type="button" className={wobbleTarget === val ? 'active' : ''} onClick={() => setWobbleTarget(val)}>{lbl}</button>
-                  ))}
-                </div>
-              </label>
-              <label>Wobble Rate ({wobbleRate.toFixed(2)} Hz)
-                <input type="range" min={0} max={12} step={0.01} value={wobbleRate} onChange={(e) => setWobbleRate(Number(e.target.value))} />
-              </label>
-              <label>Wobble Depth ({wobbleDepthLabel})
-                <input type="range" min={0} max={60} step={0.1} value={wobbleDepth} onChange={(e) => setWobbleDepth(Number(e.target.value))} />
-              </label>
+              </div>
             </div>
           )}
 
           {/* ──────────────── SOUND TAB ──────────────── */}
           {activeTab === 'sound' && (
-            <div className="grid">
-              {/* Colored Noise */}
-              <div className="section-label">Colored Noise</div>
-              <div className="seg-control">
-                {(['none', 'white', 'pink', 'brown', 'blue', 'violet'] as NoiseType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    className={noiseType === type ? 'active' : ''}
-                    onClick={() => setNoiseType(type)}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
-              </div>
-              {noiseType !== 'none' && (
-                <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={noiseVolume}
-                    onChange={(e) => setNoiseVolume(Number(e.target.value))}
-                  />
-                </label>
-              )}
-
-              {/* Ambient Playback */}
-              <div className="section-label">Ambient Playback</div>
-              <p className="control-hint">
-                {isRunning
-                  ? 'Session is active. Use the Soundscape mixer below to add or adjust rain/ocean/etc in-session.'
-                  : 'Play soundscapes and noise without starting a binaural session.'}
-              </p>
-              <button
-                className={`start-button${ambientButtonActive ? ' start-button--active' : ''}`}
-                onClick={() => void toggleAmbient()}
-                disabled={ambientButtonDisabled}
-                title={ambientButtonDisabled ? 'Disabled during session. Use the Soundscape mixer below.' : undefined}
-              >
-                {ambientButtonLabel}
-              </button>
-
-              {/* Pad Synth */}
-              <div className="section-label">Pad Synth Underlay</div>
-              <label className="toggle-row">
-                <input type="checkbox" checked={padEnabled} onChange={(e) => setPadEnabled(e.target.checked)} />
-                Enable Pad Synth
-              </label>
-              {padEnabled && (<>
-                <label>Pad Volume ({Math.round(padVolume * 100)}%)
-                  <input type="range" min={0} max={1} step={0.01} value={padVolume} onChange={(e) => setPadVolume(Number(e.target.value))} />
-                </label>
-                <label>Pad Reverb Mix ({Math.round(padReverbMix * 100)}%)
-                  <input type="range" min={0} max={1} step={0.01} value={padReverbMix} onChange={(e) => setPadReverbMix(Number(e.target.value))} />
-                </label>
-                <label>Pad Waveform
+            <div className="tab-sections">
+              {/* Noise */}
+              <div className="section-block">
+                <div className="section-title">Noise</div>
+                <div className="section-card">
                   <div className="seg-control">
-                    {(['sine', 'triangle'] as PadWaveform[]).map((w) => (
-                      <button key={w} type="button" className={padWaveform === w ? 'active' : ''} onClick={() => setPadWaveform(w)}>
-                        {w.charAt(0).toUpperCase() + w.slice(1)}
+                    {(['none', 'white', 'pink', 'brown', 'blue', 'violet'] as NoiseType[]).map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        className={noiseType === type ? 'active' : ''}
+                        onClick={() => setNoiseType(type)}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
                       </button>
                     ))}
                   </div>
-                </label>
-                <label>Breathe Rate ({padBreatheRate.toFixed(2)} Hz)
-                  <input type="range" min={0.05} max={0.5} step={0.01} value={padBreatheRate} onChange={(e) => setPadBreatheRate(Number(e.target.value))} />
-                </label>
-              </>)}
-
-              {/* Noise / Soundscape */}
-              <div className="section-label">Soundscape</div>
-              <SoundscapeMixer
-                gains={layerGains}
-                activeSceneId={soundsceneId}
-                onChange={(gains) => {
-                  setLayerGains(gains)
-                  const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
-                    scene.id !== 'custom' && scene.id !== 'off' &&
-                    SOUND_LAYERS.every(l => Math.abs((scene.gains[l.id] ?? 0) - gains[l.id]) < 0.01)
-                  )
-                  setSoundsceneId(matchedScene?.id ?? 'custom')
-                }}
-                onSceneChange={(sceneId) => {
-                  // Free users: only first 2 scenes allowed (off + first scene)
-                  if (!isPro) {
-                    const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id) // off + 2 scenes
-                    if (!freeScenes.includes(sceneId)) {
-                      openUpgradeModal('All Soundscapes')
-                      return
-                    }
-                  }
-                  setSoundsceneId(sceneId)
-                }}
-                disabled={false}
-              />
-              {!isPro && (
-                <div className="soundscape-unlock-row" onClick={() => openUpgradeModal('All Soundscapes')} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && openUpgradeModal('All Soundscapes')}>
-                  <span>🔒 Unlock all soundscapes with Pro</span>
-                  <span style={{ color: '#a78bfa', fontWeight: 600 }}>Upgrade ✨</span>
+                  {noiseType !== 'none' && (
+                    <label>Noise Volume ({Math.round(noiseVolume * 100)}%)
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={noiseVolume}
+                        onChange={(e) => setNoiseVolume(Number(e.target.value))}
+                      />
+                    </label>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Ambient */}
+              <div className="section-block">
+                <div className="section-title">Ambient</div>
+                <div className="section-card">
+                  <p className="control-hint">
+                    {isRunning
+                      ? 'Session is active. Use the Soundscape mixer below to add or adjust rain/ocean/etc in-session.'
+                      : 'Play soundscapes and noise without starting a binaural session.'}
+                  </p>
+                  <button
+                    className={`start-button${ambientButtonActive ? ' start-button--active' : ''}`}
+                    onClick={() => void toggleAmbient()}
+                    disabled={ambientButtonDisabled}
+                    title={ambientButtonDisabled ? 'Disabled during session. Use the Soundscape mixer below.' : undefined}
+                  >
+                    {ambientButtonLabel}
+                  </button>
+                </div>
+              </div>
+
+              {/* Pad Synth */}
+              <div className="section-block">
+                <div className="section-title">Pad Synth</div>
+                <div className="section-card">
+                  <label className="toggle-row">
+                    <input type="checkbox" checked={padEnabled} onChange={(e) => setPadEnabled(e.target.checked)} />
+                    Enable Pad Synth
+                  </label>
+                  {padEnabled && (<>
+                    <label>Pad Volume ({Math.round(padVolume * 100)}%)
+                      <input type="range" min={0} max={1} step={0.01} value={padVolume} onChange={(e) => setPadVolume(Number(e.target.value))} />
+                    </label>
+                    <label>Pad Reverb Mix ({Math.round(padReverbMix * 100)}%)
+                      <input type="range" min={0} max={1} step={0.01} value={padReverbMix} onChange={(e) => setPadReverbMix(Number(e.target.value))} />
+                    </label>
+                    <label>Pad Waveform
+                      <div className="seg-control">
+                        {(['sine', 'triangle'] as PadWaveform[]).map((w) => (
+                          <button key={w} type="button" className={padWaveform === w ? 'active' : ''} onClick={() => setPadWaveform(w)}>
+                            {w.charAt(0).toUpperCase() + w.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </label>
+                    <label>Breathe Rate ({padBreatheRate.toFixed(2)} Hz)
+                      <input type="range" min={0.05} max={0.5} step={0.01} value={padBreatheRate} onChange={(e) => setPadBreatheRate(Number(e.target.value))} />
+                    </label>
+                  </>)}
+                </div>
+              </div>
+
+              {/* Soundscape */}
+              <div className="section-block">
+                <div className="section-title">Soundscape</div>
+                <div className="section-card">
+                  <SoundscapeMixer
+                    gains={layerGains}
+                    activeSceneId={soundsceneId}
+                    onChange={(gains) => {
+                      setLayerGains(gains)
+                      const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
+                        scene.id !== 'custom' && scene.id !== 'off' &&
+                        SOUND_LAYERS.every(l => Math.abs((scene.gains[l.id] ?? 0) - gains[l.id]) < 0.01)
+                      )
+                      setSoundsceneId(matchedScene?.id ?? 'custom')
+                    }}
+                    onSceneChange={(sceneId) => {
+                      // Free users: only first 2 scenes allowed (off + first scene)
+                      if (!isPro) {
+                        const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id) // off + 2 scenes
+                        if (!freeScenes.includes(sceneId)) {
+                          openUpgradeModal('All Soundscapes')
+                          return
+                        }
+                      }
+                      setSoundsceneId(sceneId)
+                    }}
+                    disabled={false}
+                  />
+                  {!isPro && (
+                    <div className="soundscape-unlock-row" onClick={() => openUpgradeModal('All Soundscapes')} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && openUpgradeModal('All Soundscapes')}>
+                      <span>🔒 Unlock all soundscapes with Pro</span>
+                      <span style={{ color: '#a78bfa', fontWeight: 600 }}>Upgrade ✨</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
