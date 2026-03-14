@@ -157,7 +157,9 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   const dragIndexRef = useRef<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
 
-  const handleDragStart = useCallback((idx: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, idx: number) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(idx))
     dragIndexRef.current = idx
   }, [])
 
@@ -621,7 +623,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
               key={scene.id}
               className={`studio-journey-scene${activeJourneyIdx === idx ? ' studio-journey-scene--active' : ''}${dragOverIdx === idx ? ' studio-journey-scene--dragover' : ''}`}
               draggable
-              onDragStart={() => handleDragStart(idx)}
+              onDragStart={e => handleDragStart(e, idx)}
               onDragOver={e => handleDragOver(e, idx)}
               onDrop={e => handleDrop(e, idx)}
               onDragEnd={handleDragEnd}
