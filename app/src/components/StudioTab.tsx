@@ -364,7 +364,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     <div className="studio-tab">
       {/* Header */}
       <div className="studio-layer-header" style={{ cursor: 'default', background: 'none', padding: 0 }}>
-        <span style={{ flex: 1, fontSize: '1.1rem', fontWeight: 700 }}>Studio</span>
+        <span style={{ flex: 1, fontSize: '1.1rem', fontWeight: 700 }}>Session Builder</span>
         {isRunning && (
           <span className="sp-live-badge">
             <span className="sp-live-dot" />
@@ -622,7 +622,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
       </div>
 
       {/* Scenes section */}
-      <div className="studio-section-title">Scenes</div>
+      <div className="studio-section-title">Scenes — Save this session as a scene</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div className="studio-scene-row">
           <input
@@ -662,7 +662,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
       </div>
 
       {/* Journey section */}
-      <div className="studio-section-title">Journey</div>
+      <div className="studio-section-title">Journey — Chain scenes into a sequence</div>
       {journeyScenes.length > 0 && (
         <div className="studio-journey-list">
           {journeyScenes.map((scene, idx) => (
