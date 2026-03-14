@@ -13,13 +13,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing priceId or userId' })
     }
 
+    const origin = (req.headers.origin as string) || 'https://www.theliminal.app'
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
       metadata: { supabase_user_id: userId },
-      success_url: `${req.headers.origin}/?upgrade=success`,
-      cancel_url: `${req.headers.origin}/?upgrade=cancelled`,
+      success_url: `${origin}/?upgrade=success`,
+      cancel_url: `${origin}/?upgrade=cancelled`,
     })
 
     return res.json({ url: session.url })
