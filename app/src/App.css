@@ -2533,7 +2533,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .theme-toggle {
   position: absolute;
   top: 0;
-  right: 0;
+  right: 3.5rem;
   background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 50%;
@@ -3597,10 +3597,14 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 /* User button in header */
-.user-btn {
+.user-menu-wrap {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  z-index: 10;
+}
+
+.user-btn {
   background: rgba(255,255,255,0.08);
   border: 1px solid var(--border-card);
   border-radius: 2rem;
@@ -3612,7 +3616,6 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   align-items: center;
   gap: 0.4rem;
   transition: background 0.15s;
-  z-index: 10;
 }
 .user-btn:hover { background: rgba(255,255,255,0.12); }
 .user-btn-avatar {

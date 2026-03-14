@@ -1755,7 +1755,7 @@ function AppInner() {
         </button>
         {/* User / Auth button */}
         {user ? (
-          <div className="user-menu-wrap" style={{ position: 'relative' }}>
+          <div className="user-menu-wrap">
             <button className="user-btn" onClick={() => setShowUserMenu(m => !m)}>
               <span className="user-btn-avatar">{(user.email ?? 'U')[0].toUpperCase()}</span>
               {isPro && <span className="pro-badge">PRO</span>}
