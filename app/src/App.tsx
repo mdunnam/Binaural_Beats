@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionContext'
 import { UpgradeModal } from './components/UpgradeModal'
 import { AuthModal } from './components/AuthModal'
+import { SettingsPanel } from './components/SettingsPanel'
 import type {
   NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
   AudioGraph, AutomationLanes, SessionPreset, JournalEntry, PadSynthGraph,
@@ -607,6 +608,8 @@ function AppInner() {
   const { user, isPro, signOut, pollUntilPro } = useAuth()
   const { openUpgradeModal } = useSubscription()
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [proToast, setProToast] = useState(false)
 
   // Handle upgrade=success / cancelled URL params
@@ -1752,11 +1755,25 @@ function AppInner() {
         </button>
         {/* User / Auth button */}
         {user ? (
-          <button className="user-btn" onClick={() => void signOut()} title="Sign out">
-            <span className="user-btn-avatar">{(user.email ?? 'U')[0].toUpperCase()}</span>
-            {isPro && <span className="pro-badge">PRO</span>}
-            <span>Sign out</span>
-          </button>
+          <div className="user-menu-wrap" style={{ position: 'relative' }}>
+            <button className="user-btn" onClick={() => setShowUserMenu(m => !m)}>
+              <span className="user-btn-avatar">{(user.email ?? 'U')[0].toUpperCase()}</span>
+              {isPro && <span className="pro-badge">PRO</span>}
+            </button>
+            {showUserMenu && (
+              <>
+                <div className="user-menu-overlay" onClick={() => setShowUserMenu(false)} />
+                <div className="user-dropdown">
+                  <button className="user-dropdown-item" onClick={() => { setShowUserMenu(false); setShowSettingsPanel(true) }}>
+                    ⚙️ Settings
+                  </button>
+                  <button className="user-dropdown-item user-dropdown-item--danger" onClick={() => { setShowUserMenu(false); void signOut() }}>
+                    ↩ Sign Out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         ) : (
           <button className="user-btn" onClick={() => setShowAuthModal(true)}>
             Sign In
@@ -2582,6 +2599,11 @@ function AppInner() {
       {/* ── Auth Modal ── */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {/* ── Settings Panel ── */}
+      {showSettingsPanel && user && (
+        <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
       )}
 
       {/* ── Upgrade Modal ── */}
