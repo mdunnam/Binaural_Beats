@@ -3,6 +3,14 @@ import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
 import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
+const STUDIO_JOURNEYS_KEY = 'liminal-studio-journeys'
+
+type SavedJourney = {
+  id: string
+  name: string
+  scenes: StudioScene[]
+  savedAt: number
+}
 
 const LAYER_ICONS: Record<StudioLayerType, string> = {
   carrier: '〜',
@@ -60,6 +68,9 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   const [crossfadeSec, setCrossfadeSec] = useState(10)
   const [savedScenes, setSavedScenes] = useState<StudioScene[]>([])
   const [journeyScenes, setJourneyScenes] = useState<StudioScene[]>([])
+  const [journeyName, setJourneyName] = useState('My Journey')
+  const [savedJourneys, setSavedJourneys] = useState<SavedJourney[]>([])
+  const [journeySavedFlag, setJourneySavedFlag] = useState(false)
   const [savedFlag, setSavedFlag] = useState(false)
 
   // Load scenes from localStorage on mount
@@ -67,6 +78,8 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     try {
       const raw = localStorage.getItem(STUDIO_SCENES_KEY)
       if (raw) setSavedScenes(JSON.parse(raw) as StudioScene[])
+      const rawJ = localStorage.getItem(STUDIO_JOURNEYS_KEY)
+      if (rawJ) setSavedJourneys(JSON.parse(rawJ) as SavedJourney[])
     } catch { /* ignore */ }
   }, [])
 
@@ -130,6 +143,29 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     const first = journeyScenes[0]
     onPreview(first.layers)
     // TODO: queue remaining scenes — future enhancement
+  }
+  function saveJourney() {
+    if (journeyScenes.length === 0) return
+    const entry: SavedJourney = {
+      id: uid(),
+      name: journeyName.trim() || 'Journey',
+      scenes: JSON.parse(JSON.stringify(journeyScenes)) as StudioScene[],
+      savedAt: Date.now(),
+    }
+    const next = [...savedJourneys, entry]
+    setSavedJourneys(next)
+    localStorage.setItem(STUDIO_JOURNEYS_KEY, JSON.stringify(next))
+    setJourneySavedFlag(true)
+    setTimeout(() => setJourneySavedFlag(false), 1500)
+  }
+  function loadJourney(j: SavedJourney) {
+    setJourneyScenes(JSON.parse(JSON.stringify(j.scenes)) as StudioScene[])
+    setJourneyName(j.name)
+  }
+  function deleteJourney(id: string) {
+    const next = savedJourneys.filter(j => j.id !== id)
+    setSavedJourneys(next)
+    localStorage.setItem(STUDIO_JOURNEYS_KEY, JSON.stringify(next))
   }
 
   return (
@@ -407,6 +443,37 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           Save scenes above and add them to the Journey queue.
         </p>
       )}
+
+      {/* Journey save row */}
+      {journeyScenes.length > 0 && (
+        <div className="studio-scene-row" style={{ marginTop: '0.5rem' }}>
+          <input
+            type="text"
+            className="text-input"
+            value={journeyName}
+            onChange={e => setJourneyName(e.target.value)}
+            placeholder="Journey name"
+          />
+          <button className="soft-button" onClick={saveJourney} style={{ whiteSpace: 'nowrap' }}>
+            {journeySavedFlag ? '✓ Saved!' : '💾 Save Journey'}
+          </button>
+        </div>
+      )}
+
+      {/* Saved journeys list */}
+      {savedJourneys.length > 0 && (
+        <div className="studio-saved-scenes" style={{ marginTop: '0.4rem' }}>
+          {savedJourneys.map(j => (
+            <div key={j.id} className="studio-scene-card">
+              <span className="studio-scene-card-name">{j.name}</span>
+              <span className="studio-scene-card-meta">{j.scenes.length} scenes</span>
+              <button className="studio-journey-btn" onClick={() => loadJourney(j)}>Load</button>
+              <button className="studio-journey-btn" onClick={() => deleteJourney(j.id)}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="studio-actions" style={{ marginTop: '0.5rem' }}>
         <button className="soft-button" onClick={playJourney} disabled={journeyScenes.length === 0}>
           ▶ Play Journey
