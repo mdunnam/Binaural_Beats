@@ -1092,6 +1092,16 @@ function App() {
     }
 
     graphRef.current = graph
+    console.log('[audio] graph started', {
+      leftFreq: graph.leftOsc.frequency.value,
+      rightFreq: graph.rightOsc.frequency.value,
+      leftGain: graph.leftGain.gain.value,
+      rightGain: graph.rightGain.gain.value,
+      masterGain: bus.masterGain.gain.value,
+      binauralBus: bus.binauralBus.gain.value,
+      contextState: bus.context.state,
+      fadeIn: curFadeInSeconds,
+    })
 
     // If a journey is loaded, start it
     if (journeyRef.current && graphRef.current) {
