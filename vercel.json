@@ -1,8 +1,13 @@
 {
-  "buildCommand": "cd app && npm install && npx vite build",
+  "buildCommand": "cd app && npm install && npx vite build && cp -r ../landing ../app/dist/landing",
   "outputDirectory": "app/dist",
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/", "dest": "/landing/index.html" },
+    { "src": "/landing", "dest": "/landing/index.html" },
+    { "src": "/landing/(.*)", "dest": "/landing/$1" },
+    { "src": "/app", "dest": "/index.html" },
+    { "src": "/app/(.*)", "dest": "/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

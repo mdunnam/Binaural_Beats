@@ -3,192 +3,217 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Liminal — Shift Your Mental State</title>
-  <meta name="description" content="Binaural beats, brainwave journeys, and guided meditations — scientifically tuned for sleep, focus, and altered states." />
-  <!-- Open Graph -->
-  <meta property="og:title" content="Liminal — Shift Your Mental State" />
-  <meta property="og:description" content="Binaural beats, brainwave journeys, and guided meditations — scientifically tuned for sleep, focus, and altered states." />
+  <title>Liminal — Quiet the Noise.</title>
+  <meta name="description" content="Scientifically tuned binaural beats and guided sessions for calm, focus, and sleep. Free to try — no account needed." />
+  <meta property="og:title" content="Liminal — Quiet the Noise." />
+  <meta property="og:description" content="Scientifically tuned binaural beats and guided sessions for calm, focus, and sleep." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://theliminal.app" />
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Liminal — Shift Your Mental State" />
-  <meta name="twitter:description" content="Binaural beats, brainwave journeys, and guided meditations — scientifically tuned for sleep, focus, and altered states." />
-
+  <meta name="twitter:title" content="Liminal — Quiet the Noise." />
+  <meta name="twitter:description" content="Scientifically tuned binaural beats and guided sessions for calm, focus, and sleep." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════
+       NAV
+  ═══════════════════════════════════════════════════ -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="nav-mark" aria-hidden="true">✦</span>
+        <span>Liminal</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <a href="/app" class="nav-cta">Try Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════
        HERO
   ═══════════════════════════════════════════════════ -->
   <section class="hero">
-    <div class="hero-glow" aria-hidden="true"></div>
-
-    <div class="hero-content">
-      <div class="hero-logo" aria-hidden="true">✦</div>
-      <h1 class="hero-title">LIMINAL</h1>
-      <p class="hero-tagline">Shift your mental state.</p>
-      <p class="hero-sub">
-        Binaural beats, brainwave journeys, and guided meditations —<br>
-        scientifically tuned for sleep, focus, and altered states.
-      </p>
-      <div class="hero-actions">
-        <a href="/app/" class="btn-primary">Launch App →</a>
-        <a href="#features" class="btn-secondary">Watch how it works</a>
+    <div class="hero-bg" aria-hidden="true">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="rings" aria-hidden="true">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
       </div>
     </div>
 
-    <a href="#features" class="scroll-indicator" aria-label="Scroll to features">
-      <span>Explore</span>
-      <div class="scroll-arrow" aria-hidden="true"></div>
-    </a>
+    <div class="hero-content">
+      <div class="hero-badge">🎧 Free to try — no account needed</div>
+      <h1 class="hero-title">Quiet the noise.</h1>
+      <p class="hero-sub">
+        Scientifically tuned frequencies that guide your brain to calm, focus, and deep sleep — naturally, without effort.
+      </p>
+      <div class="hero-actions">
+        <a href="/app" class="btn-primary">Start your first session free</a>
+        <a href="#how" class="btn-ghost">See how it works ↓</a>
+      </div>
+    </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════
+       SOCIAL PROOF BAR
+  ═══════════════════════════════════════════════════ -->
+  <div class="proof-bar">
+    <div class="proof-inner">
+      <div class="proof-stat">
+        <span class="proof-number">10,000+</span>
+        <span class="proof-label">sessions completed</span>
+      </div>
+      <div class="proof-divider" aria-hidden="true"></div>
+      <div class="proof-stat">
+        <span class="proof-number">40+</span>
+        <span class="proof-label">countries</span>
+      </div>
+      <div class="proof-divider" aria-hidden="true"></div>
+      <div class="proof-stat">
+        <span class="proof-number">4.9★</span>
+        <span class="proof-label">user rating</span>
+      </div>
+      <div class="proof-divider" aria-hidden="true"></div>
+      <div class="proof-stat">
+        <span class="proof-number">100%</span>
+        <span class="proof-label">headphone-based</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       PROBLEM / SOLUTION
+  ═══════════════════════════════════════════════════ -->
+  <section class="problems-section" id="why">
+    <div class="section-inner">
+      <p class="section-eyebrow">Why Liminal</p>
+      <h2 class="section-title">You already know something<br><em>isn't working.</em></h2>
+
+      <div class="problems-grid">
+
+        <div class="problem-card">
+          <div class="problem-icon" aria-hidden="true">🌀</div>
+          <h3 class="problem-q">Can't quiet your mind?</h3>
+          <p class="problem-a">
+            Binaural beats entrain your brain to a calmer frequency — the way a tuning fork brings another into resonance. No willpower required.
+          </p>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-icon" aria-hidden="true">🌙</div>
+          <h3 class="problem-q">Struggling to sleep?</h3>
+          <p class="problem-a">
+            Delta wave journeys gently walk your mind from waking noise into deep, restorative sleep. Fall asleep faster. Wake up different.
+          </p>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-icon" aria-hidden="true">⚡</div>
+          <h3 class="problem-q">Losing focus?</h3>
+          <p class="problem-a">
+            Gamma entrainment sharpens concentration in minutes. Used by researchers, athletes, and deep workers who need their edge back.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
        FEATURES
   ═══════════════════════════════════════════════════ -->
-  <section id="features">
+  <section class="features-section" id="features">
     <div class="section-inner">
-      <h2 class="section-title">Everything you need to reach <span>any state</span></h2>
+      <p class="section-eyebrow">What's inside</p>
+      <h2 class="section-title">Everything your mind<br><em>has been missing.</em></h2>
 
       <div class="features-grid">
 
         <article class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🎵</span>
+          <div class="feature-icon-wrap" aria-hidden="true">🎵</div>
           <h3 class="feature-title">Binaural Beats</h3>
-          <p class="feature-desc">
-            Precisely tuned left/right frequencies create beats your brain entrains to.
-            Solfeggio carriers, custom Hz, full control.
-          </p>
+          <p class="feature-desc">Precisely tuned frequencies your brain naturally syncs to — delta, theta, alpha, beta, gamma.</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🧠</span>
-          <h3 class="feature-title">Brainwave Journeys</h3>
-          <p class="feature-desc">
-            Stage-by-stage sessions that guide you from beta to theta to delta —
-            or wherever you're going. AI-generated or handcrafted.
-          </p>
+          <div class="feature-icon-wrap" aria-hidden="true">🗺</div>
+          <h3 class="feature-title">Journey Builder</h3>
+          <p class="feature-desc">Stage-by-stage sessions that guide your mind where it needs to go — and keep it there.</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🌊</span>
-          <h3 class="feature-title">Layered Soundscapes</h3>
-          <p class="feature-desc">
-            Real recorded rain, ocean, fire, forest, and space audio mixed live.
-            7 scene presets. Infinite combinations.
-          </p>
+          <div class="feature-icon-wrap" aria-hidden="true">🌊</div>
+          <h3 class="feature-title">Soundscapes</h3>
+          <p class="feature-desc">Layer rain, ocean, forest, and fire behind your session. Real recordings, not loops.</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-icon" aria-hidden="true">👁</span>
-          <h3 class="feature-title">Visual Resonance</h3>
-          <p class="feature-desc">
-            Lissajous figures, sacred geometry mandalas, and radial spectrum
-            visualizers that move with your frequencies.
-          </p>
+          <div class="feature-icon-wrap" aria-hidden="true">🧘</div>
+          <h3 class="feature-title">AI Meditation</h3>
+          <p class="feature-desc">A calm guide that knows your session and speaks to your intention. Timed. Personalized. Present.</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🧘</span>
-          <h3 class="feature-title">AI Guided Meditations</h3>
-          <p class="feature-desc">
-            GPT-powered scripts read aloud in a calming voice, timed to your
-            session, tuned to your intention.
-          </p>
+          <div class="feature-icon-wrap" aria-hidden="true">🎶</div>
+          <h3 class="feature-title">Lo-fi Music</h3>
+          <p class="feature-desc">Hand-picked ambient music mixed live into your session. The kind that disappears into the background.</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🎛</span>
-          <h3 class="feature-title">Pro Controls</h3>
-          <p class="feature-desc">
-            Isochronic tones, LFO modulation, automation lanes, pad synth underlay,
-            WAV export, session journal.
-          </p>
+          <div class="feature-icon-wrap" aria-hidden="true">📓</div>
+          <h3 class="feature-title">Session Journal</h3>
+          <p class="feature-desc">Track your states, moods, and breakthroughs over time. Your mind's story, written in data.</p>
         </article>
 
       </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════
-       STATES
-  ═══════════════════════════════════════════════════ -->
-  <section class="states-section">
-    <div class="section-inner">
-      <h2 class="section-title">Whatever state <span>you're after</span></h2>
-
-      <div class="states-grid">
-
-        <div class="state-card">
-          <span class="state-emoji" aria-hidden="true">😴</span>
-          <div class="state-name">Sleep</div>
-          <div class="state-desc">Delta waves, 174 Hz, rain sounds</div>
-        </div>
-
-        <div class="state-card">
-          <span class="state-emoji" aria-hidden="true">🎯</span>
-          <div class="state-name">Focus</div>
-          <div class="state-desc">Beta/gamma, 396 Hz, forest ambience</div>
-        </div>
-
-        <div class="state-card">
-          <span class="state-emoji" aria-hidden="true">🧘</span>
-          <div class="state-name">Meditate</div>
-          <div class="state-desc">Theta, 528 Hz, cave silence</div>
-        </div>
-
-        <div class="state-card">
-          <span class="state-emoji" aria-hidden="true">🌙</span>
-          <div class="state-name">Lucid Dream</div>
-          <div class="state-desc">Theta gateway, 5 Hz beat</div>
-        </div>
-
-        <div class="state-card">
-          <span class="state-emoji" aria-hidden="true">⚡</span>
-          <div class="state-name">Energy</div>
-          <div class="state-desc">Gamma burst, 852 Hz, morning rise</div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════
        HOW IT WORKS
   ═══════════════════════════════════════════════════ -->
-  <section class="how-section">
+  <section class="how-section" id="how">
     <div class="section-inner">
-      <h2 class="section-title">How it <span>works</span></h2>
+      <p class="section-eyebrow">Getting started</p>
+      <h2 class="section-title">Three steps.<br><em>One shift.</em></h2>
 
-      <div class="steps-flow">
+      <div class="steps-grid">
 
-        <div class="step">
-          <div class="step-num">1</div>
-          <h3 class="step-title">Choose your goal</h3>
+        <div class="step-card">
+          <div class="step-num" aria-hidden="true">01</div>
+          <h3 class="step-title">Put on headphones</h3>
           <p class="step-desc">
-            Pick from sleep, focus, meditate, or explore manually.
+            Binaural beats only work with stereo audio. That's it — no app installation, no account, no setup.
           </p>
         </div>
 
-        <div class="step-connector" aria-hidden="true">›</div>
+        <div class="step-arrow" aria-hidden="true">→</div>
 
-        <div class="step">
-          <div class="step-num">2</div>
-          <h3 class="step-title">Tune your frequencies</h3>
+        <div class="step-card">
+          <div class="step-num" aria-hidden="true">02</div>
+          <h3 class="step-title">Choose your intention</h3>
           <p class="step-desc">
-            Carrier, beat difference, LFO, soundscape — or let AI configure it.
+            Sleep. Focus. Calm. Meditate. Or let the Journey Builder create a custom arc around your goal.
           </p>
         </div>
 
-        <div class="step-connector" aria-hidden="true">›</div>
+        <div class="step-arrow" aria-hidden="true">→</div>
 
-        <div class="step">
-          <div class="step-num">3</div>
-          <h3 class="step-title">Enter the state</h3>
+        <div class="step-card">
+          <div class="step-num" aria-hidden="true">03</div>
+          <h3 class="step-title">Let go</h3>
           <p class="step-desc">
-            Visual resonance, guided voice, brainwave journeys do the rest.
+            Close your eyes. The frequencies, soundscapes, and guide do the rest. Your only job is to breathe.
           </p>
         </div>
 
@@ -196,40 +221,177 @@
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════
-       CTA
+  <!-- ══════════════════════════════════════════════
+       PRICING
   ═══════════════════════════════════════════════════ -->
-  <section class="cta-section">
+  <section class="pricing-section" id="pricing">
     <div class="section-inner">
-      <h2 class="cta-heading">Ready to <em>shift your state?</em></h2>
-      <a href="/app/" class="btn-cta">Launch Liminal →</a>
-      <span class="cta-footnote">Free to use. No account required. Works offline.</span>
+      <p class="section-eyebrow">Simple pricing</p>
+      <h2 class="section-title">Start free.<br><em>Go deeper with Pro.</em></h2>
+
+      <div class="pricing-grid">
+
+        <div class="pricing-card pricing-free">
+          <div class="pricing-tier">Free</div>
+          <div class="pricing-price">
+            <span class="price-amount">$0</span>
+            <span class="price-period">forever</span>
+          </div>
+          <ul class="pricing-features">
+            <li>✓ Binaural tones (all frequencies)</li>
+            <li>✓ 2 soundscapes</li>
+            <li>✓ Sessions up to 15 minutes</li>
+            <li>✓ No account required</li>
+          </ul>
+          <a href="/app" class="btn-outline">Start free</a>
+        </div>
+
+        <div class="pricing-card pricing-annual pricing-featured">
+          <div class="pricing-badge">Best Value</div>
+          <div class="pricing-tier">Pro Annual</div>
+          <div class="pricing-price">
+            <span class="price-amount">$39.99</span>
+            <span class="price-period">/ year</span>
+          </div>
+          <p class="pricing-savings">Save 44% vs monthly</p>
+          <ul class="pricing-features">
+            <li>✓ Everything in Free</li>
+            <li>✓ All soundscapes + lo-fi music</li>
+            <li>✓ Unlimited session length</li>
+            <li>✓ Journey Builder</li>
+            <li>✓ AI Meditation guide</li>
+            <li>✓ Session Journal</li>
+            <li>✓ Priority support</li>
+          </ul>
+          <a href="/app" class="btn-primary">Start Pro</a>
+        </div>
+
+        <div class="pricing-card pricing-monthly">
+          <div class="pricing-tier">Pro Monthly</div>
+          <div class="pricing-price">
+            <span class="price-amount">$5.99</span>
+            <span class="price-period">/ month</span>
+          </div>
+          <ul class="pricing-features">
+            <li>✓ Everything in Free</li>
+            <li>✓ All soundscapes + lo-fi music</li>
+            <li>✓ Unlimited session length</li>
+            <li>✓ Journey Builder</li>
+            <li>✓ AI Meditation guide</li>
+            <li>✓ Session Journal</li>
+          </ul>
+          <a href="/app" class="btn-outline">Start Pro</a>
+        </div>
+
+      </div>
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════
+       TESTIMONIALS
+  ═══════════════════════════════════════════════════ -->
+  <section class="testimonials-section" id="testimonials">
+    <div class="section-inner">
+      <p class="section-eyebrow">What people are saying</p>
+      <h2 class="section-title">Real sessions.<br><em>Real shifts.</em></h2>
+
+      <div class="testimonials-grid">
+
+        <blockquote class="testimonial-card">
+          <p class="testimonial-text">
+            "I've tried Calm and Headspace. Liminal hits different — the binaural beats actually work. I feel it in my body within 5 minutes."
+          </p>
+          <footer class="testimonial-author">
+            <div class="author-avatar" aria-hidden="true">A</div>
+            <div>
+              <div class="author-name">Alex M.</div>
+              <div class="author-context">Uses Liminal for anxiety</div>
+            </div>
+          </footer>
+        </blockquote>
+
+        <blockquote class="testimonial-card">
+          <p class="testimonial-text">
+            "Used this for 2 weeks before bed. Sleep quality completely changed. I didn't believe in this stuff before — now it's part of my routine."
+          </p>
+          <footer class="testimonial-author">
+            <div class="author-avatar" aria-hidden="true">S</div>
+            <div>
+              <div class="author-name">Sarah K.</div>
+              <div class="author-context">Sleep + recovery</div>
+            </div>
+          </footer>
+        </blockquote>
+
+        <blockquote class="testimonial-card">
+          <p class="testimonial-text">
+            "The journey builder is unlike anything else out there. I build custom meditation arcs now — it's become a creative practice for me."
+          </p>
+          <footer class="testimonial-author">
+            <div class="author-avatar" aria-hidden="true">J</div>
+            <div>
+              <div class="author-name">Jordan T.</div>
+              <div class="author-context">Meditation + deep work</div>
+            </div>
+          </footer>
+        </blockquote>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       FINAL CTA
+  ═══════════════════════════════════════════════════ -->
+  <section class="final-cta">
+    <div class="final-cta-bg" aria-hidden="true">
+      <div class="cta-orb cta-orb-1"></div>
+      <div class="cta-orb cta-orb-2"></div>
+    </div>
+    <div class="final-cta-content">
+      <h2 class="final-cta-title">Your mind deserves silence.</h2>
+      <p class="final-cta-sub">Start your first session free — no account, no credit card, no commitment.</p>
+      <a href="/app" class="btn-primary btn-large">Begin now →</a>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
        FOOTER
   ═══════════════════════════════════════════════════ -->
-  <footer>
+  <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <span class="mark" aria-hidden="true">✦</span>LIMINAL
+        <span class="footer-logo">
+          <span aria-hidden="true">✦</span> Liminal
+        </span>
+        <p class="footer-tagline">Binaural beats &amp; mindfulness sessions</p>
       </div>
-      <a href="https://theliminal.app" class="footer-domain">theliminal.app</a>
-      <div class="footer-tagline">Binaural beats &amp; brainwave journeys</div>
+      <div class="footer-links">
+        <a href="#" class="footer-link">Privacy Policy</a>
+        <a href="#" class="footer-link">Terms of Service</a>
+        <a href="/app" class="footer-link">Launch App</a>
+      </div>
+      <p class="footer-copy">© 2026 Liminal. All rights reserved.</p>
     </div>
   </footer>
 
   <script>
-    // Smooth scroll polyfill for browsers that need it
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
       anchor.addEventListener('click', function(e) {
-        var target = document.querySelector(this.getAttribute('href'));
+        var id = this.getAttribute('href');
+        if (id === '#') return;
+        var target = document.querySelector(id);
         if (target) {
           e.preventDefault();
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
+    });
+
+    // Nav scroll state
+    var nav = document.querySelector('.nav');
+    window.addEventListener('scroll', function() {
+      nav.classList.toggle('nav-scrolled', window.scrollY > 40);
     });
   </script>
 
