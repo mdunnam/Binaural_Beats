@@ -574,19 +574,35 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                 {expandedAdvancedId === layer.id && (
                   <div className="studio-advanced-panel">
                     {layer.type === 'beat' ? (
-                      <LaneEditor
-                        config={{ key: 'beatFrequency', label: 'Beat Frequency over Session', min: 0, max: 40, unit: ' Hz' }}
-                        points={layer.automation?.beatFrequency ?? []}
-                        onChange={(pts) => updateLayerAutomation(layer.id, { beatFrequency: pts })}
-                        sessionMinutes={durationMinutes}
-                      />
+                      <>
+                        <LaneEditor
+                          config={{ key: 'beatFrequency', label: 'Beat Frequency over Session', min: 0, max: 40, unit: ' Hz' }}
+                          points={layer.automation?.beatFrequency ?? []}
+                          onChange={(pts) => updateLayerAutomation(layer.id, { beatFrequency: pts })}
+                          sessionMinutes={durationMinutes}
+                        />
+                        <LaneEditor
+                          config={{ key: 'filterCutoff', label: 'Filter Cutoff over Session', min: 20, max: 20000, unit: ' Hz' }}
+                          points={layer.automation?.filterCutoff ?? []}
+                          onChange={(pts) => updateLayerAutomation(layer.id, { filterCutoff: pts })}
+                          sessionMinutes={durationMinutes}
+                        />
+                      </>
                     ) : (
-                      <LaneEditor
-                        config={{ key: 'volume', label: 'Volume over Session', min: 0, max: 1, unit: '' }}
-                        points={layer.automation?.volume ?? []}
-                        onChange={(pts) => updateLayerAutomation(layer.id, { volume: pts })}
-                        sessionMinutes={durationMinutes}
-                      />
+                      <>
+                        <LaneEditor
+                          config={{ key: 'volume', label: 'Volume over Session', min: 0, max: 1, unit: '' }}
+                          points={layer.automation?.volume ?? []}
+                          onChange={(pts) => updateLayerAutomation(layer.id, { volume: pts })}
+                          sessionMinutes={durationMinutes}
+                        />
+                        <LaneEditor
+                          config={{ key: 'filterCutoff', label: 'Filter Cutoff over Session', min: 20, max: 20000, unit: ' Hz' }}
+                          points={layer.automation?.filterCutoff ?? []}
+                          onChange={(pts) => updateLayerAutomation(layer.id, { filterCutoff: pts })}
+                          sessionMinutes={durationMinutes}
+                        />
+                      </>
                     )}
                   </div>
                 )}

@@ -150,6 +150,7 @@ export type StudioLayer = {
   automation?: {
     beatFrequency?: AutomationPoint[]   // beat layer only
     volume?: AutomationPoint[]          // all other layers
+    filterCutoff?: AutomationPoint[]    // all layers
   }
 }
 
