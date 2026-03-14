@@ -3355,3 +3355,63 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 .studio-scene-card-name { flex: 1; font-weight: 600; }
 .studio-scene-card-meta { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Studio Tab — presets row */
+.studio-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.2rem;
+}
+.studio-preset-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s, color 0.15s;
+}
+.studio-preset-btn:hover { background: var(--accent); color: #fff; }
+
+/* Studio Tab — layer sub-label */
+.studio-layer-sublabel {
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Studio Tab — vol slider wrap for mobile */
+.studio-layer-vol-wrap { display: contents; }
+
+/* Studio Tab — active journey scene highlight */
+.studio-journey-scene--active {
+  background: rgba(91,184,150,0.12);
+  border-radius: 0.4rem;
+}
+.studio-journey-countdown {
+  font-size: 0.75rem;
+  color: var(--accent, #5bb896);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.8rem;
+  text-align: right;
+}
+
+/* Mobile layout */
+@media (max-width: 480px) {
+  .studio-layer-header { flex-wrap: wrap; }
+  .studio-layer-vol-wrap {
+    display: flex;
+    flex: 1 1 100%;
+    order: 10;
+    padding: 0.2rem 0.4rem 0.3rem;
+  }
+  .studio-layer-vol { width: 100%; }
+  .studio-layer-settings label { display: flex; flex-direction: column; }
+  .studio-layer-settings .seg-control { flex-wrap: wrap; }
+  .studio-journey-scene { flex-wrap: wrap; }
+  .studio-journey-scene-name { flex: 1 1 100%; order: -1; }
+  .studio-scene-card { flex-wrap: wrap; }
+  .studio-presets-row { gap: 0.3rem; }
+}

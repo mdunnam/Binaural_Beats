@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
 import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 
@@ -47,6 +47,77 @@ function defaultLayer(type: StudioLayerType, firstTrackId: string): StudioLayer 
   }
 }
 
+/** Build a descriptive sub-label for a layer header */
+function layerSubLabel(layer: StudioLayer, musicTracks: MusicTrack[]): string {
+  switch (layer.type) {
+    case 'carrier': {
+      const hz = (layer.settings.hz as number) ?? 432
+      return `${hz % 1 === 0 ? hz : hz.toFixed(1)} Hz`
+    }
+    case 'beat': {
+      const hz = (layer.settings.hz as number) ?? 6
+      return `${hz % 1 === 0 ? hz : hz.toFixed(2)} Hz`
+    }
+    case 'soundscape': {
+      const sceneId = (layer.settings.sceneId as string) ?? 'forest'
+      const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
+      return scene ? scene.label : sceneId
+    }
+    case 'noise': {
+      const t = (layer.settings.type as string) ?? 'pink'
+      return t.charAt(0).toUpperCase() + t.slice(1)
+    }
+    case 'pad': {
+      const w = (layer.settings.waveform as string) ?? 'sine'
+      return w.charAt(0).toUpperCase() + w.slice(1)
+    }
+    case 'music': {
+      const trackId = layer.settings.trackId as string
+      const track = musicTracks.find(t => t.id === trackId)
+      return track ? track.title : 'No track'
+    }
+  }
+}
+
+// ── Quick-start presets ──
+type Preset = { emoji: string; label: string; layers: Omit<StudioLayer, 'id'>[] }
+
+const QUICK_PRESETS: Preset[] = [
+  {
+    emoji: '🧠', label: 'Focus',
+    layers: [
+      { type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 432 } },
+      { type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 14, wobbleRate: 0.4 } },
+      { type: 'noise',   enabled: true, volume: 0.08, label: 'Noise',   settings: { type: 'pink' } },
+    ],
+  },
+  {
+    emoji: '😴', label: 'Sleep',
+    layers: [
+      { type: 'carrier',    enabled: true, volume: 0.15, label: 'Carrier',    settings: { hz: 174 } },
+      { type: 'beat',       enabled: true, volume: 0.15, label: 'Beat',       settings: { hz: 2, wobbleRate: 0.2 } },
+      { type: 'soundscape', enabled: true, volume: 0.18, label: 'Soundscape', settings: { sceneId: 'rain', layerGains: {} } },
+    ],
+  },
+  {
+    emoji: '🧘', label: 'Relax',
+    layers: [
+      { type: 'carrier',    enabled: true, volume: 0.15, label: 'Carrier',    settings: { hz: 528 } },
+      { type: 'beat',       enabled: true, volume: 0.15, label: 'Beat',       settings: { hz: 6, wobbleRate: 0.3 } },
+      { type: 'soundscape', enabled: true, volume: 0.18, label: 'Soundscape', settings: { sceneId: 'forest', layerGains: {} } },
+      { type: 'pad',        enabled: true, volume: 0.10, label: 'Pad',        settings: { waveform: 'sine', reverbMix: 0.6, breatheRate: 0.1 } },
+    ],
+  },
+  {
+    emoji: '⚡', label: 'Energy',
+    layers: [
+      { type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 528 } },
+      { type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 40, wobbleRate: 0.5 } },
+      { type: 'noise',   enabled: true, volume: 0.08, label: 'Noise',   settings: { type: 'white' } },
+    ],
+  },
+]
+
 type MusicTrack = { id: string; title: string; artist: string; duration: number }
 
 type StudioTabProps = {
@@ -73,6 +144,15 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   const [journeySavedFlag, setJourneySavedFlag] = useState(false)
   const [savedFlag, setSavedFlag] = useState(false)
 
+  // Journey playback state
+  const [activeJourneyIdx, setActiveJourneyIdx] = useState<number | null>(null)
+  const [journeyCountdown, setJourneyCountdown] = useState<number | null>(null)
+  const journeyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const journeyCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // keep a ref to current journeyScenes so timeout callbacks have fresh data
+  const journeyScenesRef = useRef<StudioScene[]>(journeyScenes)
+  useEffect(() => { journeyScenesRef.current = journeyScenes }, [journeyScenes])
+
   // Load scenes from localStorage on mount
   useEffect(() => {
     try {
@@ -90,6 +170,60 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     return () => window.clearTimeout(id)
   }, [isRunning, layers]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Stop journey timers when audio stops externally
+  useEffect(() => {
+    if (!isRunning && activeJourneyIdx !== null) {
+      clearJourneyTimers()
+      setActiveJourneyIdx(null)
+      setJourneyCountdown(null)
+    }
+  }, [isRunning]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup on unmount
+  useEffect(() => () => clearJourneyTimers(), [])
+
+  function clearJourneyTimers() {
+    if (journeyTimerRef.current) { clearTimeout(journeyTimerRef.current); journeyTimerRef.current = null }
+    if (journeyCountdownRef.current) { clearInterval(journeyCountdownRef.current); journeyCountdownRef.current = null }
+  }
+
+  function scheduleNextScene(idx: number) {
+    const scenes = journeyScenesRef.current
+    if (idx >= scenes.length) {
+      // Journey complete
+      setActiveJourneyIdx(null)
+      setJourneyCountdown(null)
+      clearJourneyTimers()
+      return
+    }
+    const scene = scenes[idx]
+    const durationMs = scene.durationMinutes * 60 * 1000
+    let remaining = scene.durationMinutes * 60
+
+    // Countdown ticker
+    clearJourneyTimers()
+    setJourneyCountdown(remaining)
+    journeyCountdownRef.current = setInterval(() => {
+      remaining -= 1
+      setJourneyCountdown(remaining)
+    }, 1000)
+
+    journeyTimerRef.current = setTimeout(() => {
+      if (journeyCountdownRef.current) { clearInterval(journeyCountdownRef.current); journeyCountdownRef.current = null }
+      const nextIdx = idx + 1
+      const nextScenes = journeyScenesRef.current
+      if (nextIdx < nextScenes.length) {
+        setActiveJourneyIdx(nextIdx)
+        onLiveUpdate(nextScenes[nextIdx].layers)
+        scheduleNextScene(nextIdx)
+      } else {
+        setActiveJourneyIdx(null)
+        setJourneyCountdown(null)
+        clearJourneyTimers()
+      }
+    }, durationMs)
+  }
+
   // ── Layer helpers ──
   function updateLayer(id: string, patch: Partial<StudioLayer>) {
     setLayers(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l))
@@ -103,6 +237,9 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   function addLayer(type: StudioLayerType) {
     const firstTrackId = musicTracks[0]?.id ?? ''
     setLayers(ls => [...ls, defaultLayer(type, firstTrackId)])
+  }
+  function applyPreset(preset: Preset) {
+    setLayers(preset.layers.map(l => ({ ...l, id: uid() })))
   }
 
   // ── Scene helpers ──
@@ -119,6 +256,13 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     localStorage.setItem(STUDIO_SCENES_KEY, JSON.stringify(next))
     setSavedFlag(true)
     setTimeout(() => setSavedFlag(false), 1500)
+  }
+
+  function loadScene(scene: StudioScene) {
+    setLayers(JSON.parse(JSON.stringify(scene.layers)) as StudioLayer[])
+    setSceneName(scene.name)
+    setDurationMinutes(scene.durationMinutes)
+    setCrossfadeSec(scene.crossfadeSec)
   }
 
   // ── Journey helpers ──
@@ -140,9 +284,17 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   }
   function playJourney() {
     if (journeyScenes.length === 0) return
+    clearJourneyTimers()
     const first = journeyScenes[0]
+    setActiveJourneyIdx(0)
     onPreview(first.layers)
-    // TODO: queue remaining scenes — future enhancement
+    scheduleNextScene(0)
+  }
+  function stopJourney() {
+    clearJourneyTimers()
+    setActiveJourneyIdx(null)
+    setJourneyCountdown(null)
+    onStop()
   }
   function saveJourney() {
     if (journeyScenes.length === 0) return
@@ -168,6 +320,14 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     localStorage.setItem(STUDIO_JOURNEYS_KEY, JSON.stringify(next))
   }
 
+  function formatCountdown(secs: number): string {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const journeyPlaying = activeJourneyIdx !== null
+
   return (
     <div className="studio-tab">
       {/* Header */}
@@ -180,9 +340,18 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           </span>
         )}
         {isRunning
-          ? <button className="soft-button" style={{ padding: '0.3rem 0.9rem', fontSize: '0.83rem' }} onClick={onStop}>■ Stop</button>
+          ? <button className="soft-button" style={{ padding: '0.3rem 0.9rem', fontSize: '0.83rem' }} onClick={journeyPlaying ? stopJourney : onStop}>■ Stop</button>
           : <button className="soft-button" style={{ padding: '0.3rem 0.9rem', fontSize: '0.83rem' }} onClick={() => onPreview(layers)}>▶ Preview</button>
         }
+      </div>
+
+      {/* Quick-start presets */}
+      <div className="studio-presets-row">
+        {QUICK_PRESETS.map(preset => (
+          <button key={preset.label} className="studio-preset-btn" onClick={() => applyPreset(preset)}>
+            {preset.emoji} {preset.label}
+          </button>
+        ))}
       </div>
 
       {/* Layer stack */}
@@ -192,14 +361,18 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
             <div className="studio-layer-header" onClick={() => setExpandedLayerId(id => id === layer.id ? null : layer.id)}>
               <span className="studio-layer-drag">⠿</span>
               <span className="studio-layer-icon">{LAYER_ICONS[layer.type]}</span>
-              <span className="studio-layer-label">{layer.label}</span>
-              <input
-                className="studio-layer-vol"
-                type="range" min={0} max={1} step={0.01}
-                value={layer.volume}
-                onClick={e => e.stopPropagation()}
-                onChange={e => updateLayer(layer.id, { volume: Number(e.target.value) })}
-              />
+              <span className="studio-layer-label">
+                {layer.label}
+                <span className="studio-layer-sublabel"> · {layerSubLabel(layer, musicTracks)}</span>
+              </span>
+              <div className="studio-layer-vol-wrap" onClick={e => e.stopPropagation()}>
+                <input
+                  className="studio-layer-vol"
+                  type="range" min={0} max={1} step={0.01}
+                  value={layer.volume}
+                  onChange={e => updateLayer(layer.id, { volume: Number(e.target.value) })}
+                />
+              </div>
               <input
                 className="studio-layer-toggle"
                 type="checkbox"
@@ -265,7 +438,6 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                       <select value={(layer.settings.sceneId as string) ?? 'forest'}
                         onChange={e => {
                           const sceneId = e.target.value
-                          // Auto-populate layerGains from the selected scene definition
                           const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
                           const gains: Record<string, number> = {}
                           if (scene) {
@@ -407,6 +579,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
               <div key={scene.id} className="studio-scene-card">
                 <span className="studio-scene-card-name">{scene.name}</span>
                 <span className="studio-scene-card-meta">{scene.durationMinutes}m · {scene.crossfadeSec}s fade</span>
+                <button className="studio-journey-btn" onClick={() => loadScene(scene)}>✏️ Load</button>
                 <button className="studio-journey-btn" onClick={() => addToJourney(scene)}>Add to Journey +</button>
               </div>
             ))}
@@ -419,10 +592,16 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
       {journeyScenes.length > 0 && (
         <div className="studio-journey-list">
           {journeyScenes.map((scene, idx) => (
-            <div key={scene.id} className="studio-journey-scene">
+            <div
+              key={scene.id}
+              className={`studio-journey-scene${activeJourneyIdx === idx ? ' studio-journey-scene--active' : ''}`}
+            >
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', minWidth: '1.2rem' }}>{idx + 1}.</span>
               <span className="studio-journey-scene-name">{scene.name}</span>
               <span className="studio-journey-scene-meta">{scene.durationMinutes}m</span>
+              {activeJourneyIdx === idx && journeyCountdown !== null && (
+                <span className="studio-journey-countdown">{formatCountdown(journeyCountdown)}</span>
+              )}
               <input
                 type="number"
                 min={0} max={60} step={1}
@@ -475,10 +654,11 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
       )}
 
       <div className="studio-actions" style={{ marginTop: '0.5rem' }}>
-        <button className="soft-button" onClick={playJourney} disabled={journeyScenes.length === 0}>
-          ▶ Play Journey
-        </button>
-        <button className="soft-button soft-button--danger" onClick={() => setJourneyScenes([])} disabled={journeyScenes.length === 0}>
+        {journeyPlaying
+          ? <button className="soft-button soft-button--danger" onClick={stopJourney}>■ Stop Journey</button>
+          : <button className="soft-button" onClick={playJourney} disabled={journeyScenes.length === 0}>▶ Play Journey</button>
+        }
+        <button className="soft-button soft-button--danger" onClick={() => { stopJourney(); setJourneyScenes([]) }} disabled={journeyScenes.length === 0}>
           ✕ Clear Journey
         </button>
       </div>
