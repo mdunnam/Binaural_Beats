@@ -22,22 +22,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (u: User) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', u.id)
       .single()
     if (error) {
-      console.error('Profile fetch error:', error)
+      console.error('Profile fetch error:', error.message)
       return null
     }
     return data as Profile
   }, [])
 
+  useEffect(() => {
+    // onAuthStateChange fires immediately with INITIAL_SESSION —
+    // the session token is guaranteed to be set at this point
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const u = session?.user ?? null
+      setUser(u)
+      if (u) {
+        const p = await fetchProfile(u)
+        setProfile(p)
+      } else {
+        setProfile(null)
+      }
+      setLoading(false)
+    })
+    return () => subscription.unsubscribe()
+  }, [fetchProfile])
+
   const refreshProfile = useCallback(async () => {
     if (!user) return
-    const p = await fetchProfile(user.id)
+    const p = await fetchProfile(user)
     setProfile(p)
   }, [user, fetchProfile])
 
@@ -45,34 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(r => setTimeout(r, intervalMs))
-      const p = await fetchProfile(user.id)
+      const p = await fetchProfile(user)
       setProfile(p)
       if (p?.is_pro) return
     }
   }, [user, fetchProfile])
-
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        const p = await fetchProfile(session.user.id)
-        setProfile(p)
-      }
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        const p = await fetchProfile(session.user.id)
-        setProfile(p)
-      } else {
-        setProfile(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [fetchProfile])
 
   const signIn = async (email: string, password: string): Promise<string | null> => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
