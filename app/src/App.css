@@ -3338,7 +3338,17 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   display: flex; align-items: center; gap: 0.5rem;
   background: var(--bg-card); border: 1px solid var(--border-card);
   border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.85rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
+.studio-journey-scene--dragover {
+  border-color: var(--accent, #7c6fff);
+  box-shadow: 0 0 0 2px var(--accent, #7c6fff44);
+}
+.studio-journey-drag-handle {
+  cursor: grab; color: var(--text-muted); font-size: 1rem; user-select: none;
+  padding: 0 0.15rem;
+}
+.studio-journey-drag-handle:active { cursor: grabbing; }
 .studio-journey-scene-name { flex: 1; font-weight: 600; }
 .studio-journey-scene-meta { font-size: 0.75rem; color: var(--text-muted); }
 .studio-journey-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.85rem; padding: 0.1rem 0.3rem; }

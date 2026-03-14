@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
 import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 
@@ -153,6 +153,38 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   const journeyScenesRef = useRef<StudioScene[]>(journeyScenes)
   useEffect(() => { journeyScenesRef.current = journeyScenes }, [journeyScenes])
 
+  // Drag-to-reorder state
+  const dragIndexRef = useRef<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+
+  const handleDragStart = useCallback((idx: number) => {
+    dragIndexRef.current = idx
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => {
+    e.preventDefault()
+    setDragOverIdx(idx)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, dropIdx: number) => {
+    e.preventDefault()
+    const from = dragIndexRef.current
+    if (from === null || from === dropIdx) { setDragOverIdx(null); return }
+    setJourneyScenes(js => {
+      const next = [...js]
+      const [moved] = next.splice(from, 1)
+      next.splice(dropIdx, 0, moved)
+      return next
+    })
+    dragIndexRef.current = null
+    setDragOverIdx(null)
+  }, [setJourneyScenes])
+
+  const handleDragEnd = useCallback(() => {
+    dragIndexRef.current = null
+    setDragOverIdx(null)
+  }, [])
+
   // Load scenes from localStorage on mount
   useEffect(() => {
     try {
@@ -268,13 +300,6 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   // ── Journey helpers ──
   function addToJourney(scene: StudioScene) {
     setJourneyScenes(js => [...js, { ...scene, id: uid() }])
-  }
-  function moveJourneyScene(idx: number, dir: -1 | 1) {
-    const next = [...journeyScenes]
-    const swap = idx + dir
-    if (swap < 0 || swap >= next.length) return
-    ;[next[idx], next[swap]] = [next[swap], next[idx]]
-    setJourneyScenes(next)
   }
   function removeJourneyScene(idx: number) {
     setJourneyScenes(js => js.filter((_, i) => i !== idx))
@@ -594,8 +619,14 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           {journeyScenes.map((scene, idx) => (
             <div
               key={scene.id}
-              className={`studio-journey-scene${activeJourneyIdx === idx ? ' studio-journey-scene--active' : ''}`}
+              className={`studio-journey-scene${activeJourneyIdx === idx ? ' studio-journey-scene--active' : ''}${dragOverIdx === idx ? ' studio-journey-scene--dragover' : ''}`}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={e => handleDragOver(e, idx)}
+              onDrop={e => handleDrop(e, idx)}
+              onDragEnd={handleDragEnd}
             >
+              <span className="studio-journey-drag-handle" title="Drag to reorder">⠿</span>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', minWidth: '1.2rem' }}>{idx + 1}.</span>
               <span className="studio-journey-scene-name">{scene.name}</span>
               <span className="studio-journey-scene-meta">{scene.durationMinutes}m</span>
@@ -610,8 +641,6 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                 onChange={e => updateJourneyCrossfade(idx, Number(e.target.value))}
                 title="Crossfade sec"
               />
-              <button className="studio-journey-btn" onClick={() => moveJourneyScene(idx, -1)} disabled={idx === 0}>▲</button>
-              <button className="studio-journey-btn" onClick={() => moveJourneyScene(idx, 1)} disabled={idx === journeyScenes.length - 1}>▼</button>
               <button className="studio-journey-btn" onClick={() => removeJourneyScene(idx)}>✕</button>
             </div>
           ))}
