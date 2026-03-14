@@ -326,6 +326,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   setLeftFrequency: (v: number) => void
   setRightFrequency: (v: number) => void
   setMusicVolume: (v: number) => void
+  playMusicTrack: (trackId: string) => void
   applySoundscapeScene: (id: string) => void
   setSoundsceneId: (id: string) => void
   setLayerGains: (g: LayerGains) => void
@@ -448,6 +449,10 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
     }
     if (layer.type === 'music') {
       callbacks.setMusicVolume(layer.volume)
+      if (layer.enabled) {
+        const trackId = (layer.settings.trackId as string | undefined) ?? ''
+        if (trackId) callbacks.playMusicTrack(trackId)
+      }
     }
   }
 
@@ -2298,6 +2303,10 @@ function App() {
                   setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
                   setLeftFrequency, setRightFrequency,
                   setMusicVolume,
+                  playMusicTrack: (id) => {
+                    const track = MUSIC_TRACKS.find(t => t.id === id)
+                    if (track) void playMusicTrack(track)
+                  },
                   applySoundscapeScene, setSoundsceneId, setLayerGains,
                   carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
                   padEnabledRef, padVolumeRef,
@@ -2320,6 +2329,10 @@ function App() {
                   setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
                   setLeftFrequency, setRightFrequency,
                   setMusicVolume,
+                  playMusicTrack: (id) => {
+                    const track = MUSIC_TRACKS.find(t => t.id === id)
+                    if (track) void playMusicTrack(track)
+                  },
                   applySoundscapeScene, setSoundsceneId, setLayerGains,
                   carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
                   padEnabledRef, padVolumeRef,
