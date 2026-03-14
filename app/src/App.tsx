@@ -450,7 +450,6 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
     }
     if (layer.type === 'music') {
       callbacks.setMusicVolume(layer.volume)
-      console.log('[studio] music layer', { enabled: layer.enabled, trackId: layer.settings.trackId, hasPendingRef: !!callbacks.pendingMusicTrackIdRef })
       if (layer.enabled) {
         const trackId = (layer.settings.trackId as string | undefined) ?? ''
         if (trackId) {
@@ -1109,16 +1108,6 @@ function App() {
     }
 
     graphRef.current = graph
-    console.log('[audio] graph started', {
-      leftFreq: graph.leftOsc.frequency.value,
-      rightFreq: graph.rightOsc.frequency.value,
-      leftGain: graph.leftGain.gain.value,
-      rightGain: graph.rightGain.gain.value,
-      masterGain: bus.masterGain.gain.value,
-      binauralBus: bus.binauralBus.gain.value,
-      contextState: bus.context.state,
-      fadeIn: curFadeInSeconds,
-    })
 
     // If a journey is loaded, start it
     if (journeyRef.current && graphRef.current) {
@@ -1170,12 +1159,10 @@ function App() {
     audioStartingRef.current = false
 
     // Start music if Studio queued a track
-    console.log('[audio] pendingMusicTrackId:', pendingMusicTrackIdRef.current)
     if (pendingMusicTrackIdRef.current) {
       const tid = pendingMusicTrackIdRef.current
       pendingMusicTrackIdRef.current = null
       const track = MUSIC_TRACKS.find(t => t.id === tid)
-      console.log('[audio] starting pending music track:', tid, track)
       if (track) void playMusicTrack(track)
     }
     if (isoEnabledRef.current) {
