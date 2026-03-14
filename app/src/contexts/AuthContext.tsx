@@ -23,26 +23,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = useCallback(async (u: User) => {
+    console.log('[Auth] fetching profile for', u.id)
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', u.id)
       .single()
     if (error) {
-      console.error('Profile fetch error:', error.message)
+      console.error('[Auth] profile fetch error:', error.message, error.code)
       return null
     }
+    console.log('[Auth] profile fetched:', data)
     return data as Profile
   }, [])
 
   useEffect(() => {
     // onAuthStateChange fires immediately with INITIAL_SESSION —
     // the session token is guaranteed to be set at this point
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] event:', event, '| user:', session?.user?.email ?? 'none')
       const u = session?.user ?? null
       setUser(u)
       if (u) {
         const p = await fetchProfile(u)
+        console.log('[Auth] profile:', p)
         setProfile(p)
       } else {
         setProfile(null)
