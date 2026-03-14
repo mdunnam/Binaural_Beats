@@ -327,6 +327,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   setRightFrequency: (v: number) => void
   setMusicVolume: (v: number) => void
   playMusicTrack: (trackId: string) => void
+  pendingMusicTrackIdRef: React.MutableRefObject<string | null> | null
   applySoundscapeScene: (id: string) => void
   setSoundsceneId: (id: string) => void
   setLayerGains: (g: LayerGains) => void
@@ -451,7 +452,15 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       callbacks.setMusicVolume(layer.volume)
       if (layer.enabled) {
         const trackId = (layer.settings.trackId as string | undefined) ?? ''
-        if (trackId) callbacks.playMusicTrack(trackId)
+        if (trackId) {
+          if (callbacks.pendingMusicTrackIdRef) {
+            // Pre-start: queue for after toggleAudio creates the bus
+            callbacks.pendingMusicTrackIdRef.current = trackId
+          } else {
+            // Already running: start immediately
+            callbacks.playMusicTrack(trackId)
+          }
+        }
       }
     }
   }
@@ -1040,6 +1049,8 @@ function App() {
   // Toggle session
   // ---------------------------------------------------------------------------
   const audioStartingRef = useRef(false)
+  // Track to start after toggleAudio creates the masterBus (Studio music layer)
+  const pendingMusicTrackIdRef = useRef<string | null>(null)
   // Pre-warmed AudioContext created synchronously inside a user gesture so
   // the browser allows it to play. toggleAudio consumes it if present.
   const prewarmedContextRef = useRef<AudioContext | null>(null)
@@ -1156,6 +1167,14 @@ function App() {
 
     setIsRunning(true)
     audioStartingRef.current = false
+
+    // Start music if Studio queued a track
+    if (pendingMusicTrackIdRef.current) {
+      const tid = pendingMusicTrackIdRef.current
+      pendingMusicTrackIdRef.current = null
+      const track = MUSIC_TRACKS.find(t => t.id === tid)
+      if (track) void playMusicTrack(track)
+    }
     if (isoEnabledRef.current) {
       // Mute the binaural graph's own output — isochronic replaces it
       graph.masterGain.gain.setValueAtTime(0, bus.context.currentTime)
@@ -2307,6 +2326,7 @@ function App() {
                     const track = MUSIC_TRACKS.find(t => t.id === id)
                     if (track) void playMusicTrack(track)
                   },
+                  pendingMusicTrackIdRef,
                   applySoundscapeScene, setSoundsceneId, setLayerGains,
                   carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
                   padEnabledRef, padVolumeRef,
@@ -2333,6 +2353,7 @@ function App() {
                     const track = MUSIC_TRACKS.find(t => t.id === id)
                     if (track) void playMusicTrack(track)
                   },
+                  pendingMusicTrackIdRef: null,
                   applySoundscapeScene, setSoundsceneId, setLayerGains,
                   carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
                   padEnabledRef, padVolumeRef,
