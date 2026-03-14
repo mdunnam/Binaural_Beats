@@ -1,8 +1,9 @@
 {
   "buildCommand": "cd app && npm install && npx vite build",
   "outputDirectory": "app/dist",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/((?!assets|sounds|music|vite\\.svg).*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
