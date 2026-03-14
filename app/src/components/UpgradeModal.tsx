@@ -19,14 +19,18 @@ export function UpgradeModal() {
     setLoading(priceId)
     setError(null)
     try {
+      const payload = { priceId, userId: user.id, email: user.email }
+      console.log('Checkout payload:', payload)
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, userId: user.id, email: user.email }),
+        body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error('Failed to create checkout session')
-      const { url } = await res.json() as { url: string }
-      window.location.href = url
+      const data = await res.json() as { url?: string; error?: string }
+      console.log('Checkout response:', res.status, data)
+      if (!res.ok) throw new Error(data.error || 'Failed to create checkout session')
+      if (!data.url) throw new Error(data.error || 'No URL returned')
+      window.location.href = data.url
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
