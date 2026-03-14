@@ -3,7 +3,6 @@
   "outputDirectory": "app/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/app/(.*)", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!assets|sounds|music|vite\\.svg).*)", "destination": "/index.html" }
   ]
 }
