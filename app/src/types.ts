@@ -135,6 +135,34 @@ export type SessionPlan = {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Studio
+// ---------------------------------------------------------------------------
+export type StudioLayerType = 'carrier' | 'beat' | 'soundscape' | 'noise' | 'pad' | 'music'
+
+export type StudioLayer = {
+  id: string
+  type: StudioLayerType
+  enabled: boolean
+  volume: number
+  label: string
+  settings: Record<string, unknown>
+}
+
+export type StudioScene = {
+  id: string
+  name: string
+  durationMinutes: number
+  crossfadeSec: number
+  layers: StudioLayer[]
+}
+
+export type StudioJourney = {
+  id: string
+  name: string
+  scenes: StudioScene[]
+}
+
 export type VoiceBus = {
   context: AudioContext
   source: AudioBufferSourceNode | null

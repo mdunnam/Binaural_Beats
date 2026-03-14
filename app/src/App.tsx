@@ -36,6 +36,8 @@ import { startJourney, stopJourney } from './engine/journeyEngine'
 import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
+import { StudioTab } from './components/StudioTab'
+import type { StudioLayer } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
 import { SessionPlanner } from './components/SessionPlanner'
 import type { SessionPlan } from './types'
@@ -50,6 +52,7 @@ const TABS = [
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
   { id: 'session',   icon: '⏱',  label: 'Session'  },
   { id: 'journey',   icon: '🗺',  label: 'Journey'  },
+  { id: 'studio',   icon: '🎛', label: 'Studio'   },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
   { id: 'music',     icon: '🎵', label: 'Music'     },
@@ -302,6 +305,94 @@ function buildAutomationPlan(planId: SessionPlanId, baseBeat: number): Automatio
       { time: 1, value: clamp(beatStart * 0.82, 0, 40) },
     ],
   }
+}
+
+// ---------------------------------------------------------------------------
+// Studio layer → audio params bridge
+// ---------------------------------------------------------------------------
+function applyStudioLayers(layers: StudioLayer[], callbacks: {
+  setCarrier: (v: number) => void
+  setBeat: (v: number) => void
+  setWobbleRate: (v: number) => void
+  setNoiseType: (v: NoiseType) => void
+  setNoiseVolume: (v: number) => void
+  setPadEnabled: (v: boolean) => void
+  setPadVolume: (v: number) => void
+  setPadWaveform: (v: PadWaveform) => void
+  setPadReverbMix: (v: number) => void
+  setPadBreatheRate: (v: number) => void
+  setLeftFrequency: (v: number) => void
+  setRightFrequency: (v: number) => void
+  setMusicVolume: (v: number) => void
+  applySoundscapeScene: (id: string) => void
+  setSoundsceneId: (id: string) => void
+  carrierRef: React.MutableRefObject<number>
+  beatRef: React.MutableRefObject<number>
+  noiseTypeRef: React.MutableRefObject<NoiseType>
+  noiseVolumeRef: React.MutableRefObject<number>
+  padEnabledRef: React.MutableRefObject<boolean>
+  padVolumeRef: React.MutableRefObject<number>
+  leftFrequencyRef: React.MutableRefObject<number>
+  rightFrequencyRef: React.MutableRefObject<number>
+  layerGainsRef: React.MutableRefObject<LayerGains>
+  fadeInSecondsRef: React.MutableRefObject<number>
+  wobbleRateRef: React.MutableRefObject<number>
+  SOUNDSCAPE_SCENES: typeof SOUNDSCAPE_SCENES
+  DEFAULT_GAINS: typeof DEFAULT_GAINS
+}) {
+  for (const layer of layers) {
+    if (!layer.enabled) continue
+    const s = layer.settings
+    if (layer.type === 'carrier') {
+      const hz = (s.hz as number) ?? 432
+      callbacks.setCarrier(hz)
+      callbacks.carrierRef.current = hz
+    }
+    if (layer.type === 'beat') {
+      const hz = (s.hz as number) ?? 6
+      const wr = (s.wobbleRate as number) ?? 0.4
+      callbacks.setBeat(hz)
+      callbacks.beatRef.current = hz
+      callbacks.setWobbleRate(wr)
+      callbacks.wobbleRateRef.current = wr
+    }
+    if (layer.type === 'noise') {
+      const t = ((s.type as string) ?? 'pink') as NoiseType
+      const v = layer.volume
+      callbacks.setNoiseType(t)
+      callbacks.noiseTypeRef.current = t
+      callbacks.setNoiseVolume(v)
+      callbacks.noiseVolumeRef.current = v
+    }
+    if (layer.type === 'soundscape') {
+      const sceneId = (s.sceneId as string) ?? 'forest'
+      callbacks.applySoundscapeScene(sceneId)
+      const scene = callbacks.SOUNDSCAPE_SCENES.find(sc => sc.id === sceneId)
+      if (scene) {
+        const gains = { ...callbacks.DEFAULT_GAINS }
+        Object.entries(scene.gains).forEach(([id, v]) => { (gains as Record<string, number>)[id] = v as number })
+        callbacks.layerGainsRef.current = gains
+      }
+    }
+    if (layer.type === 'pad') {
+      callbacks.setPadEnabled(true)
+      callbacks.padEnabledRef.current = true
+      callbacks.setPadVolume(layer.volume)
+      callbacks.padVolumeRef.current = layer.volume
+      if (s.waveform) callbacks.setPadWaveform(s.waveform as PadWaveform)
+      if (s.reverbMix !== undefined) callbacks.setPadReverbMix(s.reverbMix as number)
+      if (s.breatheRate !== undefined) callbacks.setPadBreatheRate(s.breatheRate as number)
+    }
+    if (layer.type === 'music') {
+      callbacks.setMusicVolume(layer.volume)
+    }
+  }
+  const c = callbacks.carrierRef.current
+  const b = callbacks.beatRef.current
+  callbacks.setLeftFrequency(c)
+  callbacks.setRightFrequency(c + b)
+  callbacks.leftFrequencyRef.current = c
+  callbacks.rightFrequencyRef.current = c + b
 }
 
 // ---------------------------------------------------------------------------
@@ -2072,6 +2163,49 @@ function App() {
               beat={beat}
               isRunning={isRunning}
               analyser={masterBusRef.current?.analyser ?? null}
+            />
+          )}
+
+          {/* ──────────────── STUDIO TAB ──────────────── */}
+          {activeTab === 'studio' && (
+            <StudioTab
+              isRunning={isRunning}
+              musicTracks={MUSIC_TRACKS}
+              onPreview={(studioLayers) => {
+                if (graphRef.current) stopSession(false)
+                applyStudioLayers(studioLayers, {
+                  setCarrier, setBeat, setWobbleRate,
+                  setNoiseType, setNoiseVolume,
+                  setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
+                  setLeftFrequency, setRightFrequency,
+                  setMusicVolume,
+                  applySoundscapeScene, setSoundsceneId,
+                  carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
+                  padEnabledRef, padVolumeRef,
+                  leftFrequencyRef, rightFrequencyRef,
+                  layerGainsRef, fadeInSecondsRef, wobbleRateRef,
+                  SOUNDSCAPE_SCENES, DEFAULT_GAINS,
+                })
+                window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+                  if (!graphRef.current) void toggleAudio()
+                }))
+              }}
+              onStop={() => stopSession(true)}
+              onLiveUpdate={(studioLayers) => {
+                applyStudioLayers(studioLayers, {
+                  setCarrier, setBeat, setWobbleRate,
+                  setNoiseType, setNoiseVolume,
+                  setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
+                  setLeftFrequency, setRightFrequency,
+                  setMusicVolume,
+                  applySoundscapeScene, setSoundsceneId,
+                  carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
+                  padEnabledRef, padVolumeRef,
+                  leftFrequencyRef, rightFrequencyRef,
+                  layerGainsRef, fadeInSecondsRef, wobbleRateRef,
+                  SOUNDSCAPE_SCENES, DEFAULT_GAINS,
+                })
+              }}
             />
           )}
 
