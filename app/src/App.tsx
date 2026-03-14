@@ -2159,103 +2159,118 @@ function AppInner() {
 
           {/* ──────────────── SESSION TAB ──────────────── */}
           {activeTab === 'session' && (
-            <div className="grid">
-              <div className="section-label">Quick Play Sessions</div>
-              <p className="control-hint">One click applies frequencies, sounds, noise, and a starter plan, then starts playback.</p>
-              <div className="session-quick-grid">
-                {QUICK_PLAY_SESSIONS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className="session-quick-card"
-                    onClick={() => runQuickPlaySession(preset)}
-                  >
-                    <span className="session-quick-emoji">{preset.emoji}</span>
-                    <span className="session-quick-title">{preset.label}</span>
-                    <span className="session-quick-meta">{preset.carrier} Hz · {preset.beat} Hz · {preset.sessionMinutes}m</span>
-                    <span className="session-quick-desc">{preset.description}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="section-label">Session Planning</div>
-              <p className="control-hint">Choose a plan after setting your tones/sound/noise, then tweak points in Automation Lanes.</p>
-              <div className="session-plan-panel">
-                <div className="seg-control">
-                  {SESSION_PLAN_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      className={sessionPlanId === opt.id ? 'active' : ''}
-                      onClick={() => setSessionPlanId(opt.id)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="session-plan-desc">
-                  {SESSION_PLAN_OPTIONS.find((opt) => opt.id === sessionPlanId)?.description}
-                </p>
-                <div className="session-plan-actions">
-                  <button type="button" className="soft-button" onClick={() => applySessionPlanFromCurrent(sessionPlanId)}>
-                    Build Lanes From Current Setup
-                  </button>
-                  <button type="button" className="soft-button" onClick={() => setAutomationLanes(defaultLanes())}>
-                    Clear Lanes
-                  </button>
+            <div className="tab-sections">
+              <div className="section-block">
+                <div className="section-title">Quick Play</div>
+                <div className="section-card">
+                  <p className="control-hint">One click applies frequencies, sounds, noise, and a starter plan, then starts playback.</p>
+                  <div className="session-quick-grid">
+                    {QUICK_PLAY_SESSIONS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className="session-quick-card"
+                        onClick={() => runQuickPlaySession(preset)}
+                      >
+                        <span className="session-quick-emoji">{preset.emoji}</span>
+                        <span className="session-quick-title">{preset.label}</span>
+                        <span className="session-quick-meta">{preset.carrier} Hz · {preset.beat} Hz · {preset.sessionMinutes}m</span>
+                        <span className="session-quick-desc">{preset.description}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="section-label">Session</div>
-              <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for >15 min' : ''})
-                <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
-                  onChange={(e) => {
-                    const val = Number(e.target.value)
-                    if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
-                    setSessionMinutes(val)
-                  }} />
-                {!isPro && <span className="control-hint">🔒 <button className="link-btn" onClick={() => openUpgradeModal('Sessions > 15 minutes')}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
-              </label>
-              <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
-                <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
-              </label>
-              <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
-                <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
-              </label>
-
-              {/* Export WAV */}
-              <button className="soft-button export-button" onClick={() => void exportWav()}
-                disabled={isRunning || isExporting} style={{ width: '100%' }}>
-                {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
-              </button>
-
-              {/* Automation */}
-              <div className="section-label">Automation Lanes</div>
-              <p className="control-hint">Plan first, then drag points to dial in your exact progression.</p>
-              <AutomationEditor
-                lanes={automationLanes}
-                onChange={setAutomationLanes}
-                sessionMinutes={sessionMinutes}
-              />
-
-              {/* Presets */}
-              <div className="preset-panel">
-                <div className="section-label" style={{ borderTop: 'none', paddingTop: 0 }}>Presets</div>
-                <label>Preset Name
-                  <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
-                </label>
-                <div className="preset-actions">
-                  <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
+              <div className="section-block">
+                <div className="section-title">Session Planning</div>
+                <div className="section-card">
+                  <p className="control-hint">Choose a plan after setting your tones/sound/noise, then tweak points in Automation Lanes.</p>
+                  <div className="session-plan-panel">
+                    <div className="seg-control">
+                      {SESSION_PLAN_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className={sessionPlanId === opt.id ? 'active' : ''}
+                          onClick={() => setSessionPlanId(opt.id)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="session-plan-desc">
+                      {SESSION_PLAN_OPTIONS.find((opt) => opt.id === sessionPlanId)?.description}
+                    </p>
+                    <div className="session-plan-actions">
+                      <button type="button" className="soft-button" onClick={() => applySessionPlanFromCurrent(sessionPlanId)}>
+                        Build Lanes From Current Setup
+                      </button>
+                      <button type="button" className="soft-button" onClick={() => setAutomationLanes(defaultLanes())}>
+                        Clear Lanes
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <label>Load Preset
-                  <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
-                    <option value="">Select a preset</option>
-                    {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
-                  </select>
-                </label>
-                <div className="preset-actions">
-                  <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
-                  <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
+              </div>
+
+              <div className="section-block">
+                <div className="section-title">Session</div>
+                <div className="section-card">
+                  <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for >15 min' : ''})
+                    <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
+                      onChange={(e) => {
+                        const val = Number(e.target.value)
+                        if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
+                        setSessionMinutes(val)
+                      }} />
+                    {!isPro && <span className="control-hint">🔒 <button className="link-btn" onClick={() => openUpgradeModal('Sessions > 15 minutes')}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
+                  </label>
+                  <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
+                    <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
+                  </label>
+                  <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
+                    <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
+                  </label>
+                  <button className="soft-button export-button" onClick={() => void exportWav()}
+                    disabled={isRunning || isExporting} style={{ width: '100%' }}>
+                    {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="section-block">
+                <div className="section-title">Automation</div>
+                <div className="section-card">
+                  <p className="control-hint">Plan first, then drag points to dial in your exact progression.</p>
+                  <AutomationEditor
+                    lanes={automationLanes}
+                    onChange={setAutomationLanes}
+                    sessionMinutes={sessionMinutes}
+                  />
+                </div>
+              </div>
+
+              <div className="section-block">
+                <div className="section-title">Presets</div>
+                <div className="section-card">
+                  <label>Preset Name
+                    <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
+                  </label>
+                  <div className="preset-actions">
+                    <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
+                  </div>
+                  <hr className="section-divider" />
+                  <label>Load Preset
+                    <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
+                      <option value="">Select a preset</option>
+                      {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
+                    </select>
+                  </label>
+                  <div className="preset-actions">
+                    <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
+                    <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2263,7 +2278,10 @@ function AppInner() {
 
           {/* ──────────────── JOURNEY TAB ──────────────── */}
           {activeTab === 'journey' && (
-            <div>
+            <div className="tab-sections">
+              <div className="section-block">
+                <div className="section-title">Session Planner</div>
+                <div className="section-card" style={{ padding: 0, overflow: 'hidden' }}>
               <SessionPlanner
                 carrier={carrier}
                 beat={beat}
@@ -2389,10 +2407,11 @@ function AppInner() {
                   localStorage.setItem('liminal-session-plans', JSON.stringify(updated))
                 }}
               />
-              <details style={{ marginTop: '1.5rem' }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 600, opacity: 0.65, fontSize: '0.85rem' }}>
-                  🗺 Advanced: Journey Builder
-                </summary>
+                </div>
+              </div>
+              <div className="section-block">
+                <div className="section-title">Journey Builder</div>
+                <div className="section-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <JourneyBuilder
                   isRunning={isRunning}
                   journey={journey}
@@ -2404,7 +2423,8 @@ function AppInner() {
                   setSoundsceneId={setSoundsceneId}
                   apiKey={localStorage.getItem('binaural-openai-key') ?? ''}
                 />
-              </details>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2486,20 +2506,33 @@ function AppInner() {
           )}
 
           {/* ──────────────── AI TAB ──────────────── */}
-          {activeTab === 'ai' && (            <AiMeditationPanel
-              onSessionReady={handleAiSessionReady}
-              apiKey={aiApiKey}
-              onOpenSettings={() => setShowApiSettings(true)}
-            />
+          {activeTab === 'ai' && (
+            <div className="tab-sections">
+              <div className="section-block">
+                <div className="section-title">AI Meditation</div>
+                <div className="section-card">
+                  <AiMeditationPanel
+                    onSessionReady={handleAiSessionReady}
+                    apiKey={aiApiKey}
+                    onOpenSettings={() => setShowApiSettings(true)}
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ──────────────── JOURNAL TAB ──────────────── */}
           {activeTab === 'journal' && (
-            <div className="ai-tab-content">
-              <p className="ai-tab-desc">Review your past sessions and reflections.</p>
-              <button className="soft-button" style={{ width: '100%' }} onClick={() => setShowJournalList(true)}>
-                📓 Open Session Journal
-              </button>
+            <div className="tab-sections">
+              <div className="section-block">
+                <div className="section-title">Session Journal</div>
+                <div className="section-card">
+                  <p className="control-hint">Review your past sessions and reflections.</p>
+                  <button className="soft-button" style={{ width: '100%' }} onClick={() => setShowJournalList(true)}>
+                    📓 Open Session Journal
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

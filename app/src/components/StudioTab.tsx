@@ -377,16 +377,24 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
         }
       </div>
 
-      {/* Quick-start presets */}
-      <div className="studio-presets-row">
-        {QUICK_PRESETS.map(preset => (
-          <button key={preset.label} className="studio-preset-btn" onClick={() => applyPreset(preset)}>
-            {preset.emoji} {preset.label}
-          </button>
-        ))}
+      <div className="tab-sections">
+
+      <div className="section-block">
+        <div className="section-title">Quick Start</div>
+        <div className="section-card" style={{ padding: '0.5rem' }}>
+          <div className="studio-presets-row">
+            {QUICK_PRESETS.map(preset => (
+              <button key={preset.label} className="studio-preset-btn" onClick={() => applyPreset(preset)}>
+                {preset.emoji} {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Layer stack */}
+      <div className="section-block">
+        <div className="section-title">Layers</div>
+        <div className="section-card" style={{ padding: '0.5rem' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
         {layers.map(layer => (
           <div key={layer.id} className={`studio-layer-card${!layer.enabled ? ' studio-layer-card--disabled' : ''}`}>
@@ -620,9 +628,12 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           </button>
         ))}
       </div>
+        </div>
+      </div>
 
-      {/* Scenes section */}
-      <div className="studio-section-title">Scenes — Save this session as a scene</div>
+      <div className="section-block">
+        <div className="section-title">Scenes</div>
+        <div className="section-card">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div className="studio-scene-row">
           <input
@@ -660,9 +671,12 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           </div>
         )}
       </div>
+        </div>
+      </div>
 
-      {/* Journey section */}
-      <div className="studio-section-title">Journey — Chain scenes into a sequence</div>
+      <div className="section-block">
+        <div className="section-title">Journey</div>
+        <div className="section-card">
       {journeyScenes.length > 0 && (
         <div className="studio-journey-list">
           {journeyScenes.map((scene, idx) => (
@@ -740,6 +754,10 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           ✕ Clear Journey
         </button>
       </div>
+        </div>
+      </div>
+
+      </div>{/* tab-sections */}
     </div>
   )
 }
