@@ -1795,25 +1795,6 @@ function AppInner() {
                 ] as { emoji: string; label: string; sub: string; layers: StudioLayer[] }[]).map(({ emoji, label, sub, layers }) => (
                   <button key={label} className="dash-quick-card" onClick={() => {
                     if (isRunning) stopSession(false)
-                    applyStudioLayers(layers, {
-                      setCarrier, setBeat, setWobbleRate,
-                      setNoiseType, setNoiseVolume,
-                      setBinauralVolume, setSoundscapeVolume,
-                      setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
-                      setLeftFrequency, setRightFrequency,
-                      setMusicVolume,
-                      playMusicTrack: (id) => { const t = MUSIC_TRACKS.find(tr => tr.id === id); if (t) void playMusicTrack(t) },
-                      pendingMusicTrackIdRef,
-                      applySoundscapeScene, setSoundsceneId, setLayerGains,
-                      carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
-                      padEnabledRef, padVolumeRef,
-                      leftFrequencyRef, rightFrequencyRef,
-                      layerGainsRef, fadeInSecondsRef, wobbleRateRef,
-                      binauralVolumeRef, soundscapeVolumeRef,
-                      graphRef, masterBusRef, mixerNodesRef,
-                      SOUNDSCAPE_SCENES, DEFAULT_GAINS,
-                      setAutomationLanes,
-                    })
                     setStudioQuickStartLayers([...layers])
                     setActiveTab('studio')
                   }}>
