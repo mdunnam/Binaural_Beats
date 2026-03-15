@@ -4,6 +4,7 @@ import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 import { LaneEditor } from './AutomationEditor'
 import { PREBUILT_JOURNEYS, JOURNEY_EMOJIS } from '../data/prebuiltJourneys'
 import type { StudioJourney } from '../types'
+import { loadPadPresets } from '../data/padPresets'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
 const STUDIO_JOURNEYS_KEY = 'liminal-studio-journeys'
@@ -561,6 +562,20 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                 )}
                 {layer.type === 'pad' && (
                   <>
+                    <label>
+                      Pad Sound
+                      {/* Presets saved in the Pad tab are selectable here; settings apply when using the standalone Pad tab */}
+                      <select
+                        className="text-input"
+                        value={(layer.settings.presetName as string) ?? ''}
+                        onChange={e => updateSettings(layer.id, { presetName: e.target.value })}
+                      >
+                        <option value="">Default Pad</option>
+                        {loadPadPresets().map(p => (
+                          <option key={p.name} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                    </label>
                     <label>
                       Waveform
                       <div className="seg-control">

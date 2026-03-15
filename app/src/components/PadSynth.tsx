@@ -1,4 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
+import { loadPadPresets, savePadPreset, deletePadPreset } from '../data/padPresets'
+import type { PadPreset } from '../data/padPresets'
 
 const NOTE_FREQS: Record<string, number> = {
   'C': 261.63, 'C#': 277.18, 'D': 293.66, 'D#': 311.13,
@@ -46,6 +48,50 @@ export function PadSynth() {
   const [filterQ, setFilterQ] = useState(1.5)
   const [reverbMix, setReverbMix] = useState(0.5)
   const [masterVolume, setMasterVolume] = useState(0.7)
+
+  // Preset state
+  const [presets, setPresets] = useState<PadPreset[]>(() => loadPadPresets())
+  const [presetName, setPresetName] = useState('')
+  const [selectedPreset, setSelectedPreset] = useState('')
+
+  function handleSavePreset() {
+    if (!presetName.trim()) return
+    const preset: PadPreset = {
+      name: presetName.trim(),
+      waveform, rootNote, octave, chordMode, detune,
+      attack, decay, sustain, release,
+      filterCutoff, filterQ, reverbMix, masterVolume
+    }
+    savePadPreset(preset)
+    setPresets(loadPadPresets())
+    setPresetName('')
+  }
+
+  function handleLoadPreset(name: string) {
+    const p = presets.find(pr => pr.name === name)
+    if (!p) return
+    setWaveform(p.waveform)
+    setRootNote(p.rootNote)
+    setOctave(p.octave)
+    setChordMode(p.chordMode)
+    setDetune(p.detune)
+    setAttack(p.attack)
+    setDecay(p.decay)
+    setSustain(p.sustain)
+    setRelease(p.release)
+    setFilterCutoff(p.filterCutoff)
+    setFilterQ(p.filterQ)
+    setReverbMix(p.reverbMix)
+    setMasterVolume(p.masterVolume)
+    setSelectedPreset(name)
+  }
+
+  function handleDeletePreset() {
+    if (!selectedPreset) return
+    deletePadPreset(selectedPreset)
+    setPresets(loadPadPresets())
+    setSelectedPreset('')
+  }
 
   const ctxRef = useRef<AudioContext | null>(null)
   const voiceGainsRef = useRef<GainNode[]>([])
@@ -309,6 +355,34 @@ export function PadSynth() {
             <label className="control-label">Reverb Mix: <span className="control-value">{Math.round(reverbMix * 100)}%</span></label>
             <input type="range" min={0} max={1} step={0.01} value={reverbMix}
               onChange={e => setReverbMix(Number(e.target.value))} className="slider" />
+          </div>
+        </div>
+      </div>
+
+      {/* Presets */}
+      <div className="section-block">
+        <div className="section-title">Presets</div>
+        <div className="section-card">
+          <label>Preset Name
+            <input className="text-input" type="text" value={presetName}
+              onChange={e => setPresetName(e.target.value)}
+              placeholder="e.g. Deep Dream Pad" />
+          </label>
+          <div className="preset-actions">
+            <button className="soft-button" onClick={handleSavePreset}>Save Preset</button>
+          </div>
+          <hr className="section-divider" />
+          <label>Load Preset
+            <select className="text-input" value={selectedPreset}
+              onChange={e => { setSelectedPreset(e.target.value); handleLoadPreset(e.target.value) }}>
+              <option value="">Select a preset</option>
+              {presets.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+            </select>
+          </label>
+          <div className="preset-actions">
+            <button className="soft-button soft-button--danger"
+              onClick={handleDeletePreset}
+              disabled={!selectedPreset}>Delete</button>
           </div>
         </div>
       </div>
