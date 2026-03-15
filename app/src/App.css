@@ -4889,3 +4889,34 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   text-align: right;
   width: 100%;
 }
+
+/* 🔄 Continue Listening card */
+.dash-continue-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bg-3);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-top: 0.75rem;
+}
+.dash-continue-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.dash-continue-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.dash-continue-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

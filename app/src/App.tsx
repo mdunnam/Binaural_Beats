@@ -216,7 +216,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       callbacks.carrierRef.current = hz
       callbacks.setBinauralVolume(layer.volume)
       callbacks.binauralVolumeRef.current = layer.volume
-      // Direct graph update — bypasses React state batching
+      // Direct graph update - bypasses React state batching
       const graph = callbacks.graphRef.current
       if (graph) {
         graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, layer.volume), graph.context.currentTime, 0.05)
@@ -284,7 +284,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       callbacks.setSoundscapeVolume(layer.volume)
       callbacks.soundscapeVolumeRef.current = layer.volume
 
-      // Direct mixer update — update each layer gain immediately
+      // Direct mixer update - update each layer gain immediately
       const mixer = callbacks.mixerNodesRef.current
       const bus = callbacks.masterBusRef.current
       if (mixer) {
@@ -437,6 +437,12 @@ function AppInner() {
   // Pad synth
   const [padEnabled, setPadEnabled] = useState(false)
   const [studioQuickStartLayers, setStudioQuickStartLayers] = useState<StudioLayer[] | undefined>(undefined)
+
+  // Last session for "Continue Listening"
+  type LastSession = { carrier: number; beat: number; soundsceneId: string; noiseType: string; noiseVolume: number; padEnabled: boolean; sessionMinutes: number; savedAt: number }
+  const [lastSession, setLastSession] = useState<LastSession | null>(() => {
+    try { const raw = localStorage.getItem('liminal-last-session'); return raw ? JSON.parse(raw) as LastSession : null } catch { return null }
+  })
   const [padVolume, setPadVolume] = useState(0.15)
   const [padReverbMix, setPadReverbMix] = useState(0.5)
   const [padWaveform, setPadWaveform] = useState<PadWaveform>('sine')
@@ -764,7 +770,7 @@ function AppInner() {
   // ---------------------------------------------------------------------------
   // Timer helpers
   // ---------------------------------------------------------------------------
-  // iOS AudioContext unlock — Safari requires a user gesture before any audio
+  // iOS AudioContext unlock - Safari requires a user gesture before any audio
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const unlock = () => {
@@ -815,7 +821,7 @@ function AppInner() {
       setShowJournalModal(true)
     }
 
-    // Fade pad out (session pad only — standalone pad keeps running)
+    // Fade pad out (session pad only - standalone pad keeps running)
     if (padRef.current && masterBusRef.current) {
       void stopPadSynth(padRef.current, Math.max(1, fadeOut))
       padRef.current = null
@@ -998,7 +1004,7 @@ function AppInner() {
     const curSoundscapeVolume = soundscapeVolumeRef.current
     const curFadeInSeconds = fadeInSecondsRef.current
 
-    // 1. Create master bus — reuse pre-warmed context if available (created
+    // 1. Create master bus - reuse pre-warmed context if available (created
     //    synchronously inside the user gesture to satisfy browser autoplay policy)
     const prewarmed = prewarmedContextRef.current
     prewarmedContextRef.current = null
@@ -1052,7 +1058,7 @@ function AppInner() {
     mixerNodesRef.current = mixerNodes
 
     if (padEnabledRef.current) {
-      // Stop standalone pad if running — session takes over
+      // Stop standalone pad if running - session takes over
       if (padRef.current) {
         void stopPadSynth(padRef.current, 0.1)
         padRef.current = null
@@ -1079,11 +1085,27 @@ function AppInner() {
     setIsRunning(true)
     audioStartingRef.current = false
 
+    // Save "continue listening" snapshot
+    try {
+      const snapshot = {
+        carrier: carrierRef.current,
+        beat: beatRef.current,
+        soundsceneId: soundsceneId,
+        noiseType: noiseTypeRef.current,
+        noiseVolume: noiseVolumeRef.current,
+        padEnabled: padEnabledRef.current,
+        sessionMinutes: sessionMinutesRef.current,
+        savedAt: Date.now(),
+      }
+      localStorage.setItem('liminal-last-session', JSON.stringify(snapshot))
+      setLastSession(snapshot)
+    } catch { /* ignore */ }
+
     // Background playback: keep screen on and update AudioContext proxy ref
     masterBusContextRef.current = bus.context
     void requestWakeLock()
 
-    // Media Session API — system-level now-playing notification
+    // Media Session API - system-level now-playing notification
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: presetNameRef.current || 'Liminal Session',
@@ -1103,7 +1125,7 @@ function AppInner() {
       if (track) void playMusicTrack(track)
     }
     if (isoEnabledRef.current) {
-      // Mute the binaural graph's own output — isochronic replaces it
+      // Mute the binaural graph's own output - isochronic replaces it
       graph.masterGain.gain.setValueAtTime(0, bus.context.currentTime)
       isoGraphRef.current = createIsochronicTone({
         carrier: carrierRef.current,
@@ -1716,13 +1738,45 @@ function AppInner() {
                 </div>
               </div>
 
-              {/* Now Playing — only when running */}
+              {/* Continue Listening - when not running and a last session exists */}
+              {!isRunning && lastSession && (
+                <div className="dash-continue-card">
+                  <div className="dash-continue-info">
+                    <span className="dash-continue-label">Continue Listening</span>
+                    <span className="dash-continue-meta">
+                      {lastSession.carrier.toFixed(0)} Hz · {lastSession.beat.toFixed(1)} Hz beat
+                      {lastSession.soundsceneId !== 'off' ? ` · ${SOUNDSCAPE_SCENES.find(s => s.id === lastSession.soundsceneId)?.label ?? 'Soundscape'}` : ''}
+                    </span>
+                  </div>
+                  <button className="soft-button soft-button--accent" onClick={() => {
+                    setCarrier(lastSession.carrier)
+                    setBeat(lastSession.beat)
+                    carrierRef.current = lastSession.carrier
+                    beatRef.current = lastSession.beat
+                    setNoiseType(lastSession.noiseType as NoiseType)
+                    noiseTypeRef.current = lastSession.noiseType as NoiseType
+                    setNoiseVolume(lastSession.noiseVolume)
+                    noiseVolumeRef.current = lastSession.noiseVolume
+                    setPadEnabled(lastSession.padEnabled)
+                    padEnabledRef.current = lastSession.padEnabled
+                    setSessionMinutes(lastSession.sessionMinutes)
+                    sessionMinutesRef.current = lastSession.sessionMinutes
+                    if (lastSession.soundsceneId !== 'off') {
+                      applySoundscapeScene(lastSession.soundsceneId)
+                      setSoundsceneId(lastSession.soundsceneId)
+                    }
+                    void toggleAudio()
+                  }}>▶ Resume</button>
+                </div>
+              )}
+
+              {/* Now Playing - only when running */}
               {isRunning && (
                 <div className="dash-now-playing">
                   <div className="dash-now-row"><span>Carrier</span><strong>{carrier.toFixed(1)} Hz</strong></div>
                   <div className="dash-now-row"><span>Beat</span><strong>{beat.toFixed(2)} Hz</strong></div>
                   <div className="dash-now-row"><span>Brainwave</span><strong>
-                    {beat < 4 ? 'Delta — deep sleep' : beat < 8 ? 'Theta — meditation' : beat < 14 ? 'Alpha — relax' : beat < 30 ? 'Beta — focus' : 'Gamma — peak'}
+                    {beat < 4 ? 'Delta - deep sleep' : beat < 8 ? 'Theta - meditation' : beat < 14 ? 'Alpha - relax' : beat < 30 ? 'Beta - focus' : 'Gamma - peak'}
                   </strong></div>
                   <div className="dash-now-row"><span>Soundscape</span><strong>
                     {soundsceneId === 'off' ? 'None' : SOUNDSCAPE_SCENES.find(s => s.id === soundsceneId)?.label ?? 'Custom'}
@@ -1804,7 +1858,7 @@ function AppInner() {
                   </button>
                 ))}
               </div>
-              {/* Explore — feature spotlight */}
+              {/* Explore - feature spotlight */}
               <div className="section-label" style={{ marginTop: '1.25rem' }}>Explore</div>
               <div className="dash-explore-row">
                 {([
@@ -1831,7 +1885,7 @@ function AppInner() {
               <div className="dash-recent">
                 {journalEntries.length === 0 ? (
                   <div className="dash-recent-row" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    No sessions logged yet — your history will appear here.
+                    No sessions logged yet - your history will appear here.
                   </div>
                 ) : (
                   journalEntries.slice(0, 3).map(entry => (
@@ -1922,7 +1976,7 @@ function AppInner() {
                     </label>
                   </>)}
                   <label>Phase Offset ({phaseOffset}°)
-                    <small className="control-hint">Applied at session start — restart to hear change</small>
+                    <small className="control-hint">Applied at session start - restart to hear change</small>
                     <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
                   </label>
                 </div>
@@ -2255,7 +2309,7 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-title">Session</div>
                 <div className="section-card">
-                  <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for >15 min' : ''})
+                  <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' - ⚠️ Pro required for >15 min' : ''})
                     <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
                       onChange={(e) => {
                         const val = Number(e.target.value)
@@ -2435,7 +2489,7 @@ function AppInner() {
         Safety: keep volume low at session start. Use headphones for full binaural effect. Avoid therapeutic claims.
       </p>
 
-      {/* ── Persistent Mini Player Bar — inside main for iOS gesture trust ── */}
+      {/* ── Persistent Mini Player Bar - inside main for iOS gesture trust ── */}
       <MiniPlayer
         isRunning={isRunning}
         ambientRunning={ambientRunning}
