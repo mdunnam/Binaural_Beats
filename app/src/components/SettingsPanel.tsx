@@ -80,14 +80,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             {isPro ? (
               <>
                 <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>✅ Pro subscriber</p>
-                <a className="soft-button" href="#" style={{ display: 'inline-block', textDecoration: 'none' }}>
+                <a className="soft-button soft-button--accent" href="#" style={{ display: 'inline-block', textDecoration: 'none' }}>
                   Manage subscription
                 </a>
               </>
             ) : (
               <>
                 <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>Current plan: <strong>Free</strong></p>
-                <button className="soft-button" onClick={() => openUpgradeModal('Settings')}>
+                <button className="soft-button soft-button--accent" onClick={() => openUpgradeModal('Settings')}>
                   Upgrade to Pro →
                 </button>
               </>
@@ -123,7 +123,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Headphone reminder</span>
               <button
-                className="soft-button"
+                className="soft-button soft-button--accent"
                 style={{ minWidth: 56, fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
                 onClick={toggleHeadphoneReminder}
               >
