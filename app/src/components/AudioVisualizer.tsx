@@ -28,6 +28,8 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
   const levelRef = useRef<HTMLCanvasElement>(null)
   const spectrumRef = useRef<HTMLCanvasElement>(null)
   const scopeRef = useRef<HTMLCanvasElement>(null)
+  const specWrapRef = useRef<HTMLDivElement>(null)
+  const specWidthRef = useRef(220)
   const rafRef = useRef<number>(0)
   const peaksRef = useRef<Float32Array>(new Float32Array(32).fill(0))
   const peakHoldRef = useRef<Float32Array>(new Float32Array(32).fill(0))
@@ -39,6 +41,26 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     const scopeCanvas = scopeRef.current
     if (!levelCanvas || !specCanvas || !scopeCanvas) return
 
+    // Set initial spectrum canvas width to actual rendered width
+    if (specWrapRef.current) {
+      specCanvas.width = specWrapRef.current.offsetWidth || 220
+      specWidthRef.current = specCanvas.width
+    }
+
+    // ResizeObserver to keep spectrum canvas sharp at any width
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = Math.round(entry.contentRect.width)
+        if (w > 0) {
+          specCanvas.width = w
+          specWidthRef.current = w
+        }
+      }
+    })
+    if (specWrapRef.current) {
+      resizeObserver.observe(specWrapRef.current)
+    }
+
     cancelAnimationFrame(rafRef.current)
 
     const active = isRunning || ambientRunning
@@ -48,21 +70,26 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     if (!analyser || !active) {
       // Draw idle state
       const drawIdle = () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+        const bgColor = isDark ? '#0d1a14' : '#f0f7f3'
+        const idleLineColor = isDark ? '#1e3a2a' : '#c8ddd5'
+
         // Level
         const lCtx = levelCanvas.getContext('2d')!
-        lCtx.fillStyle = '#0d1a14'
+        lCtx.fillStyle = bgColor
         lCtx.fillRect(0, 0, 14, 40)
 
         // Spectrum
         const sCtx = specCanvas.getContext('2d')!
-        sCtx.fillStyle = '#0d1a14'
-        sCtx.fillRect(0, 0, 220, 40)
+        const W = specCanvas.width
+        sCtx.fillStyle = bgColor
+        sCtx.fillRect(0, 0, W, 40)
 
         // Scope — flat dim line
         const oCtx = scopeCanvas.getContext('2d')!
-        oCtx.fillStyle = '#0d1a14'
+        oCtx.fillStyle = bgColor
         oCtx.fillRect(0, 0, 110, 40)
-        oCtx.strokeStyle = '#1e3a2a'
+        oCtx.strokeStyle = idleLineColor
         oCtx.lineWidth = 1.5
         oCtx.beginPath()
         oCtx.moveTo(0, 20)
@@ -70,7 +97,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
         oCtx.stroke()
       }
       drawIdle()
-      return
+      return () => resizeObserver.disconnect()
     }
 
     const fftSize = analyser.fftSize
@@ -84,10 +111,12 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       analyser.getByteTimeDomainData(timeData)
 
       const now = performance.now()
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+      const bgColor = isDark ? '#0d1a14' : '#f0f7f3'
 
       // ── Zone 1: Level Meter ──
       const lCtx = levelCanvas.getContext('2d')!
-      lCtx.fillStyle = '#0d1a14'
+      lCtx.fillStyle = bgColor
       lCtx.fillRect(0, 0, 14, 40)
 
       // RMS from time domain
@@ -119,12 +148,13 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
 
       // ── Zone 2: Spectrum Analyzer ──
       const sCtx = specCanvas.getContext('2d')!
-      sCtx.fillStyle = '#0d1a14'
-      sCtx.fillRect(0, 0, 220, 40)
+      const W = specCanvas.width
+      sCtx.fillStyle = bgColor
+      sCtx.fillRect(0, 0, W, 40)
 
       const binCount = analyser.frequencyBinCount
       const barsPerGroup = Math.floor(binCount / NUM_BARS)
-      const barW = Math.floor(220 / NUM_BARS)
+      const barW = Math.floor(W / NUM_BARS)
       const gap = 1
 
       // Carrier marker bar index
@@ -173,7 +203,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
 
       // ── Zone 3: Oscilloscope ──
       const oCtx = scopeCanvas.getContext('2d')!
-      oCtx.fillStyle = '#0d1a14'
+      oCtx.fillStyle = bgColor
       oCtx.fillRect(0, 0, 110, 40)
 
       oCtx.strokeStyle = brightColor
@@ -192,13 +222,16 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     }
 
     rafRef.current = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(rafRef.current)
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      resizeObserver.disconnect()
+    }
   }, [analyser, isRunning, ambientRunning, beat, carrier])
 
   return (
     <div className="audio-viz-strip">
       <canvas ref={levelRef} className="audio-viz-level" width={14} height={40} />
-      <div className="audio-viz-spectrum-wrap">
+      <div className="audio-viz-spectrum-wrap" ref={specWrapRef}>
         <canvas ref={spectrumRef} className="audio-viz-spectrum" width={220} height={40} />
       </div>
       <div className="audio-viz-scope-wrap">
