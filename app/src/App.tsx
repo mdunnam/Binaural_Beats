@@ -39,7 +39,7 @@ import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
 import { VisualTab } from './components/VisualTab'
 import { MiniPlayer } from './components/MiniPlayer'
-import { JourneyBuilder, BUILT_IN_JOURNEYS } from './components/JourneyBuilder'
+import { BUILT_IN_JOURNEYS } from './components/JourneyBuilder'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import type { OnboardingConfig } from './components/OnboardingFlow'
 import { OnboardingModal } from './components/OnboardingModal'
@@ -51,8 +51,6 @@ import { MusicTab } from './components/MusicTab'
 import { StudioTab } from './components/StudioTab'
 import type { StudioLayer } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
-import { SessionPlanner } from './components/SessionPlanner'
-import type { SessionPlan } from './types'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 import { BreathGuide } from './components/BreathGuide'
 import { SessionLibrary } from './components/SessionLibrary'
@@ -64,9 +62,8 @@ const TABS = [
   { id: 'dashboard', icon: '🏠', label: 'Home'      },
   { id: 'tones',     icon: '🎵', label: 'Tones'     },
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
-  { id: 'session',   icon: '⏱',  label: 'Session'  },
-  { id: 'journey',   icon: '🗺',  label: 'Journey'  },
-  { id: 'studio',   icon: '🎛', label: 'Studio'   },
+  { id: 'studio',    icon: '🎛', label: 'Studio'    },
+  { id: 'focus',     icon: '👁', label: 'Focus'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
   { id: 'music',     icon: '🎵', label: 'Music'     },
@@ -142,179 +139,6 @@ function isSessionSoundscapeActive(isRunning: boolean, soundsceneId: string): bo
   return isRunning && soundsceneId !== 'off'
 }
 
-type SessionPlanId = 'gentle-drift' | 'focus-ramp' | 'sleep-descent'
-
-type SessionPlanOption = {
-  id: SessionPlanId
-  label: string
-  description: string
-}
-
-type QuickPlaySessionPreset = {
-  id: string
-  emoji: string
-  label: string
-  description: string
-  carrier: number
-  beat: number
-  sessionMinutes: number
-  noiseType: NoiseType
-  noiseVolume: number
-  soundsceneId: string
-  wobbleRate: number
-  fadeInSeconds: number
-  fadeOutSeconds: number
-  planId: SessionPlanId
-}
-
-const SESSION_PLAN_OPTIONS: SessionPlanOption[] = [
-  { id: 'gentle-drift', label: 'Gentle Drift', description: 'Soft rise then settle for calm sessions.' },
-  { id: 'focus-ramp', label: 'Focus Ramp', description: 'Progressively sharper energy and clarity.' },
-  { id: 'sleep-descent', label: 'Sleep Descent', description: 'Slowly lowers intensity toward deep rest.' },
-]
-
-const QUICK_PLAY_SESSIONS: QuickPlaySessionPreset[] = [
-  {
-    id: 'sleep-rain',
-    emoji: '😴',
-    label: 'Deep Sleep Rain',
-    description: 'Delta drift with rain + cave bed.',
-    carrier: 174,
-    beat: 2,
-    sessionMinutes: 45,
-    noiseType: 'brown',
-    noiseVolume: 0.22,
-    soundsceneId: 'forest',
-    wobbleRate: 0.12,
-    fadeInSeconds: 10,
-    fadeOutSeconds: 20,
-    planId: 'sleep-descent',
-  },
-  {
-    id: 'focus-forest',
-    emoji: '🎯',
-    label: 'Focus Sprint',
-    description: 'Beta focus with a light forest bed.',
-    carrier: 396,
-    beat: 16,
-    sessionMinutes: 25,
-    noiseType: 'pink',
-    noiseVolume: 0.16,
-    soundsceneId: 'forest',
-    wobbleRate: 0.48,
-    fadeInSeconds: 4,
-    fadeOutSeconds: 6,
-    planId: 'focus-ramp',
-  },
-  {
-    id: 'theta-ocean',
-    emoji: '🧘',
-    label: 'Theta Reset',
-    description: 'Meditative theta with ocean wash.',
-    carrier: 528,
-    beat: 6,
-    sessionMinutes: 30,
-    noiseType: 'pink',
-    noiseVolume: 0.14,
-    soundsceneId: 'ocean',
-    wobbleRate: 0.22,
-    fadeInSeconds: 6,
-    fadeOutSeconds: 10,
-    planId: 'gentle-drift',
-  },
-  {
-    id: 'creative-storm',
-    emoji: '💡',
-    label: 'Creative Storm',
-    description: 'Alpha-to-beta lift with rain energy.',
-    carrier: 741,
-    beat: 10,
-    sessionMinutes: 35,
-    noiseType: 'white',
-    noiseVolume: 0.12,
-    soundsceneId: 'storm',
-    wobbleRate: 0.35,
-    fadeInSeconds: 5,
-    fadeOutSeconds: 8,
-    planId: 'focus-ramp',
-  },
-]
-
-/**
- * Constrains a value into the provided numeric range.
- */
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
-}
-
-/**
- * Creates starter automation lanes from the selected session planning strategy.
- */
-function buildAutomationPlan(planId: SessionPlanId, baseBeat: number): AutomationLanes {
-  const beatStart = clamp(baseBeat, 0, 40)
-  if (planId === 'focus-ramp') {
-    return {
-      volume: [
-        { time: 0, value: 0.72 },
-        { time: 0.35, value: 0.88 },
-        { time: 0.75, value: 0.98 },
-        { time: 1, value: 0.9 },
-      ],
-      filterCutoff: [
-        { time: 0, value: 1800 },
-        { time: 0.45, value: 3800 },
-        { time: 1, value: 6200 },
-      ],
-      beatFrequency: [
-        { time: 0, value: clamp(beatStart * 0.9, 0, 40) },
-        { time: 0.5, value: clamp(beatStart, 0, 40) },
-        { time: 1, value: clamp(beatStart * 1.2, 0, 40) },
-      ],
-    }
-  }
-
-  if (planId === 'sleep-descent') {
-    return {
-      volume: [
-        { time: 0, value: 0.78 },
-        { time: 0.35, value: 0.66 },
-        { time: 0.7, value: 0.54 },
-        { time: 1, value: 0.42 },
-      ],
-      filterCutoff: [
-        { time: 0, value: 1700 },
-        { time: 0.45, value: 950 },
-        { time: 1, value: 420 },
-      ],
-      beatFrequency: [
-        { time: 0, value: clamp(beatStart, 0, 40) },
-        { time: 0.5, value: clamp(beatStart * 0.75, 0, 40) },
-        { time: 1, value: clamp(beatStart * 0.5, 0, 40) },
-      ],
-    }
-  }
-
-  return {
-    volume: [
-      { time: 0, value: 0.68 },
-      { time: 0.25, value: 0.84 },
-      { time: 0.8, value: 0.8 },
-      { time: 1, value: 0.7 },
-    ],
-    filterCutoff: [
-      { time: 0, value: 1200 },
-      { time: 0.5, value: 1500 },
-      { time: 1, value: 950 },
-    ],
-    beatFrequency: [
-      { time: 0, value: clamp(beatStart * 0.9, 0, 40) },
-      { time: 0.55, value: clamp(beatStart, 0, 40) },
-      { time: 1, value: clamp(beatStart * 0.82, 0, 40) },
-    ],
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Studio layer → audio params bridge
 // ---------------------------------------------------------------------------
 function applyStudioLayers(layers: StudioLayer[], callbacks: {
@@ -582,7 +406,6 @@ function AppInner() {
 
   // Automation
   const [automationLanes, setAutomationLanes] = useState<AutomationLanes>(defaultLanes)
-  const [sessionPlanId, setSessionPlanId] = useState<SessionPlanId>('gentle-drift')
 
   // Presets
   const [presetName, setPresetName] = useState('My Session')
@@ -663,7 +486,7 @@ function AppInner() {
 
   // Journey
   const [journey, setJourney] = useState<Journey | null>(null)
-  const [activeStageIndex, setActiveStageIndex] = useState(-1)
+  const [_activeStageIndex, setActiveStageIndex] = useState(-1)
   const activeJourneyRef = useRef<ActiveJourney | null>(null)
 
   // Onboarding
@@ -1295,38 +1118,6 @@ function AppInner() {
     setSoundsceneId(sceneId)
   }, [])
 
-  /**
-   * Seeds automation lanes from the selected planning template and current beat.
-   */
-  const applySessionPlanFromCurrent = useCallback((planId: SessionPlanId): void => {
-    setSessionPlanId(planId)
-    setAutomationLanes(buildAutomationPlan(planId, beat))
-  }, [beat])
-
-  /**
-   * Applies a complete quick-play preset and starts playback.
-   */
-  const runQuickPlaySession = useCallback((preset: QuickPlaySessionPreset): void => {
-    if (graphRef.current) {
-      stopSession(false)
-    }
-    setUseIndependentTuning(false)
-    setCarrier(preset.carrier)
-    setBeat(preset.beat)
-    setWobbleRate(preset.wobbleRate)
-    setNoiseType(preset.noiseType)
-    setNoiseVolume(preset.noiseVolume)
-    setSessionMinutes(preset.sessionMinutes)
-    setFadeInSeconds(preset.fadeInSeconds)
-    setFadeOutSeconds(preset.fadeOutSeconds)
-    applySoundscapeScene(preset.soundsceneId)
-    setSessionPlanId(preset.planId)
-    setAutomationLanes(buildAutomationPlan(preset.planId, preset.beat))
-    window.setTimeout(() => {
-      void toggleAudio()
-    }, 120)
-  }, [applySoundscapeScene, stopSession]) // eslint-disable-line react-hooks/exhaustive-deps
-
   // ---------------------------------------------------------------------------
   // Preset helpers
   // ---------------------------------------------------------------------------
@@ -1841,7 +1632,7 @@ function AppInner() {
         {/* ── Tab navigation ── */}
         {/* PRO_TABS: tabs that require Pro subscription */}
         {(() => {
-          const PRO_TABS = new Set(['journey', 'studio', 'ai', 'journal', 'music'])
+          const PRO_TABS = new Set(['studio', 'focus', 'ai', 'journal', 'music'])
           return (
             <nav className="tab-nav" aria-label="Main navigation">
               {TABS.map((tab) => {
@@ -1993,13 +1784,6 @@ function AppInner() {
                       </button>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Breath Guide */}
-              <div className="section-block">
-                <div className="section-card">
-                  <BreathGuide isRunning={isRunning} />
                 </div>
               </div>
 
@@ -2248,286 +2032,28 @@ function AppInner() {
             </div>
           )}
 
-          {/* ──────────────── SESSION TAB ──────────────── */}
-          {activeTab === 'session' && (
-            <div className="tab-sections">
-              <div className="section-block">
-                <div className="section-title">Quick Play</div>
-                <div className="section-card">
-                  <p className="control-hint">One click applies frequencies, sounds, noise, and a starter plan, then starts playback.</p>
-                  <div className="session-quick-grid">
-                    {QUICK_PLAY_SESSIONS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        className="session-quick-card"
-                        onClick={() => runQuickPlaySession(preset)}
-                      >
-                        <span className="session-quick-emoji">{preset.emoji}</span>
-                        <span className="session-quick-title">{preset.label}</span>
-                        <span className="session-quick-meta">{preset.carrier} Hz · {preset.beat} Hz · {preset.sessionMinutes}m</span>
-                        <span className="session-quick-desc">{preset.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="section-block">
-                <div className="section-title">Session Planning</div>
-                <div className="section-card">
-                  <p className="control-hint">Choose a plan after setting your tones/sound/noise, then tweak points in Automation Lanes.</p>
-                  <div className="session-plan-panel">
-                    <div className="seg-control">
-                      {SESSION_PLAN_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className={sessionPlanId === opt.id ? 'active' : ''}
-                          onClick={() => setSessionPlanId(opt.id)}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="session-plan-desc">
-                      {SESSION_PLAN_OPTIONS.find((opt) => opt.id === sessionPlanId)?.description}
-                    </p>
-                    <div className="session-plan-actions">
-                      <button type="button" className="soft-button" onClick={() => applySessionPlanFromCurrent(sessionPlanId)}>
-                        Build Lanes From Current Setup
-                      </button>
-                      <button type="button" className="soft-button" onClick={() => setAutomationLanes(defaultLanes())}>
-                        Clear Lanes
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="section-block">
-                <div className="section-title">Session</div>
-                <div className="section-card">
-                  <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for >15 min' : ''})
-                    <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
-                      onChange={(e) => {
-                        const val = Number(e.target.value)
-                        if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
-                        setSessionMinutes(val)
-                      }} />
-                    {!isPro && <span className="control-hint">🔒 <button className="link-btn" onClick={() => openUpgradeModal('Sessions > 15 minutes')}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
-                  </label>
-                  <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
-                    <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
-                  </label>
-                  <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
-                    <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
-                  </label>
-                  <button className="soft-button export-button" onClick={() => void exportWav()}
-                    disabled={isRunning || isExporting} style={{ width: '100%' }}>
-                    {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
-                  </button>
-                  <VuMeter analyser={masterBusRef.current?.analyser ?? null} isRunning={isRunning} />
-                </div>
-              </div>
-
-              <div className="section-block">
-                <div className="section-title">Automation</div>
-                <div className="section-card">
-                  <p className="control-hint">Plan first, then drag points to dial in your exact progression.</p>
-                  <AutomationEditor
-                    lanes={automationLanes}
-                    onChange={setAutomationLanes}
-                    sessionMinutes={sessionMinutes}
-                  />
-                </div>
-              </div>
-
-              <div className="section-block">
-                <div className="section-title">Presets</div>
-                <div className="section-card">
-                  <label>Preset Name
-                    <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
-                  </label>
-                  <div className="preset-actions">
-                    <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
-                  </div>
-                  <hr className="section-divider" />
-                  <label>Load Preset
-                    <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
-                      <option value="">Select a preset</option>
-                      {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
-                    </select>
-                  </label>
-                  <div className="preset-actions">
-                    <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
-                    <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ──────────────── JOURNEY TAB ──────────────── */}
-          {activeTab === 'journey' && (
-            <div className="tab-sections">
-              <div className="section-block">
-                <div className="section-title">Session Planner</div>
-              <SessionPlanner
-                carrier={carrier}
-                beat={beat}
-                noiseType={noiseType}
-                noiseVolume={noiseVolume}
-                soundsceneId={soundsceneId}
-                padEnabled={padEnabled}
-                padVolume={padVolume}
-                musicTrackId={musicTrackId}
-                musicVolume={musicVolume}
-                musicTracks={MUSIC_TRACKS}
-                soundscapeScenes={[
-                  { id: 'off', label: 'Off' },
-                  { id: 'storm', label: 'Thunderstorm' },
-                  { id: 'ocean', label: 'Ocean' },
-                  { id: 'forest', label: 'Forest Rain' },
-                  { id: 'fire', label: 'Fireplace' },
-                  { id: 'space', label: 'Deep Space' },
-                  { id: 'cave', label: 'Cave Drip' },
-                ]}
-                brainwavePresets={[
-                  { label: 'Delta 1Hz', beat: 1, carrier: 174 },
-                  { label: 'Delta 2Hz', beat: 2, carrier: 174 },
-                  { label: 'Theta 4Hz', beat: 4, carrier: 285 },
-                  { label: 'Theta 6Hz', beat: 6, carrier: 432 },
-                  { label: 'Alpha 8Hz', beat: 8, carrier: 432 },
-                  { label: 'Alpha 10Hz', beat: 10, carrier: 432 },
-                  { label: 'Beta 14Hz', beat: 14, carrier: 528 },
-                  { label: 'Beta 18Hz', beat: 18, carrier: 528 },
-                  { label: 'Gamma 40Hz', beat: 40, carrier: 741 },
-                ]}
-                isRunning={isRunning}
-                onPreview={(plan: SessionPlan) => {
-                  if (graphRef.current) stopSession(false)
-                  // Create AudioContext synchronously inside user gesture
-                  prewarmedContextRef.current = new AudioContext()
-                  if (plan.binaural.enabled) {
-                    setCarrier(plan.binaural.carrier)
-                    setBeat(plan.binaural.beatStart)
-                    carrierRef.current = plan.binaural.carrier
-                    beatRef.current = plan.binaural.beatStart
-                    setLeftFrequency(plan.binaural.carrier)
-                    setRightFrequency(plan.binaural.carrier + plan.binaural.beatStart)
-                    leftFrequencyRef.current = plan.binaural.carrier
-                    rightFrequencyRef.current = plan.binaural.carrier + plan.binaural.beatStart
-                  }
-                  const resolvedNoiseType = plan.noise.enabled ? (plan.noise.type as import('./types').NoiseType) : 'none'
-                  setNoiseType(resolvedNoiseType)
-                  setNoiseVolume(plan.noise.volume)
-                  noiseTypeRef.current = resolvedNoiseType
-                  noiseVolumeRef.current = plan.noise.volume
-                  // Apply soundscape scene so layerGains get updated too
-                  if (plan.soundscape.enabled) {
-                    applySoundscapeScene(plan.soundscape.sceneId)
-                    const scene = SOUNDSCAPE_SCENES.find(s => s.id === plan.soundscape.sceneId)
-                    if (scene) {
-                      const gains = { ...DEFAULT_GAINS }
-                      Object.entries(scene.gains).forEach(([id, value]) => { (gains as Record<string, number>)[id] = value as number })
-                      layerGainsRef.current = gains
-                    }
-                  } else {
-                    setSoundsceneId('off')
-                  }
-                  setPadEnabled(plan.pad.enabled)
-                  setPadVolume(plan.pad.volume)
-                  padEnabledRef.current = plan.pad.enabled
-                  padVolumeRef.current = plan.pad.volume
-                  setSessionMinutes(plan.totalMinutes)
-                  setFadeInSeconds(plan.fadeInSec)
-                  setFadeOutSeconds(plan.fadeOutSec)
-                  fadeInSecondsRef.current = plan.fadeInSec
-                  if (plan.music.enabled && plan.music.trackIds[0]) {
-                    const track = MUSIC_TRACKS.find(t => t.id === plan.music.trackIds[0])
-                    if (track) void playMusicTrack(track)
-                  }
-                  // Use rAF to let React flush state before starting audio
-                  window.requestAnimationFrame(() => {
-                    window.requestAnimationFrame(() => {
-                      if (!graphRef.current) void toggleAudio()
-                    })
-                  })
-                }}
-                onStop={() => { stopSession(true) }}
-                onLiveUpdate={(plan: SessionPlan) => {
-                  // Binaural
-                  if (plan.binaural.enabled) {
-                    const c = plan.binaural.carrier
-                    const b = plan.binaural.beatStart
-                    setCarrier(c); carrierRef.current = c
-                    setBeat(b); beatRef.current = b
-                    setLeftFrequency(c); leftFrequencyRef.current = c
-                    setRightFrequency(c + b); rightFrequencyRef.current = c + b
-                  }
-                  // Noise
-                  const nt = plan.noise.enabled ? (plan.noise.type as import('./types').NoiseType) : 'none'
-                  setNoiseType(nt); noiseTypeRef.current = nt
-                  setNoiseVolume(plan.noise.volume); noiseVolumeRef.current = plan.noise.volume
-                  // Soundscape
-                  if (plan.soundscape.enabled) {
-                    applySoundscapeScene(plan.soundscape.sceneId)
-                    const scene = SOUNDSCAPE_SCENES.find(s => s.id === plan.soundscape.sceneId)
-                    if (scene) {
-                      const gains = { ...DEFAULT_GAINS }
-                      Object.entries(scene.gains).forEach(([id, v]) => { (gains as Record<string,number>)[id] = v as number })
-                      layerGainsRef.current = gains
-                    }
-                  } else {
-                    setSoundsceneId('off')
-                  }
-                  // Pad
-                  setPadEnabled(plan.pad.enabled); padEnabledRef.current = plan.pad.enabled
-                  setPadVolume(plan.pad.volume); padVolumeRef.current = plan.pad.volume
-                  // Music volume
-                  setMusicVolume(plan.music.volume)
-                }}
-                onSave={(plan: SessionPlan) => {
-                  const existing: SessionPlan[] = (() => {
-                    try { return JSON.parse(localStorage.getItem('liminal-session-plans') ?? '[]') as SessionPlan[] } catch { return [] }
-                  })()
-                  const idx = existing.findIndex(p => p.name === plan.name)
-                  const updated = [...existing]
-                  if (idx >= 0) updated[idx] = plan; else updated.push(plan)
-                  localStorage.setItem('liminal-session-plans', JSON.stringify(updated))
-                }}
-              />
-              </div>
-              <div className="section-block">
-                <div className="section-title">Journey Builder</div>
-                <JourneyBuilder
-                  isRunning={isRunning}
-                  journey={journey}
-                  setJourney={setJourney}
-                  activeStageIndex={activeStageIndex}
-                  setCarrier={setCarrier}
-                  setBeat={setBeat}
-                  setWobbleRate={setWobbleRate}
-                  setSoundsceneId={setSoundsceneId}
-                  apiKey={localStorage.getItem('binaural-openai-key') ?? ''}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ──────────────── VISUAL TAB ──────────────── */}
-          {activeTab === 'visual' && (
+          {/* ──────────────── FOCUS TAB ──────────────── */}
+          {activeTab === 'focus' && (
+            <div>
             <VisualTab
               carrier={carrier}
               beat={beat}
               isRunning={isRunning}
               analyser={masterBusRef.current?.analyser ?? null}
             />
+            <div className="tab-sections">
+              <div className="section-block">
+                <div className="section-card">
+                  <BreathGuide isRunning={isRunning} />
+                </div>
+              </div>
+            </div>
+            </div>
           )}
 
           {/* ──────────────── STUDIO TAB ──────────────── */}
           {activeTab === 'studio' && (
+            <div>
             <StudioTab
               isRunning={isRunning}
               musicTracks={MUSIC_TRACKS}
@@ -2592,6 +2118,69 @@ function AppInner() {
                 })
               }}
             />
+            <div className="tab-sections">
+              <div className="section-block">
+                <div className="section-title">Session</div>
+                <div className="section-card">
+                  <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for >15 min' : ''})
+                    <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
+                      onChange={(e) => {
+                        const val = Number(e.target.value)
+                        if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
+                        setSessionMinutes(val)
+                      }} />
+                    {!isPro && <span className="control-hint">🔒 <button className="link-btn" onClick={() => openUpgradeModal('Sessions > 15 minutes')}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
+                  </label>
+                  <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
+                    <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
+                  </label>
+                  <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
+                    <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
+                  </label>
+                  <button className="soft-button export-button" onClick={() => void exportWav()}
+                    disabled={isRunning || isExporting} style={{ width: '100%' }}>
+                    {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
+                  </button>
+                  <VuMeter analyser={masterBusRef.current?.analyser ?? null} isRunning={isRunning} />
+                </div>
+              </div>
+
+              <div className="section-block">
+                <div className="section-title">Automation</div>
+                <div className="section-card">
+                  <p className="control-hint">Plan first, then drag points to dial in your exact progression.</p>
+                  <AutomationEditor
+                    lanes={automationLanes}
+                    onChange={setAutomationLanes}
+                    sessionMinutes={sessionMinutes}
+                  />
+                </div>
+              </div>
+
+              <div className="section-block">
+                <div className="section-title">Presets</div>
+                <div className="section-card">
+                  <label>Preset Name
+                    <input className="text-input" type="text" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
+                  </label>
+                  <div className="preset-actions">
+                    <button type="button" className="soft-button" onClick={savePreset}>Save Preset</button>
+                  </div>
+                  <hr className="section-divider" />
+                  <label>Load Preset
+                    <select className="text-input" value={selectedPresetName} onChange={(e) => setSelectedPresetName(e.target.value)}>
+                      <option value="">Select a preset</option>
+                      {savedPresets.map((p) => (<option key={p.name} value={p.name}>{p.name}</option>))}
+                    </select>
+                  </label>
+                  <div className="preset-actions">
+                    <button type="button" className="soft-button" onClick={loadSelectedPreset}>Load Selected</button>
+                    <button type="button" className="soft-button soft-button--danger" onClick={deleteSelectedPreset} disabled={!selectedPresetName}>Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
           )}
 
           {/* ──────────────── AI TAB ──────────────── */}
@@ -2733,7 +2322,7 @@ function AppInner() {
       setWobbleRate={setWobbleRate}
       isExpanded={playerExpanded}
       onToggleExpand={() => setPlayerExpanded(v => !v)}
-      onOpenVisual={() => { setActiveTab('visual'); setPlayerExpanded(false) }}
+      onOpenVisual={() => { setActiveTab('focus'); setPlayerExpanded(false) }}
     />
     </main>
 
