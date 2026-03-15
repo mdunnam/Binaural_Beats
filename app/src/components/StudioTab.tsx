@@ -131,13 +131,27 @@ type StudioTabProps = {
   onLiveUpdate: (layers: StudioLayer[]) => void
   musicTracks: MusicTrack[]
   onExportWav?: () => void
+  initialLayers?: StudioLayer[]
 }
 
-export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav }: StudioTabProps) {
-  const [layers, setLayers] = useState<StudioLayer[]>([
-    { id: '1', type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 432 } },
-    { id: '2', type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 6, wobbleRate: 0.4 } },
-  ])
+export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav, initialLayers }: StudioTabProps) {
+  const [layers, setLayers] = useState<StudioLayer[]>(
+    initialLayers && initialLayers.length > 0
+      ? initialLayers
+      : [
+          { id: '1', type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 432 } },
+          { id: '2', type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 6, wobbleRate: 0.4 } },
+        ]
+  )
+
+  // Apply new initialLayers when they change (e.g. quick start from Home)
+  const prevInitialLayersRef = useRef(initialLayers)
+  useEffect(() => {
+    if (initialLayers && initialLayers !== prevInitialLayersRef.current) {
+      prevInitialLayersRef.current = initialLayers
+      setLayers(initialLayers)
+    }
+  }, [initialLayers])
   const [showTutorial, setShowTutorial] = useState(
     () => localStorage.getItem('liminal-studio-tutorial-seen') !== 'true'
   )

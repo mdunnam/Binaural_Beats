@@ -418,6 +418,7 @@ function AppInner() {
 
   // Pad synth
   const [padEnabled, setPadEnabled] = useState(false)
+  const [studioQuickStartLayers, setStudioQuickStartLayers] = useState<StudioLayer[] | undefined>(undefined)
   const [padVolume, setPadVolume] = useState(0.15)
   const [padReverbMix, setPadReverbMix] = useState(0.5)
   const [padWaveform, setPadWaveform] = useState<PadWaveform>('sine')
@@ -1795,6 +1796,7 @@ function AppInner() {
                       SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                       setAutomationLanes,
                     })
+                    setStudioQuickStartLayers([...layers])
                     setActiveTab('studio')
                   }}>
                     <span className="dash-quick-emoji">{emoji}</span>
@@ -2189,6 +2191,7 @@ function AppInner() {
               isRunning={isRunning}
               musicTracks={MUSIC_TRACKS}
               onExportWav={() => void exportWav()}
+              initialLayers={studioQuickStartLayers}
               onPreview={(studioLayers) => {
                 if (graphRef.current) stopSession(false)
                 // Create AudioContext synchronously inside the user gesture
