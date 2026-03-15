@@ -6,6 +6,7 @@ import { UpgradeModal } from './components/UpgradeModal'
 import { AuthModal } from './components/AuthModal'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Toast } from './components/Toast'
+import { InstallPrompt } from './components/InstallPrompt'
 import { useToast } from './hooks/useToast'
 import type {
   NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
@@ -2632,6 +2633,9 @@ function AppInner() {
 
       {/* ── Upgrade Modal ── */}
       <UpgradeModal />
+
+      {/* ── PWA Install Prompt ── */}
+      <InstallPrompt />
 
       {/* ── Toast Notifications ── */}
       <Toast toasts={toasts} onRemove={removeToast} />

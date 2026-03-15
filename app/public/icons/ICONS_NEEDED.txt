@@ -1,0 +1,5 @@
+Icons needed for PWA:
+- icon-192.png (192x192) — dark bg #0d1211, white "L" or Liminal logomark
+- icon-512.png (512x512) — same
+
+Until real icons are created, the manifest will reference missing files.
