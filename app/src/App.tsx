@@ -35,6 +35,7 @@ import { MiniPlayer } from './components/MiniPlayer'
 import { JourneyBuilder, BUILT_IN_JOURNEYS } from './components/JourneyBuilder'
 import { OnboardingFlow } from './components/OnboardingFlow'
 import type { OnboardingConfig } from './components/OnboardingFlow'
+import { OnboardingModal } from './components/OnboardingModal'
 import type { Journey, ActiveJourney } from './engine/journeyEngine'
 import { startJourney, stopJourney } from './engine/journeyEngine'
 import type { AmbientPlayer } from './engine/ambientPlayer'
@@ -656,6 +657,11 @@ function AppInner() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('binaural-onboarded')
   })
+
+  // Welcome modal (first-run)
+  const [showWelcome, setShowWelcome] = useState(() =>
+    localStorage.getItem('liminal-onboarding-done') !== 'true'
+  )
 
   // Ambient mode
   const [ambientRunning, setAmbientRunning] = useState(false)
@@ -1738,6 +1744,7 @@ function AppInner() {
           onSkip={handleOnboardingSkip}
         />
       )}
+      {showWelcome && <OnboardingModal onDone={() => setShowWelcome(false)} />}
     <main className="app-shell">
       <section className="hero">
         <div className="hero-main">

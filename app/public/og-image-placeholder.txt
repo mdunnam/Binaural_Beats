@@ -1,0 +1,3 @@
+OG image needed: 1200x630px
+Design: Dark bg (#0d1211), centered "Liminal" in large DM Serif Display font, green (#3e8f72) accent
+File should be saved as: app/public/og-image.png
