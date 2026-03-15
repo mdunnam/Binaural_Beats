@@ -264,29 +264,33 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
   return (
     <div className="visual-tab" style={{ position: 'relative' }}>
       <div className="visual-controls">
-        <div className="seg-control">
-          {(['lissajous', 'pulse', 'mandala', 'spectrum'] as const).map(m => (
-            <button key={m} className={mode === m ? 'seg-btn seg-btn--active' : 'seg-btn'}
-              onClick={() => setMode(m)}>
-              {m.charAt(0).toUpperCase() + m.slice(1)}
-            </button>
-          ))}
+        <div className="visual-controls-row">
+          <div className="seg-control">
+            {(['lissajous', 'pulse', 'mandala', 'spectrum'] as const).map(m => (
+              <button key={m} className={mode === m ? 'seg-btn seg-btn--active' : 'seg-btn'}
+                onClick={() => setMode(m)}>
+                {m.charAt(0).toUpperCase() + m.slice(1)}
+              </button>
+            ))}
+          </div>
+          <button className="soft-button" style={{ fontSize: '0.8rem', marginLeft: 'auto' }} onClick={() => {
+            const el = document.querySelector('.visual-canvas-wrap') as HTMLElement
+            if (!isFullscreen) { el?.requestFullscreen?.(); setIsFullscreen(true) }
+            else { document.exitFullscreen?.(); setIsFullscreen(false) }
+          }}>
+            {isFullscreen ? '⛶ Exit' : '⛶ Fullscreen'}
+          </button>
         </div>
-        <div className="seg-control">
-          {(['emerald', 'violet', 'gold', 'void'] as const).map(t => (
-            <button key={t} className={colorTheme === t ? 'seg-btn seg-btn--active' : 'seg-btn'}
-              onClick={() => setColorTheme(t)}>
-              {t}
-            </button>
-          ))}
+        <div className="visual-controls-row">
+          <div className="seg-control">
+            {(['emerald', 'violet', 'gold', 'void'] as const).map(t => (
+              <button key={t} className={colorTheme === t ? 'seg-btn seg-btn--active' : 'seg-btn'}
+                onClick={() => setColorTheme(t)}>
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
-        <button className="soft-button" style={{ fontSize: '0.8rem' }} onClick={() => {
-          const el = document.querySelector('.visual-canvas-wrap') as HTMLElement
-          if (!isFullscreen) { el?.requestFullscreen?.(); setIsFullscreen(true) }
-          else { document.exitFullscreen?.(); setIsFullscreen(false) }
-        }}>
-          {isFullscreen ? '⛶ Exit' : '⛶ Fullscreen'}
-        </button>
       </div>
 
       {!isRunning && (

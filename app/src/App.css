@@ -2429,10 +2429,16 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 .visual-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.visual-controls-row {
+  display: flex;
+  gap: 0.6rem;
   align-items: center;
-  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .visual-canvas-wrap {
