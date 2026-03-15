@@ -2677,7 +2677,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* Add bottom padding to app-shell so content is not hidden behind the mini-player */
 .app-shell {
-  padding-bottom: 80px;
+  padding-bottom: 120px;
 }
 
 @media (max-width: 599px) {
@@ -2695,9 +2695,11 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   background: var(--bg-panel);
   border-top: 1px solid var(--border-card);
   box-shadow: 0 -4px 20px var(--shadow-panel);
-  max-height: 64px;
+  max-height: 104px;
   overflow: hidden;
   transition: max-height 0.35s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .mini-player--expanded {
@@ -5196,36 +5198,48 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   flex-direction: row;
   width: 100%;
   height: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
   background: var(--bg-section);
-  border-top: 1px solid var(--border-section);
+  border-bottom: 1px solid var(--border-section);
   overflow: hidden;
   gap: 2px;
 }
 
 .audio-viz-level {
   flex: 0 0 14px;
+  width: 14px;
   height: 40px;
+  min-height: 40px;
+  display: block;
 }
 
 .audio-viz-spectrum-wrap {
   flex: 1;
   height: 40px;
+  min-height: 40px;
   position: relative;
+  overflow: hidden;
 }
 
 .audio-viz-spectrum {
   width: 100%;
   height: 40px;
+  min-height: 40px;
   display: block;
 }
 
 .audio-viz-scope-wrap {
   flex: 0 0 110px;
+  width: 110px;
   height: 40px;
+  min-height: 40px;
+  overflow: hidden;
 }
 
 .audio-viz-scope {
   width: 110px;
   height: 40px;
+  min-height: 40px;
   display: block;
 }
