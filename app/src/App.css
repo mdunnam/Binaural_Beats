@@ -2782,7 +2782,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .mini-player-timer {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 
