@@ -38,8 +38,6 @@ import { VuMeter } from './components/VuMeter'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
 import { VisualTab } from './components/VisualTab'
-import { VisualResonance } from './components/VisualResonance'
-import type { VisualMode } from './components/VisualResonance'
 import { MiniPlayer } from './components/MiniPlayer'
 import { JourneyBuilder, BUILT_IN_JOURNEYS } from './components/JourneyBuilder'
 import { OnboardingFlow } from './components/OnboardingFlow'
@@ -590,8 +588,6 @@ function AppInner() {
   const [selectedPresetName, setSelectedPresetName] = useState('')
 
   // Visual resonance
-  const [visualMode, setVisualMode] = useState<VisualMode>('lissajous')
-
   // Session state
   const [isRunning, setIsRunning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
@@ -2107,31 +2103,6 @@ function AppInner() {
                 </div>
               </div>
 
-              {/* Visual Resonance */}
-              <div className="section-block">
-                <div className="section-title">Visual Resonance</div>
-                <div className="visual-resonance-wrap">
-                  <VisualResonance
-                    carrier={carrier}
-                    beat={beat}
-                    phase={phaseOffset}
-                    isRunning={isRunning}
-                    mode={visualMode}
-                  />
-                  <div className="visual-mode-selector">
-                    {(['lissajous', 'pulse', 'mandala'] as VisualMode[]).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        className={`visual-mode-btn${visualMode === m ? ' visual-mode-btn--active' : ''}`}
-                        onClick={() => setVisualMode(m)}
-                      >
-                        {m.charAt(0).toUpperCase() + m.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
