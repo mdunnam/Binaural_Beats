@@ -4435,3 +4435,110 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   display: block;
   max-width: 200px;
 }
+
+/* ── Journey Library ── */
+.journey-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.journey-library-card {
+  background: var(--bg-section);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.journey-library-card-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.journey-library-card-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.journey-library-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.journey-library-card .soft-button {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  width: 100%;
+}
+
+/* ── Session Library ── */
+.session-library {
+  margin-bottom: 0.5rem;
+}
+
+.session-library-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+@media (max-width: 500px) {
+  .session-library-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.session-card {
+  background: var(--bg-section);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 0.65rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+  position: relative;
+}
+
+.session-card:hover:not(.session-card--locked) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.session-card--locked {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.session-card-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.session-card-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.session-card-meta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.session-card-lock {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  font-size: 0.7rem;
+}

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
 import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 import { LaneEditor } from './AutomationEditor'
+import { PREBUILT_JOURNEYS, JOURNEY_EMOJIS } from '../data/prebuiltJourneys'
+import type { StudioJourney } from '../types'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
 const STUDIO_JOURNEYS_KEY = 'liminal-studio-journeys'
@@ -152,6 +154,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   const [journeyName, setJourneyName] = useState('My Journey')
   const [savedJourneys, setSavedJourneys] = useState<SavedJourney[]>([])
   const [journeySavedFlag, setJourneySavedFlag] = useState(false)
+  const [showJourneyLibrary, setShowJourneyLibrary] = useState(false)
   const [savedFlag, setSavedFlag] = useState(false)
 
   // Journey playback state
@@ -353,6 +356,11 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
   function loadJourney(j: SavedJourney) {
     setJourneyScenes(JSON.parse(JSON.stringify(j.scenes)) as StudioScene[])
     setJourneyName(j.name)
+  }
+
+  function loadPrebuiltJourney(journey: StudioJourney) {
+    setJourneyScenes(JSON.parse(JSON.stringify(journey.scenes)) as StudioScene[])
+    setJourneyName(journey.name)
   }
   function deleteJourney(id: string) {
     const next = savedJourneys.filter(j => j.id !== id)
@@ -743,6 +751,35 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           Save scenes above and add them to the Journey queue.
         </p>
       )}
+
+      {/* Journey Library */}
+      <div style={{ marginTop: '0.75rem' }}>
+        <button
+          className="soft-button"
+          style={{ width: '100%', textAlign: 'left' }}
+          onClick={() => setShowJourneyLibrary(v => !v)}
+        >
+          📚 Journey Library {showJourneyLibrary ? '▾' : '▸'}
+        </button>
+        {showJourneyLibrary && (
+          <div className="journey-library-grid">
+            {PREBUILT_JOURNEYS.map(journey => {
+              const totalMin = journey.scenes.reduce((s, sc) => s + sc.durationMinutes, 0)
+              const emoji = JOURNEY_EMOJIS[journey.id] ?? '🎵'
+              return (
+                <div key={journey.id} className="journey-library-card">
+                  <div className="journey-library-card-emoji">{emoji}</div>
+                  <div className="journey-library-card-name">{journey.name}</div>
+                  <div className="journey-library-card-meta">{totalMin} min · {journey.scenes.length} scenes</div>
+                  <button className="soft-button" onClick={() => loadPrebuiltJourney(journey)}>
+                    Load Journey
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Journey save row */}
       {journeyScenes.length > 0 && (

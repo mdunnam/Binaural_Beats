@@ -55,6 +55,8 @@ import { SessionPlanner } from './components/SessionPlanner'
 import type { SessionPlan } from './types'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 import { BreathGuide } from './components/BreathGuide'
+import { SessionLibrary } from './components/SessionLibrary'
+import type { SessionCard } from './data/sessionLibrary'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
@@ -1946,6 +1948,22 @@ function AppInner() {
           {/* ──────────────── TONES TAB ──────────────── */}
           {activeTab === 'tones' && (
             <div className="tab-sections">
+              {/* Session Library */}
+              <div className="section-block">
+                <div className="section-title">Quick Start</div>
+                <SessionLibrary
+                  isPro={isPro}
+                  onLoad={(card: SessionCard) => {
+                    setCarrier(card.carrier)
+                    setBeat(card.beat)
+                    setNoiseType(card.noiseType)
+                    setNoiseVolume(card.noiseVolume)
+                    setPadEnabled(card.padEnabled)
+                    setSessionMinutes(card.duration)
+                  }}
+                />
+              </div>
+
               {/* Presets */}
               <div className="section-block">
                 <div className="section-title">Presets</div>
