@@ -5273,6 +5273,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   display: block;
   border-radius: 8px;
   overflow: hidden;
+  background: var(--bg-section);
   background: var(--bg-card);
   border: 1px solid var(--border-card);
 }
@@ -5293,6 +5294,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   height: 36px;
   min-height: 36px;
   display: block;
+  background: var(--bg-section);
 }
 
 .audio-viz-scope-wrap {
@@ -5311,6 +5313,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   height: 36px;
   min-height: 36px;
   display: block;
+  background: var(--bg-section);
 }
   display: block;
 }
