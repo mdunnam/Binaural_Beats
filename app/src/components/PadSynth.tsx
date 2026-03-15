@@ -95,6 +95,10 @@ export function PadSynth() {
 
   const ctxRef = useRef<AudioContext | null>(null)
   const voiceGainsRef = useRef<GainNode[]>([])
+  const masterGainRef = useRef<GainNode | null>(null)
+  const filterRef = useRef<BiquadFilterNode | null>(null)
+  const dryGainRef = useRef<GainNode | null>(null)
+  const wetGainRef = useRef<GainNode | null>(null)
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -112,12 +116,16 @@ export function PadSynth() {
 
     const masterGain = ctx.createGain()
     masterGain.gain.value = masterVolume
+    masterGainRef.current = masterGain
+    masterGainRef.current = masterGain
 
     // Filter
     const filter = ctx.createBiquadFilter()
     filter.type = 'lowpass'
     filter.frequency.value = filterCutoff
     filter.Q.value = filterQ
+    filterRef.current = filter
+    filterRef.current = filter
 
     // Reverb
     const convolver = ctx.createConvolver()
@@ -126,6 +134,10 @@ export function PadSynth() {
     const wetGain = ctx.createGain()
     dryGain.gain.value = 1 - reverbMix
     wetGain.gain.value = reverbMix
+    dryGainRef.current = dryGain
+    wetGainRef.current = wetGain
+    dryGainRef.current = dryGain
+    wetGainRef.current = wetGain
     filter.connect(dryGain)
     filter.connect(convolver)
     convolver.connect(wetGain)
@@ -220,6 +232,25 @@ export function PadSynth() {
     }, (release + 0.5) * 1000)
   }, [isPlaying, release])
 
+
+  // Live parameter updates — no restart needed
+  useEffect(() => { if (masterGainRef.current) masterGainRef.current.gain.setTargetAtTime(masterVolume, ctxRef.current?.currentTime ?? 0, 0.02) }, [masterVolume])
+  useEffect(() => { if (filterRef.current) filterRef.current.frequency.setTargetAtTime(filterCutoff, ctxRef.current?.currentTime ?? 0, 0.02) }, [filterCutoff])
+  useEffect(() => { if (filterRef.current) filterRef.current.Q.setTargetAtTime(filterQ, ctxRef.current?.currentTime ?? 0, 0.02) }, [filterQ])
+  useEffect(() => {
+    if (dryGainRef.current) dryGainRef.current.gain.setTargetAtTime(1 - reverbMix, ctxRef.current?.currentTime ?? 0, 0.02)
+    if (wetGainRef.current) wetGainRef.current.gain.setTargetAtTime(reverbMix, ctxRef.current?.currentTime ?? 0, 0.02)
+  }, [reverbMix])
+
+  // Params that require restart — auto-restart if playing
+  const restartIfPlaying = useCallback(() => {
+    if (!isPlaying) return
+    stopPad()
+    // Small delay to let release begin, then restart
+    setTimeout(() => { startPad() }, 100)
+  }, [isPlaying, stopPad, startPad])
+
+  useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="tab-sections">
       {/* Root & Chord */}
