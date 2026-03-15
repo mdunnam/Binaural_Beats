@@ -15,13 +15,13 @@ export function createMasterBus(initialVolume: number, existingContext?: AudioCo
   const masterGain = context.createGain()
   masterGain.gain.value = initialVolume
 
-  // Soft limiter — prevents clipping when multiple buses are loud
+  // Hard limiter — clip protection only; inaudible at normal levels
   const limiter = context.createDynamicsCompressor()
-  limiter.threshold.value = -3
-  limiter.knee.value = 3
-  limiter.ratio.value = 20
-  limiter.attack.value = 0.001
-  limiter.release.value = 0.1
+  limiter.threshold.value = -1.0  // kicks in just below 0 dBFS
+  limiter.knee.value = 0          // hard knee for true limiting
+  limiter.ratio.value = 20        // high ratio = limiting behaviour
+  limiter.attack.value = 0.001    // 1ms attack
+  limiter.release.value = 0.1     // 100ms release
 
   const binauralBus = context.createGain()
   binauralBus.gain.value = 1

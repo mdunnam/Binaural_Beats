@@ -4310,3 +4310,45 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .journal-trends-toggle {
   margin-bottom: 0.75rem;
 }
+
+/* ── Visual Resonance (inline component) ── */
+.visual-resonance-wrap {
+  margin: 1rem 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-section);
+  border: 1px solid var(--border-card);
+  position: relative;
+}
+
+.visual-resonance-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 280px;
+}
+
+.visual-mode-selector {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  padding: 0.5rem;
+  background: var(--bg-section);
+}
+
+.visual-mode-btn {
+  background: none;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.visual-mode-btn--active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
