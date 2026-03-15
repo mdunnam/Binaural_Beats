@@ -77,7 +77,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
         // Level
         const lCtx = levelCanvas.getContext('2d')!
         lCtx.fillStyle = bgColor
-        lCtx.fillRect(0, 0, 14, 40)
+        lCtx.fillRect(0, 0, 24, 40)
 
         // Spectrum
         const sCtx = specCanvas.getContext('2d')!
@@ -88,12 +88,12 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
         // Scope — flat dim line
         const oCtx = scopeCanvas.getContext('2d')!
         oCtx.fillStyle = bgColor
-        oCtx.fillRect(0, 0, 110, 40)
+        oCtx.fillRect(0, 0, 140, 40)
         oCtx.strokeStyle = idleLineColor
         oCtx.lineWidth = 1.5
         oCtx.beginPath()
         oCtx.moveTo(0, 20)
-        oCtx.lineTo(110, 20)
+        oCtx.lineTo(140, 20)
         oCtx.stroke()
       }
       drawIdle()
@@ -104,7 +104,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     const freqData = new Uint8Array(analyser.frequencyBinCount)
     const timeData = new Uint8Array(fftSize)
     const sampleRate = analyser.context.sampleRate
-    const NUM_BARS = 32
+    const NUM_BARS = 64
 
     const draw = () => {
       analyser.getByteFrequencyData(freqData)
@@ -117,7 +117,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 1: Level Meter ──
       const lCtx = levelCanvas.getContext('2d')!
       lCtx.fillStyle = bgColor
-      lCtx.fillRect(0, 0, 14, 40)
+      lCtx.fillRect(0, 0, 24, 40)
 
       // RMS from time domain
       let sum = 0
@@ -135,7 +135,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       gradient.addColorStop(0.6, '#e8b84b')
       gradient.addColorStop(1, '#e05a3a')
       lCtx.fillStyle = gradient
-      lCtx.fillRect(0, 40 - barH, 14, barH)
+      lCtx.fillRect(0, 40 - barH, 24, barH)
 
       // Clip flash
       if (level > 0.9) clipTimeRef.current = now
@@ -143,7 +143,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       if (clipAge < 500) {
         const alpha = clipAge < 200 ? 1 : 1 - (clipAge - 200) / 300
         lCtx.fillStyle = `rgba(224, 90, 58, ${alpha})`
-        lCtx.fillRect(0, 0, 14, 4)
+        lCtx.fillRect(0, 0, 24, 4)
       }
 
       // ── Zone 2: Spectrum Analyzer ──
@@ -154,8 +154,8 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
 
       const binCount = analyser.frequencyBinCount
       const barsPerGroup = Math.floor(binCount / NUM_BARS)
-      const barW = Math.floor(W / NUM_BARS)
-      const gap = 1
+      const barW = W / NUM_BARS
+      const gap = 0.5
 
       // Carrier marker bar index
       const hzPerBin = sampleRate / analyser.fftSize
@@ -204,15 +204,15 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 3: Oscilloscope ──
       const oCtx = scopeCanvas.getContext('2d')!
       oCtx.fillStyle = bgColor
-      oCtx.fillRect(0, 0, 110, 40)
+      oCtx.fillRect(0, 0, 140, 40)
 
       oCtx.strokeStyle = brightColor
       oCtx.lineWidth = 1.5
       oCtx.beginPath()
-      const sliceW = 110 / timeData.length
+      const sliceW = 140 / timeData.length
       for (let i = 0; i < timeData.length; i++) {
         const v = (timeData[i] / 128) - 1
-        const y = (v * 18) + 20
+        const y = (v * 60) + 20
         if (i === 0) oCtx.moveTo(0, y)
         else oCtx.lineTo(i * sliceW, y)
       }
@@ -230,12 +230,12 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
 
   return (
     <div className="audio-viz-strip">
-      <canvas ref={levelRef} className="audio-viz-level" width={14} height={40} />
+      <canvas ref={levelRef} className="audio-viz-level" width={24} height={40} />
       <div className="audio-viz-spectrum-wrap" ref={specWrapRef}>
         <canvas ref={spectrumRef} className="audio-viz-spectrum" width={220} height={40} />
       </div>
       <div className="audio-viz-scope-wrap">
-        <canvas ref={scopeRef} className="audio-viz-scope" width={110} height={40} />
+        <canvas ref={scopeRef} className="audio-viz-scope" width={140} height={40} />
       </div>
     </div>
   )

@@ -5207,8 +5207,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .audio-viz-level {
-  flex: 0 0 14px;
-  width: 14px;
+  flex: 0 0 24px;
+  width: 24px;
   height: 40px;
   min-height: 40px;
   display: block;
@@ -5230,15 +5230,15 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .audio-viz-scope-wrap {
-  flex: 0 0 110px;
-  width: 110px;
+  flex: 0 0 140px;
+  width: 140px;
   height: 40px;
   min-height: 40px;
   overflow: hidden;
 }
 
 .audio-viz-scope {
-  width: 110px;
+  width: 140px;
   height: 40px;
   min-height: 40px;
   display: block;
