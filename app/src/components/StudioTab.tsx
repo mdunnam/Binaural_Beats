@@ -127,9 +127,10 @@ type StudioTabProps = {
   onStop: () => void
   onLiveUpdate: (layers: StudioLayer[]) => void
   musicTracks: MusicTrack[]
+  onExportWav?: () => void
 }
 
-export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks }: StudioTabProps) {
+export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav }: StudioTabProps) {
   const [layers, setLayers] = useState<StudioLayer[]>([
     { id: '1', type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 432 } },
     { id: '2', type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 6, wobbleRate: 0.4 } },
@@ -758,6 +759,13 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
       </div>
 
       </div>{/* tab-sections */}
+      {onExportWav && (
+        <div className="section-block" style={{ marginTop: '1rem' }}>
+          <button className="soft-button soft-button--accent" onClick={onExportWav} style={{ width: '100%' }}>
+            💾 Export WAV
+          </button>
+        </div>
+      )}
     </div>
   )
 }

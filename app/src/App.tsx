@@ -2459,6 +2459,7 @@ function AppInner() {
             <StudioTab
               isRunning={isRunning}
               musicTracks={MUSIC_TRACKS}
+              onExportWav={() => void exportWav()}
               onPreview={(studioLayers) => {
                 if (graphRef.current) stopSession(false)
                 // Create AudioContext synchronously inside the user gesture
