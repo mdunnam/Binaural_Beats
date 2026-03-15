@@ -196,8 +196,7 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
 
     if (!analyserNode) {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = '#dbe4dd'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      // transparent — bg from CSS
       ctx.fillStyle = '#9ab5aa'
       ctx.font = '9px system-ui'
       ctx.textBaseline = 'middle'
@@ -261,8 +260,7 @@ function Oscilloscope({ analyserNode }: { analyserNode: AnalyserNode | null }) {
     const drawEmpty = () => {
       const w = canvas.width
       const h = canvas.height
-      ctx.fillStyle = '#f5faf7'
-      ctx.fillRect(0, 0, w, h)
+      ctx.clearRect(0, 0, w, h)
       ctx.strokeStyle = '#c8ddd5'
       ctx.lineWidth = 1
       ctx.beginPath()
@@ -284,8 +282,7 @@ function Oscilloscope({ analyserNode }: { analyserNode: AnalyserNode | null }) {
       analyserNode.getByteTimeDomainData(dataArray)
       const w = canvas.width
       const h = canvas.height
-      ctx.fillStyle = '#f5faf7'
-      ctx.fillRect(0, 0, w, h)
+      ctx.clearRect(0, 0, w, h)
       // Centerline
       ctx.strokeStyle = '#c8ddd5'
       ctx.lineWidth = 1
@@ -343,13 +340,12 @@ function FrequencySpectrum({ analyserNode }: { analyserNode: AnalyserNode | null
     const drawEmpty = () => {
       const w = canvas.width
       const h = canvas.height
-      ctx.fillStyle = '#f5faf7'
-      ctx.fillRect(0, 0, w, h)
+      ctx.clearRect(0, 0, w, h)
       const gap = 2
       const barW = (w - gap * (NUM_BARS - 1)) / NUM_BARS
       for (let i = 0; i < NUM_BARS; i++) {
         const x = i * (barW + gap)
-        ctx.fillStyle = '#dbe4dd'
+        ctx.fillStyle = 'rgba(255,255,255,0.15)'
         ctx.fillRect(x, h - 2, barW, 2)
       }
     }
@@ -367,8 +363,7 @@ function FrequencySpectrum({ analyserNode }: { analyserNode: AnalyserNode | null
 
       const w = canvas.width
       const h = canvas.height
-      ctx.fillStyle = '#f5faf7'
-      ctx.fillRect(0, 0, w, h)
+      ctx.clearRect(0, 0, w, h)
 
       const gap = 2
       const barW = (w - gap * (NUM_BARS - 1)) / NUM_BARS
@@ -444,8 +439,6 @@ function VoiceWaveform({ objectUrl }: { objectUrl: string }) {
         const step = Math.ceil(data.length / w)
         const mid = h / 2
         ctx.clearRect(0, 0, w, h)
-        ctx.fillStyle = '#f0f8f4'
-        ctx.fillRect(0, 0, w, h)
         ctx.strokeStyle = '#3e8f72'
         ctx.lineWidth = 1
         ctx.beginPath()

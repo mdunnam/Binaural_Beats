@@ -1301,6 +1301,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   position: relative;
   width: 100%;
   height: 64px;
+  background: var(--bg-card);
+  border-radius: 4px;
 }
 
 .waveform-canvas {
@@ -1308,6 +1310,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   width: 100%;
   height: 64px;
   border-radius: 4px;
+  background: transparent;
 }
 
 .waveform-scrubber {
@@ -1635,6 +1638,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   display: block;
   width: 100%;
   height: 48px;
+  background: transparent;
 }
 
 /* ── Volume section ── */
