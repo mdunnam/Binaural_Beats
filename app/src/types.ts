@@ -54,12 +54,17 @@ export type SessionPreset = {
   noiseVolume: number
 }
 
+export type MoodRating = 1 | 2 | 3 | 4 | 5
+
 export type JournalEntry = {
   id: string
   date: string
   presetName: string
   durationMinutes: number
   notes: string
+  mood: MoodRating | null
+  tags: string[]
+  completedAt: number
 }
 
 export type PadSynthGraph = {

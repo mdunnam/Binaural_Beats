@@ -26,6 +26,7 @@ import { SoundscapeMixer } from './components/SoundscapeMixer'
 import type { LayerGains, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
 import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
 import { SessionJournal } from './components/SessionJournal'
+import { useJournal } from './hooks/useJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
 import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
@@ -52,7 +53,6 @@ import type { SessionPlan } from './types'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
-const JOURNAL_STORAGE_KEY = 'binaural-journal-v1'
 
 const TABS = [
   { id: 'dashboard', icon: '🏠', label: 'Home'      },
@@ -101,14 +101,7 @@ function readSavedPresets(): SessionPreset[] {
 function writeSavedPresets(presets: SessionPreset[]): void {
   localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets))
 }
-function readJournal(): JournalEntry[] {
-  const raw = localStorage.getItem(JOURNAL_STORAGE_KEY)
-  if (!raw) return []
-  try { return JSON.parse(raw) as JournalEntry[] } catch { return [] }
-}
-function writeJournal(entries: JournalEntry[]): void {
-  localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(entries))
-}
+
 
 // ---------------------------------------------------------------------------
 // End chime
@@ -596,10 +589,10 @@ function AppInner() {
   const [sessionTotalSeconds, setSessionTotalSeconds] = useState(0)
 
   // Journal
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
+  const { entries: journalEntries, addEntry: journalAddEntry, updateEntry: journalUpdateEntry, deleteEntry: journalDeleteEntry } = useJournal()
   const [showJournalModal, setShowJournalModal] = useState(false)
   const [showJournalList, setShowJournalList] = useState(false)
-  const [pendingJournalEntry, setPendingJournalEntry] = useState<Omit<JournalEntry, 'id' | 'notes'> | null>(null)
+  const [pendingJournalEntry, setPendingJournalEntry] = useState<Omit<JournalEntry, 'id' | 'notes' | 'mood' | 'tags' | 'completedAt'> | null>(null)
 
   // WAV export
   const [isExporting, setIsExporting] = useState(false)
@@ -1422,10 +1415,11 @@ function AppInner() {
       id: Date.now().toString(),
       ...pendingJournalEntry,
       notes,
+      mood: null,
+      tags: [],
+      completedAt: Date.now(),
     }
-    const list = [entry, ...journalEntries]
-    setJournalEntries(list)
-    writeJournal(list)
+    journalAddEntry(entry)
     setShowJournalModal(false)
     setPendingJournalEntry(null)
   }
@@ -1462,7 +1456,6 @@ function AppInner() {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     setSavedPresets(readSavedPresets())
-    setJournalEntries(readJournal())
     const key = localStorage.getItem('binaural-openai-key') ?? ''
     setAiApiKey(key)
   }, [])
@@ -2600,7 +2593,13 @@ function AppInner() {
 
       {/* ── Journal List ── */}
       {showJournalList && (
-        <SessionJournal entries={journalEntries} onClose={() => setShowJournalList(false)} />
+        <SessionJournal
+          entries={journalEntries}
+          onClose={() => setShowJournalList(false)}
+          addEntry={journalAddEntry}
+          updateEntry={journalUpdateEntry}
+          deleteEntry={journalDeleteEntry}
+        />
       )}
 
       {/* ── Journal Modal ── */}
@@ -2692,7 +2691,7 @@ function JournalModal({
   onSave,
   onCancel,
 }: {
-  entry: Omit<JournalEntry, 'id' | 'notes'>
+  entry: Omit<JournalEntry, 'id' | 'notes' | 'mood' | 'tags' | 'completedAt'>
   onSave: (notes: string) => void
   onCancel: () => void
 }) {
