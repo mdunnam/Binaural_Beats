@@ -44,29 +44,72 @@ const PATTERNS: Pattern[] = [
   },
 ]
 
+function createBreathSound(ctx: AudioContext, phase: 'inhale' | 'exhale', durationSec: number): void {
+  const bufferSize = Math.floor(ctx.sampleRate * durationSec)
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1
+  }
+
+  const source = ctx.createBufferSource()
+  source.buffer = buffer
+
+  const filter = ctx.createBiquadFilter()
+  filter.type = 'bandpass'
+  filter.frequency.value = phase === 'inhale' ? 1800 : 1200
+  filter.Q.value = 0.8
+
+  const gainNode = ctx.createGain()
+  gainNode.gain.setValueAtTime(0, ctx.currentTime)
+  if (phase === 'inhale') {
+    gainNode.gain.linearRampToValueAtTime(0.12, ctx.currentTime + durationSec * 0.6)
+    gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + durationSec)
+  } else {
+    gainNode.gain.linearRampToValueAtTime(0.08, ctx.currentTime + durationSec * 0.2)
+    gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + durationSec)
+  }
+
+  source.connect(filter)
+  filter.connect(gainNode)
+  gainNode.connect(ctx.destination)
+  source.start(ctx.currentTime)
+  source.stop(ctx.currentTime + durationSec)
+}
+
 type Props = { isRunning: boolean }
 
 export function BreathGuide({ isRunning }: Props) {
   const [enabled, setEnabled] = useState(false)
+  const [isSolo, setIsSolo] = useState(false)
+  const [isSoloActive, setIsSoloActive] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [patternName, setPatternName] = useState('box')
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale' | 'hold2'>('inhale')
-  const [progress, setProgress] = useState(0) // 0–1 within current phase
+  const [progress, setProgress] = useState(0)
   const [countdown, setCountdown] = useState(0)
   const timerRef = useRef<number | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const prevPhaseRef = useRef<string>('')
+
+  const isActive = isRunning || isSoloActive
 
   // Run breathing cycle
   useEffect(() => {
-    if (!enabled || !isRunning) {
+    if (!enabled || !isActive) {
       if (timerRef.current) clearInterval(timerRef.current)
       setPhase('inhale')
       setProgress(0)
+      setCountdown(0)
       return
     }
 
     const pattern = PATTERNS.find(p => p.name === patternName) ?? PATTERNS[1]
     let stepIdx = 0
     let elapsed = 0
-    const TICK = 50 // ms
+    const TICK = 50
 
     timerRef.current = window.setInterval(() => {
       const step = pattern.steps[stepIdx]
@@ -83,7 +126,43 @@ export function BreathGuide({ isRunning }: Props) {
     }, TICK)
 
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [enabled, isRunning, patternName])
+  }, [enabled, isActive, patternName])
+
+  // Play sound on phase change
+  useEffect(() => {
+    if (!soundEnabled || !enabled) return
+    if (phase === prevPhaseRef.current) return
+    prevPhaseRef.current = phase
+
+    if (phase === 'inhale' || phase === 'exhale') {
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        audioCtxRef.current = new AudioContext()
+      }
+      const pattern = PATTERNS.find(p => p.name === patternName) ?? PATTERNS[1]
+      const step = pattern.steps.find(s => s.phase === phase)
+      if (step) createBreathSound(audioCtxRef.current, phase, step.seconds)
+    }
+  }, [phase, soundEnabled, enabled, patternName])
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  // Cleanup AudioContext on unmount
+  useEffect(() => {
+    return () => { audioCtxRef.current?.close() }
+  }, [])
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {})
+    } else {
+      document.exitFullscreen().catch(() => {})
+    }
+  }
 
   const PHASE_LABELS: Record<string, string> = {
     inhale: 'Inhale',
@@ -92,7 +171,6 @@ export function BreathGuide({ isRunning }: Props) {
     hold2: 'Hold',
   }
 
-  // Ring size: inhale = grows, hold = full, exhale = shrinks, hold2 = small
   const ringScale = phase === 'inhale' ? 0.5 + progress * 0.5
     : phase === 'hold' ? 1
     : phase === 'exhale' ? 1 - progress * 0.5
@@ -102,13 +180,38 @@ export function BreathGuide({ isRunning }: Props) {
     <div className="breath-guide-wrap">
       <div className="breath-guide-header">
         <span className="section-label">BREATH GUIDE</span>
-        <button
-          className={`soft-button${enabled ? ' soft-button--accent' : ''}`}
-          style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
-          onClick={() => setEnabled(e => !e)}
-        >
-          {enabled ? 'On' : 'Off'}
-        </button>
+        <div className="breath-guide-controls">
+          <button
+            className={`soft-button${enabled ? ' soft-button--accent' : ''}`}
+            style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
+            onClick={() => {
+              setEnabled(e => !e)
+              if (enabled) {
+                setIsSoloActive(false)
+              }
+            }}
+          >
+            {enabled ? 'On' : 'Off'}
+          </button>
+          <button
+            className={`breath-solo-btn${isSolo ? ' breath-solo-btn--active' : ''}`}
+            onClick={() => {
+              setIsSolo(s => {
+                if (s) setIsSoloActive(false)
+                return !s
+              })
+            }}
+          >
+            Solo
+          </button>
+          <button
+            className={`breath-sound-btn${soundEnabled ? ' breath-sound-btn--active' : ''}`}
+            onClick={() => setSoundEnabled(s => !s)}
+            title={soundEnabled ? 'Mute breath sounds' : 'Enable breath sounds'}
+          >
+            {soundEnabled ? '🔊' : '🔇'}
+          </button>
+        </div>
       </div>
 
       {enabled && (
@@ -128,8 +231,18 @@ export function BreathGuide({ isRunning }: Props) {
           </div>
 
           {/* Visual ring */}
-          {isRunning ? (
-            <div className="breath-ring-container">
+          {isActive ? (
+            <div
+              className={`breath-ring-container${isFullscreen ? ' breath-ring-container--fullscreen' : ''}`}
+              ref={containerRef}
+            >
+              <button
+                className="breath-fullscreen-btn"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+              >
+                {isFullscreen ? '✕' : '⛶'}
+              </button>
               <div
                 className={`breath-ring breath-ring--${phase}`}
                 style={{ transform: `scale(${ringScale})` }}
@@ -140,7 +253,33 @@ export function BreathGuide({ isRunning }: Props) {
               </div>
             </div>
           ) : (
-            <p className="control-hint" style={{ textAlign: 'center' }}>Start a session to begin breathing guide</p>
+            <div
+              className={`breath-ring-container${isFullscreen ? ' breath-ring-container--fullscreen' : ''}`}
+              ref={containerRef}
+              style={{ minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <button
+                className="breath-fullscreen-btn"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                style={{ display: 'none' }}
+              >
+                {isFullscreen ? '✕' : '⛶'}
+              </button>
+              <p className="control-hint" style={{ textAlign: 'center', margin: 0 }}>
+                {isSolo ? 'Press Start to begin breathing guide' : 'Start a session to begin breathing guide'}
+              </p>
+            </div>
+          )}
+
+          {/* Solo start/stop */}
+          {isSolo && (
+            <button
+              className={`breath-solo-start-btn${isSoloActive ? ' breath-solo-start-btn--stop' : ''}`}
+              onClick={() => setIsSoloActive(a => !a)}
+            >
+              {isSoloActive ? '■ Stop' : '▶ Start breathing session'}
+            </button>
           )}
         </>
       )}

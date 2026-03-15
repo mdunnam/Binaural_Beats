@@ -4742,3 +4742,90 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .edu-step-text strong {
   color: var(--text-primary);
 }
+
+/* ── Breath Guide enhancements ── */
+.breath-guide-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.breath-sound-btn,
+.breath-solo-btn,
+.breath-fullscreen-btn {
+  background: none;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.breath-sound-btn:hover,
+.breath-solo-btn:hover,
+.breath-fullscreen-btn:hover,
+.breath-sound-btn--active,
+.breath-solo-btn--active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.breath-ring-container--fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg, #0d1211);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.breath-ring-container--fullscreen .breath-ring {
+  width: 280px;
+  height: 280px;
+}
+
+.breath-ring-container--fullscreen .breath-phase-text {
+  font-size: 1.4rem;
+}
+
+.breath-ring-container--fullscreen .breath-countdown {
+  font-size: 3rem;
+}
+
+.breath-fullscreen-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+}
+
+.breath-ring-container {
+  position: relative;
+}
+
+.breath-solo-start-btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #3e8f72, #52c896);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.breath-solo-start-btn:hover { opacity: 0.88; }
+
+.breath-solo-start-btn--stop {
+  background: linear-gradient(135deg, #7a3e3e, #c85252);
+}
