@@ -4366,10 +4366,17 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .breath-ring-container {
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fixed-size circle that holds both the ring and the label */
+.breath-ring-inner {
   position: relative;
   width: 120px;
   height: 120px;
-  margin: 0 auto 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4786,7 +4793,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   z-index: 9999;
 }
 
-.breath-ring-container--fullscreen .breath-ring {
+.breath-ring-container--fullscreen .breath-ring-inner {
   width: 280px;
   height: 280px;
 }
@@ -4799,14 +4806,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   font-size: 3rem;
 }
 
-.breath-fullscreen-btn {
-  position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-}
-
 .breath-ring-container {
-  position: relative;
 }
 
 .breath-solo-start-btn {

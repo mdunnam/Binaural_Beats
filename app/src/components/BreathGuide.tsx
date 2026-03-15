@@ -211,6 +211,13 @@ export function BreathGuide({ isRunning }: Props) {
           >
             {soundEnabled ? '🔊' : '🔇'}
           </button>
+          <button
+            className="breath-fullscreen-btn"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? '✕' : '⛶'}
+          </button>
         </div>
       </div>
 
@@ -236,36 +243,22 @@ export function BreathGuide({ isRunning }: Props) {
               className={`breath-ring-container${isFullscreen ? ' breath-ring-container--fullscreen' : ''}`}
               ref={containerRef}
             >
-              <button
-                className="breath-fullscreen-btn"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-              >
-                {isFullscreen ? '✕' : '⛶'}
-              </button>
-              <div
-                className={`breath-ring breath-ring--${phase}`}
-                style={{ transform: `scale(${ringScale})` }}
-              />
-              <div className="breath-ring-label">
-                <span className="breath-phase-text">{PHASE_LABELS[phase]}</span>
-                <span className="breath-countdown">{countdown}</span>
+              <div className="breath-ring-inner">
+                <div
+                  className={`breath-ring breath-ring--${phase}`}
+                  style={{ transform: `scale(${ringScale})` }}
+                />
+                <div className="breath-ring-label">
+                  <span className="breath-phase-text">{PHASE_LABELS[phase]}</span>
+                  <span className="breath-countdown">{countdown}</span>
+                </div>
               </div>
             </div>
           ) : (
             <div
-              className={`breath-ring-container${isFullscreen ? ' breath-ring-container--fullscreen' : ''}`}
               ref={containerRef}
               style={{ minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <button
-                className="breath-fullscreen-btn"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-                style={{ display: 'none' }}
-              >
-                {isFullscreen ? '✕' : '⛶'}
-              </button>
               <p className="control-hint" style={{ textAlign: 'center', margin: 0 }}>
                 {isSolo ? 'Press Start to begin breathing guide' : 'Start a session to begin breathing guide'}
               </p>
