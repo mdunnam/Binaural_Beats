@@ -4950,22 +4950,21 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* ── Dashboard: Explore cards ── */
 .dash-explore-row {
-  display: flex;
-  overflow-x: auto;
-  gap: 0.75rem;
-  padding-bottom: 0.5rem;
-  -webkit-overflow-scrolling: touch;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 .dash-explore-card {
-  flex: 0 0 140px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 12px;
   padding: 0.85rem 0.75rem;
   cursor: pointer;
-  text-align: left;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .dash-explore-card:hover {
