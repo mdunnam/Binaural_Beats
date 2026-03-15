@@ -185,6 +185,10 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   noiseVolumeRef: React.MutableRefObject<number>
   padEnabledRef: React.MutableRefObject<boolean>
   padVolumeRef: React.MutableRefObject<number>
+  padRef?: React.MutableRefObject<PadSynthGraph | null>
+  padWaveformRef?: React.MutableRefObject<PadWaveform>
+  padReverbMixRef?: React.MutableRefObject<number>
+  padBreatheRateRef?: React.MutableRefObject<number>
   leftFrequencyRef: React.MutableRefObject<number>
   rightFrequencyRef: React.MutableRefObject<number>
   layerGainsRef: React.MutableRefObject<LayerGains>
@@ -298,9 +302,23 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       callbacks.padEnabledRef.current = layer.enabled
       callbacks.setPadVolume(layer.volume)
       callbacks.padVolumeRef.current = layer.volume
-      if (s.waveform) callbacks.setPadWaveform(s.waveform as PadWaveform)
-      if (s.reverbMix !== undefined) callbacks.setPadReverbMix(s.reverbMix as number)
-      if (s.breatheRate !== undefined) callbacks.setPadBreatheRate(s.breatheRate as number)
+      const pad = callbacks.padRef?.current
+      if (s.waveform) {
+        callbacks.setPadWaveform(s.waveform as PadWaveform)
+        if (callbacks.padWaveformRef) callbacks.padWaveformRef.current = s.waveform as PadWaveform
+        if (pad) updatePadWaveform(pad, s.waveform as PadWaveform)
+      }
+      if (s.reverbMix !== undefined) {
+        callbacks.setPadReverbMix(s.reverbMix as number)
+        if (callbacks.padReverbMixRef) callbacks.padReverbMixRef.current = s.reverbMix as number
+        if (pad) updatePadReverbMix(pad, s.reverbMix as number)
+      }
+      if (s.breatheRate !== undefined) {
+        callbacks.setPadBreatheRate(s.breatheRate as number)
+        if (callbacks.padBreatheRateRef) callbacks.padBreatheRateRef.current = s.breatheRate as number
+        if (pad) updatePadBreatheRate(pad, s.breatheRate as number)
+      }
+      if (pad) updatePadVolume(pad, layer.volume)
     }
     if (layer.type === 'music') {
       callbacks.setMusicVolume(layer.volume)
