@@ -55,6 +55,7 @@ import type { StudioLayer } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 import { BreathGuide } from './components/BreathGuide'
+import { FrequencyVerifier } from './components/FrequencyVerifier'
 import { SessionLibrary } from './components/SessionLibrary'
 import type { SessionCard } from './data/sessionLibrary'
 
@@ -2079,6 +2080,12 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-card">
                   <BreathGuide isRunning={isRunning} />
+                </div>
+              </div>
+              <div className="section-block">
+                <div className="section-title">Frequency Verifier</div>
+                <div className="section-card">
+                  <FrequencyVerifier />
                 </div>
               </div>
             </div>
