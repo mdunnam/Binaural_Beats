@@ -111,6 +111,9 @@ export function PadSynth() {
   const startPad = useCallback(() => {
     if (isPlaying) return
 
+    // Clear any pending release timeout from a previous stop
+    if (releaseTimeoutRef.current) { clearTimeout(releaseTimeoutRef.current); releaseTimeoutRef.current = null }
+
     const ctx = new AudioContext()
     ctxRef.current = ctx
 
@@ -225,8 +228,8 @@ export function PadSynth() {
     })
 
     releaseTimeoutRef.current = setTimeout(() => {
-      ctx.close()
-      ctxRef.current = null
+      if (ctx.state !== 'closed') ctx.close().catch(() => {})
+      if (ctxRef.current === ctx) { ctxRef.current = null }
       voiceGainsRef.current = []
       setIsPlaying(false)
     }, (release + 0.5) * 1000)
