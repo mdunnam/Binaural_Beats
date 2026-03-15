@@ -74,19 +74,16 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     }
 
     if (!analyser || !active) {
-      const { bg, idleLine } = getTheme()
+      const { idleLine } = getTheme()
       // Level
       const lCtx = levelCanvas.getContext('2d')!
-      lCtx.fillStyle = bg
-      lCtx.fillRect(0, 0, 24, H)
+      lCtx.clearRect(0, 0, 24, H)
       // Spectrum
       const sCtx = specCanvas.getContext('2d')!
-      sCtx.fillStyle = bg
-      sCtx.fillRect(0, 0, specCanvas.width, H)
+      sCtx.clearRect(0, 0, specCanvas.width, H)
       // Scope — flat dim line
       const oCtx = scopeCanvas.getContext('2d')!
-      oCtx.fillStyle = bg
-      oCtx.fillRect(0, 0, scopeCanvas.width, H)
+      oCtx.clearRect(0, 0, scopeCanvas.width, H)
       oCtx.strokeStyle = idleLine
       oCtx.lineWidth = 1.5
       oCtx.beginPath()
@@ -106,12 +103,11 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       analyser.getByteTimeDomainData(timeData)
 
       const now = performance.now()
-      const { bg } = getTheme()
+      // theme bg handled by CSS
 
       // ── Zone 1: Level Meter (vertical, fills upward) ──
       const lCtx = levelCanvas.getContext('2d')!
-      lCtx.fillStyle = bg
-      lCtx.fillRect(0, 0, 24, H)
+      lCtx.clearRect(0, 0, 24, H)
 
       let sum = 0
       for (let i = 0; i < timeData.length; i++) {
@@ -141,8 +137,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 2: Spectrum Analyzer ──
       const sCtx = specCanvas.getContext('2d')!
       const W = specCanvas.width
-      sCtx.fillStyle = bg
-      sCtx.fillRect(0, 0, W, H)
+      sCtx.clearRect(0, 0, W, H)
 
       const binCount = analyser.frequencyBinCount
       const barsPerGroup = Math.floor(binCount / NUM_BARS)
@@ -189,8 +184,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 3: Oscilloscope ──
       const oCtx = scopeCanvas.getContext('2d')!
       const SW = scopeCanvas.width
-      oCtx.fillStyle = bg
-      oCtx.fillRect(0, 0, SW, H)
+      oCtx.clearRect(0, 0, SW, H)
 
       oCtx.strokeStyle = brightColor
       oCtx.lineWidth = 1.5
