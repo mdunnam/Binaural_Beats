@@ -1770,6 +1770,7 @@ function AppInner() {
                   },
                 ] as { emoji: string; label: string; sub: string; layers: StudioLayer[] }[]).map(({ emoji, label, sub, layers }) => (
                   <button key={label} className="dash-quick-card" onClick={() => {
+                    if (isRunning) stopSession(false)
                     applyStudioLayers(layers, {
                       setCarrier, setBeat, setWobbleRate,
                       setNoiseType, setNoiseVolume,
