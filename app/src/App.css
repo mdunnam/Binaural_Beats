@@ -272,7 +272,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 8px;
   padding: 0.45rem 0.7rem;
-  background: var(--bg-section);
+  background: transparent;
   color: var(--text-label);
   font: inherit;
   cursor: pointer;
@@ -362,7 +362,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .seg-control button:hover {
-  background: var(--bg-section);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
 }
 
 .seg-control button.active {
@@ -1145,12 +1147,15 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: background 0.15s, color 0.15s;
 }
 
-.ai-seg-btn:hover { background: var(--bg-section); }
+.ai-seg-btn:hover { background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff; }
 
 .ai-seg-btn--active {
-  background: #3e8f72;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
   color: #fff;
-  border-color: #3e8f72;
+  font-weight: 600;
 }
 
 .ai-cost-note {
@@ -1177,12 +1182,15 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: background 0.15s, color 0.15s;
 }
 
-.ai-gender-btn:hover { background: var(--bg-section); }
+.ai-gender-btn:hover { background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff; }
 
 .ai-gender-btn--active {
-  background: #3e8f72;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
   color: #fff;
-  border-color: #3e8f72;
+  font-weight: 600;
 }
 
 /* Voice grid */
@@ -1204,11 +1212,15 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: background 0.15s, border-color 0.15s;
 }
 
-.ai-voice-btn:hover { background: var(--bg-section); }
+.ai-voice-btn:hover { background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff; }
 
 .ai-voice-btn--active {
-  background: var(--accent-light);
-  border-color: #3e8f72;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
 }
 
 .ai-voice-name {
@@ -1253,11 +1265,14 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: background 0.15s, border-color 0.15s;
 }
 
-.ai-soundscape-btn:hover { background: var(--bg-section); }
+.ai-soundscape-btn:hover { background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff; }
 
 .ai-soundscape-btn--active {
-  background: var(--accent-light);
-  border-color: #3e8f72;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
   font-weight: 600;
 }
 
@@ -1761,10 +1776,10 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .player-reverb-toggle {
-  background: var(--accent-light);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 4px;
-  color: #3e8f72;
+  color: var(--text-label);
   font-size: 0.6rem;
   cursor: pointer;
   padding: 0.15rem 0.25rem;
@@ -1776,7 +1791,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .player-reverb-toggle:hover {
-  background: var(--bg-section);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
 }
 
 /* ── Start/Stop button ── */
@@ -1938,12 +1955,14 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .mood-eq-tab--active {
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   color: #fff;
 }
 
 .mood-eq-tab:not(.mood-eq-tab--active):hover {
-  background: var(--bg-hover);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
 }
 
 .player-mood-eq {
@@ -2301,7 +2320,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   padding: 0.35rem 0.8rem;
   border-radius: 20px;
   border: 1px solid var(--border-section);
-  background: var(--accent-light);
+  background: transparent;
   color: var(--text-label);
   font-size: 0.8rem;
   font-weight: 600;
@@ -2311,8 +2330,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .journey-preset-btn:hover {
-  background: var(--bg-section);
-  border-color: #3e8f72;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
 }
 
 /* ── AI Journey Designer Panel ── */
@@ -3442,7 +3462,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   color: var(--text-muted);
   transition: background 0.15s, color 0.15s;
 }
-.studio-add-btn:hover { background: var(--bg-card); color: var(--text); }
+.studio-add-btn:hover { background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff; }
 
 .studio-layer-card {
   background: var(--bg-card);
@@ -3469,7 +3491,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   color: var(--text-muted); font-size: 0.9rem; padding: 0.1rem 0.3rem;
   border-radius: 4px;
 }
-.studio-layer-delete:hover { color: #e05a5a; background: rgba(224,90,90,0.1); }
+.studio-layer-delete:hover { color: var(--danger); background: var(--danger-bg); }
 .studio-layer-expand { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.75rem; }
 
 .studio-layer-settings {
@@ -3529,16 +3551,21 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   margin-bottom: 0.2rem;
 }
 .studio-preset-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid var(--border-section);
   border-radius: 2rem;
   padding: 0.3rem 0.8rem;
   font-size: 0.82rem;
   cursor: pointer;
-  color: var(--text);
-  transition: background 0.15s, color 0.15s;
+  color: var(--text-label);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.studio-preset-btn:hover { background: var(--accent); color: #fff; }
+.studio-preset-btn:hover {
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
 
 /* Studio Tab — layer sub-label */
 .studio-layer-sublabel {
@@ -4464,7 +4491,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .visual-mode-btn {
-  background: none;
+  background: transparent;
   border: 1px solid var(--border-card);
   border-radius: 8px;
   padding: 0.25rem 0.7rem;
@@ -4474,10 +4501,17 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: all 0.15s;
 }
 
+.visual-mode-btn:hover {
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
+}
+
 .visual-mode-btn--active {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
 }
 
 /* ── Breath Guide ── */
@@ -4700,9 +4734,10 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 .pad-note-btn--active,
 .pad-note-btn:hover {
-  border-color: var(--accent);
-  background: var(--accent-light);
-  color: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
 }
 
 .pad-sharp {
@@ -4731,7 +4766,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .pad-play-btn--stop {
-  background: linear-gradient(135deg, #7a3e3e, #c85252);
+  background: linear-gradient(135deg, var(--danger), var(--danger-hover));
 }
 
 .pad-adsr-grid {
@@ -4954,7 +4989,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .breath-solo-start-btn:hover { opacity: 0.88; }
 
 .breath-solo-start-btn--stop {
-  background: linear-gradient(135deg, #7a3e3e, #c85252);
+  background: linear-gradient(135deg, var(--danger), var(--danger-hover));
 }
 
 /* ── Custom Soundscape Presets ── */
