@@ -17,6 +17,8 @@ const REFERENCE_FREQUENCIES: RefFrequency[] = [
   { hz: 963, label: 'Solfeggio — Divine Consciousness' },
 ]
 
+type InputMode = 'mic' | 'display' | null
+
 function autoCorrelate(buf: Float32Array, sampleRate: number): number {
   let rms = 0
   for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i]
@@ -79,9 +81,14 @@ function centsLabel(cents: number): string {
   return cents > 0 ? `+${n} cents sharp` : `−${n} cents flat`
 }
 
+const hasDisplayMedia =
+  typeof navigator !== 'undefined' &&
+  typeof navigator.mediaDevices !== 'undefined' &&
+  typeof (navigator.mediaDevices as MediaDevices & { getDisplayMedia?: unknown }).getDisplayMedia === 'function'
+
 export function FrequencyVerifier() {
-  const [listening, setListening] = useState(false)
-  const [permissionDenied, setPermissionDenied] = useState(false)
+  const [inputMode, setInputMode] = useState<InputMode>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [detectedHz, setDetectedHz] = useState<number | null>(null)
   const [confidence, setConfidence] = useState(0)
 
@@ -102,50 +109,86 @@ export function FrequencyVerifier() {
       audioCtxRef.current = null
     }
     analyserRef.current = null
-    setListening(false)
+    setInputMode(null)
     setDetectedHz(null)
     setConfidence(0)
   }, [])
 
-  const startListening = useCallback(() => {
-    setPermissionDenied(false)
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      streamRef.current = stream
-      const ctx = new AudioContext()
-      audioCtxRef.current = ctx
-      const analyser = ctx.createAnalyser()
-      analyser.fftSize = 2048
-      analyserRef.current = analyser
-      const source = ctx.createMediaStreamSource(stream)
-      source.connect(analyser)
+  const startFromStream = useCallback((stream: MediaStream) => {
+    streamRef.current = stream
+    const ctx = new AudioContext()
+    audioCtxRef.current = ctx
+    const analyser = ctx.createAnalyser()
+    analyser.fftSize = 2048
+    analyserRef.current = analyser
+    const source = ctx.createMediaStreamSource(stream)
+    source.connect(analyser)
 
-      const buf = new Float32Array(analyser.fftSize)
-      intervalRef.current = setInterval(() => {
-        if (!analyserRef.current) return
-        analyserRef.current.getFloatTimeDomainData(buf)
+    const buf = new Float32Array(analyser.fftSize)
+    intervalRef.current = setInterval(() => {
+      if (!analyserRef.current) return
+      analyserRef.current.getFloatTimeDomainData(buf)
 
-        let rms = 0
-        for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i]
-        rms = Math.sqrt(rms / buf.length)
-        const conf = Math.min(1, rms / 0.1)
-        setConfidence(conf)
+      let rms = 0
+      for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i]
+      rms = Math.sqrt(rms / buf.length)
+      const conf = Math.min(1, rms / 0.1)
+      setConfidence(conf)
 
-        const freq = autoCorrelate(buf, ctx.sampleRate)
-        if (freq > 0) setDetectedHz(freq)
-        else setDetectedHz(null)
-      }, 100)
-
-      setListening(true)
-    }).catch(() => {
-      setPermissionDenied(true)
-    })
+      const freq = autoCorrelate(buf, ctx.sampleRate)
+      if (freq > 0) setDetectedHz(freq)
+      else setDetectedHz(null)
+    }, 100)
   }, [])
 
-  const toggle = () => {
-    if (listening) stopListening()
-    else startListening()
-  }
+  const startMic = useCallback(() => {
+    setErrorMsg(null)
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        startFromStream(stream)
+        setInputMode('mic')
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : ''
+        if (msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('permission')) {
+          setErrorMsg('Microphone permission denied')
+        } else {
+          setErrorMsg('Could not access audio')
+        }
+      })
+  }, [startFromStream])
 
+  const startDisplay = useCallback(() => {
+    setErrorMsg(null)
+    ;(navigator.mediaDevices as MediaDevices & {
+      getDisplayMedia: (constraints: MediaStreamConstraints) => Promise<MediaStream>
+    }).getDisplayMedia({ video: false, audio: true })
+      .then(stream => {
+        const audioTracks = stream.getAudioTracks()
+        if (audioTracks.length === 0) {
+          stream.getTracks().forEach(t => t.stop())
+          setErrorMsg("No audio track found — make sure to check 'Share audio' in the picker")
+          return
+        }
+        startFromStream(stream)
+        setInputMode('display')
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : ''
+        if (
+          msg.toLowerCase().includes('cancel') ||
+          msg.toLowerCase().includes('denied') ||
+          msg.toLowerCase().includes('permission') ||
+          msg.toLowerCase().includes('abort')
+        ) {
+          setErrorMsg('Screen capture cancelled')
+        } else {
+          setErrorMsg('Could not access audio')
+        }
+      })
+  }, [startFromStream])
+
+  const listening = inputMode !== null
   const nearest = detectedHz !== null ? findNearest(detectedHz) : null
 
   return (
@@ -154,12 +197,39 @@ export function FrequencyVerifier() {
         Is your audio actually the frequency it claims?
       </p>
 
-      <button className="soft-button" onClick={toggle} style={{ alignSelf: 'flex-start' }}>
-        {listening ? '⏹ Stop Listening' : '🎙 Start Listening'}
-      </button>
+      {!listening ? (
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <button className="soft-button" onClick={startMic}>
+            🎤 Microphone
+          </button>
+          <button
+            className="soft-button"
+            onClick={hasDisplayMedia ? startDisplay : undefined}
+            disabled={!hasDisplayMedia}
+            title={hasDisplayMedia ? undefined : 'Not available on this device'}
+            style={!hasDisplayMedia ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
+          >
+            🖥 Device Audio
+          </button>
+          {!hasDisplayMedia && (
+            <span style={{ fontSize: '0.75rem', opacity: 0.55, alignSelf: 'center' }}>
+              (Not available on this device)
+            </span>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button className="soft-button" onClick={stopListening}>
+            ⏹ Stop Listening
+          </button>
+          <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>
+            Listening via: {inputMode === 'mic' ? 'Microphone' : 'Device Audio'}
+          </span>
+        </div>
+      )}
 
-      {permissionDenied && (
-        <p style={{ color: '#f44336', margin: 0 }}>Microphone permission denied.</p>
+      {errorMsg && (
+        <p style={{ color: '#f44336', margin: 0 }}>{errorMsg}</p>
       )}
 
       {listening && (
@@ -200,7 +270,11 @@ export function FrequencyVerifier() {
               )}
             </>
           ) : (
-            <p style={{ opacity: 0.5, margin: 0 }}>Listening… hold your device near the audio source.</p>
+            <p style={{ opacity: 0.5, margin: 0 }}>
+              {inputMode === 'display'
+                ? 'Listening… play audio in the captured tab.'
+                : 'Listening… hold your device near the audio source.'}
+            </p>
           )}
         </div>
       )}
