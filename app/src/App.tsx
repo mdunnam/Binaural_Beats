@@ -49,6 +49,7 @@ import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
 import { StudioTab } from './components/StudioTab'
+import { PadSynth } from './components/PadSynth'
 import type { StudioLayer } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
@@ -63,6 +64,7 @@ const TABS = [
   { id: 'tones',     icon: '🎵', label: 'Tones'     },
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
   { id: 'studio',    icon: '🎛', label: 'Studio'    },
+  { id: 'pad',       icon: '🎹', label: 'Pad'       },
   { id: 'focus',     icon: '👁', label: 'Focus'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
@@ -1632,7 +1634,7 @@ function AppInner() {
         {/* ── Tab navigation ── */}
         {/* PRO_TABS: tabs that require Pro subscription */}
         {(() => {
-          const PRO_TABS = new Set(['studio', 'focus', 'ai', 'journal', 'music'])
+          const PRO_TABS = new Set(['studio', 'pad', 'focus', 'ai', 'journal', 'music'])
           return (
             <nav className="tab-nav" aria-label="Main navigation">
               {TABS.map((tab) => {
@@ -2029,6 +2031,13 @@ function AppInner() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ──────────────── PAD SYNTH TAB ──────────────── */}
+          {activeTab === 'pad' && (
+            <div className="tab-sections">
+              <PadSynth />
             </div>
           )}
 

@@ -4542,3 +4542,66 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   right: 0.3rem;
   font-size: 0.7rem;
 }
+
+/* ── Pad Synth ── */
+.pad-note-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.pad-note-btn {
+  min-width: 2.2rem;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-section);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pad-note-btn--active,
+.pad-note-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.pad-sharp {
+  background: var(--bg-deep, #111918);
+  border-color: var(--border-card);
+}
+
+.pad-play-btn {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #3e8f72, #52c896);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  margin-top: 0.5rem;
+}
+
+.pad-play-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.pad-play-btn--stop {
+  background: linear-gradient(135deg, #7a3e3e, #c85252);
+}
+
+.pad-adsr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
