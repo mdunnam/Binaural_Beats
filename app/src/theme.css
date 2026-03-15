@@ -1,0 +1,56 @@
+/* ============================================================
+   Liminal — Design Tokens
+   Edit this file to change colors for both light and dark themes.
+   ============================================================ */
+
+/* ── Light theme (default) ── */
+:root {
+  --bg-page:        #f5f7f4;
+  --bg-panel:       linear-gradient(160deg, #fffcf4, #eef6f2);
+  --bg-card:        #ffffff;
+  --bg-input:       #ffffff;
+  --bg-section:     #f5faf7;
+  --border-card:    #d7dfd9;
+  --border-section: #c8ddd5;
+  --text-primary:   #1a2e22;
+  --text-secondary: #3d3f42;
+  --text-muted:     #54625b;
+  --text-label:     #3f5f53;
+  --accent:         #3e8f72;
+  --accent-hover:   #2d7a5f;
+  --accent-light:   #eaf4ee;
+  --readout-bg:     #ffffff;
+  --readout-border: #dbe4dd;
+  --shadow-panel:   rgba(21, 32, 20, 0.08);
+  --danger:         #c0392b;
+  --danger-hover:   #a93226;
+  --danger-bg:      #fdecea;
+  --danger-border:  #e8b4b0;
+  --danger-text:    #8b2a24;
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --bg-page:        #0d1211;
+  --bg-panel:       #111918;
+  --bg-card:        #1a2420;
+  --bg-input:       #1a2420;
+  --bg-section:     #1f2d28;
+  --border-card:    #2e4038;
+  --border-section: #283a32;
+  --text-primary:   #edf5ef;
+  --text-secondary: #a8bfb2;
+  --text-muted:     #6b8c7a;
+  --text-label:     #7aaa90;
+  --accent:         #52c896;
+  --accent-hover:   #3fb87f;
+  --accent-light:   #1c3028;
+  --readout-bg:     #1a2420;
+  --readout-border: #2e4038;
+  --shadow-panel:   rgba(0, 0, 0, 0.5);
+  --danger:         #e05c5c;
+  --danger-hover:   #c84a4a;
+  --danger-bg:      #2a1212;
+  --danger-border:  #6b2a2a;
+  --danger-text:    #f0a0a0;
+}
