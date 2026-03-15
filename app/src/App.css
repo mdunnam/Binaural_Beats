@@ -3909,3 +3909,66 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .studio-tutorial-steps strong {
   color: var(--text-primary);
 }
+
+/* ── Onboarding ── */
+.onboarding-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1rem;
+}
+
+.onboarding-emoji {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.onboarding-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.onboarding-body {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 360px;
+}
+
+.onboarding-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.onboarding-dots {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
+
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-card);
+  transition: background 0.2s;
+}
+
+.onboarding-dot--active {
+  background: var(--accent);
+}
+
+.onboarding-skip {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  text-decoration: underline;
+}

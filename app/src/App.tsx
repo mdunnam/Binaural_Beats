@@ -5,6 +5,8 @@ import { SubscriptionProvider, useSubscription } from './contexts/SubscriptionCo
 import { UpgradeModal } from './components/UpgradeModal'
 import { AuthModal } from './components/AuthModal'
 import { SettingsPanel } from './components/SettingsPanel'
+import { Toast } from './components/Toast'
+import { useToast } from './hooks/useToast'
 import type {
   NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
   AudioGraph, AutomationLanes, SessionPreset, JournalEntry, PadSynthGraph,
