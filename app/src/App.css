@@ -2396,17 +2396,26 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   padding: 0.3rem 0.65rem;
   border: 1px solid var(--border-section);
   border-radius: 6px;
-  background: var(--bg-card);
+  background: transparent;
   cursor: pointer;
   font-size: 0.82rem;
-  color: var(--text-secondary);
-  transition: background 0.15s;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--text-label);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .seg-btn--active {
-  background: #3e8f72;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   color: #fff;
-  border-color: #3e8f72;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.seg-btn:hover:not(.seg-btn--active) {
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  color: #fff;
+  border-color: transparent;
 }
 
 .value-badge {

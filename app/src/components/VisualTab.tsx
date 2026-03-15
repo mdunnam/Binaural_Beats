@@ -265,7 +265,7 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
     <div className="visual-tab" style={{ position: 'relative' }}>
       <div className="visual-controls">
         <div className="visual-controls-row">
-          <div className="seg-control">
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {(['lissajous', 'pulse', 'mandala', 'spectrum'] as const).map(m => (
               <button key={m} className={mode === m ? 'seg-btn seg-btn--active' : 'seg-btn'}
                 onClick={() => setMode(m)}>
@@ -282,7 +282,7 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
           </button>
         </div>
         <div className="visual-controls-row">
-          <div className="seg-control">
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {(['emerald', 'violet', 'gold', 'void'] as const).map(t => (
               <button key={t} className={colorTheme === t ? 'seg-btn seg-btn--active' : 'seg-btn'}
                 onClick={() => setColorTheme(t)}>
