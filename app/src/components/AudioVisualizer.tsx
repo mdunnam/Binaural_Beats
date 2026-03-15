@@ -9,11 +9,11 @@ type AudioVisualizerProps = {
 }
 
 function getBrainwaveColor(beat: number): string {
-  if (beat < 4) return '#7b68ee'   // Delta — purple
-  if (beat < 8) return '#5b9bd5'   // Theta — blue
-  if (beat < 14) return '#3e8f72'  // Alpha — green
-  if (beat < 30) return '#e8b84b'  // Beta — amber
-  return '#e05a3a'                 // Gamma — red
+  if (beat < 4) return '#7b68ee'
+  if (beat < 8) return '#5b9bd5'
+  if (beat < 14) return '#3e8f72'
+  if (beat < 30) return '#e8b84b'
+  return '#e05a3a'
 }
 
 function getBrainwaveBrightColor(beat: number): string {
@@ -29,10 +29,10 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
   const spectrumRef = useRef<HTMLCanvasElement>(null)
   const scopeRef = useRef<HTMLCanvasElement>(null)
   const specWrapRef = useRef<HTMLDivElement>(null)
-  const specWidthRef = useRef(220)
+  const scopeWrapRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number>(0)
-  const peaksRef = useRef<Float32Array>(new Float32Array(32).fill(0))
-  const peakHoldRef = useRef<Float32Array>(new Float32Array(32).fill(0))
+  const peaksRef = useRef<Float32Array>(new Float32Array(64).fill(0))
+  const peakHoldRef = useRef<Float32Array>(new Float32Array(64).fill(0))
   const clipTimeRef = useRef<number>(0)
 
   useEffect(() => {
@@ -41,25 +41,23 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     const scopeCanvas = scopeRef.current
     if (!levelCanvas || !specCanvas || !scopeCanvas) return
 
-    // Set initial spectrum canvas width to actual rendered width
-    if (specWrapRef.current) {
-      specCanvas.width = specWrapRef.current.offsetWidth || 220
-      specWidthRef.current = specCanvas.width
-    }
+    const H = 36 // canvas height matching CSS
 
-    // ResizeObserver to keep spectrum canvas sharp at any width
-    const resizeObserver = new ResizeObserver(entries => {
+    // Init canvas widths from actual DOM
+    if (specWrapRef.current) specCanvas.width = specWrapRef.current.offsetWidth || 300
+    if (scopeWrapRef.current) scopeCanvas.width = scopeWrapRef.current.offsetWidth || 140
+
+    // ResizeObserver for both resizable canvases
+    const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         const w = Math.round(entry.contentRect.width)
-        if (w > 0) {
-          specCanvas.width = w
-          specWidthRef.current = w
-        }
+        if (w <= 0) continue
+        if (entry.target === specWrapRef.current) specCanvas.width = w
+        if (entry.target === scopeWrapRef.current) scopeCanvas.width = w
       }
     })
-    if (specWrapRef.current) {
-      resizeObserver.observe(specWrapRef.current)
-    }
+    if (specWrapRef.current) ro.observe(specWrapRef.current)
+    if (scopeWrapRef.current) ro.observe(scopeWrapRef.current)
 
     cancelAnimationFrame(rafRef.current)
 
@@ -67,42 +65,39 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     const color = getBrainwaveColor(beat)
     const brightColor = getBrainwaveBrightColor(beat)
 
-    if (!analyser || !active) {
-      // Draw idle state
-      const drawIdle = () => {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
-        const bgColor = isDark ? '#0d1a14' : '#f0f7f3'
-        const idleLineColor = isDark ? '#1e3a2a' : '#c8ddd5'
-
-        // Level
-        const lCtx = levelCanvas.getContext('2d')!
-        lCtx.fillStyle = bgColor
-        lCtx.fillRect(0, 0, 24, 40)
-
-        // Spectrum
-        const sCtx = specCanvas.getContext('2d')!
-        const W = specCanvas.width
-        sCtx.fillStyle = bgColor
-        sCtx.fillRect(0, 0, W, 40)
-
-        // Scope — flat dim line
-        const oCtx = scopeCanvas.getContext('2d')!
-        oCtx.fillStyle = bgColor
-        oCtx.fillRect(0, 0, 140, 40)
-        oCtx.strokeStyle = idleLineColor
-        oCtx.lineWidth = 1.5
-        oCtx.beginPath()
-        oCtx.moveTo(0, 20)
-        oCtx.lineTo(140, 20)
-        oCtx.stroke()
+    const getTheme = () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+      return {
+        bg: isDark ? '#0d1a14' : '#f0f7f3',
+        idleLine: isDark ? '#1e3a2a' : '#c8ddd5',
       }
-      drawIdle()
-      return () => resizeObserver.disconnect()
     }
 
-    const fftSize = analyser.fftSize
+    if (!analyser || !active) {
+      const { bg, idleLine } = getTheme()
+      // Level
+      const lCtx = levelCanvas.getContext('2d')!
+      lCtx.fillStyle = bg
+      lCtx.fillRect(0, 0, 24, H)
+      // Spectrum
+      const sCtx = specCanvas.getContext('2d')!
+      sCtx.fillStyle = bg
+      sCtx.fillRect(0, 0, specCanvas.width, H)
+      // Scope — flat dim line
+      const oCtx = scopeCanvas.getContext('2d')!
+      oCtx.fillStyle = bg
+      oCtx.fillRect(0, 0, scopeCanvas.width, H)
+      oCtx.strokeStyle = idleLine
+      oCtx.lineWidth = 1.5
+      oCtx.beginPath()
+      oCtx.moveTo(0, H / 2)
+      oCtx.lineTo(scopeCanvas.width, H / 2)
+      oCtx.stroke()
+      return () => ro.disconnect()
+    }
+
     const freqData = new Uint8Array(analyser.frequencyBinCount)
-    const timeData = new Uint8Array(fftSize)
+    const timeData = new Uint8Array(analyser.fftSize)
     const sampleRate = analyser.context.sampleRate
     const NUM_BARS = 64
 
@@ -111,15 +106,13 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       analyser.getByteTimeDomainData(timeData)
 
       const now = performance.now()
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
-      const bgColor = isDark ? '#0d1a14' : '#f0f7f3'
+      const { bg } = getTheme()
 
-      // ── Zone 1: Level Meter ──
+      // ── Zone 1: Level Meter (vertical, fills upward) ──
       const lCtx = levelCanvas.getContext('2d')!
-      lCtx.fillStyle = bgColor
-      lCtx.fillRect(0, 0, 24, 40)
+      lCtx.fillStyle = bg
+      lCtx.fillRect(0, 0, 24, H)
 
-      // RMS from time domain
       let sum = 0
       for (let i = 0; i < timeData.length; i++) {
         const s = (timeData[i] - 128) / 128
@@ -129,15 +122,14 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       const db = 20 * Math.log10(rms + 0.00001)
       const level = Math.max(0, Math.min(1, (db + 60) / 60))
 
-      const barH = level * 40
-      const gradient = lCtx.createLinearGradient(0, 40, 0, 0)
+      const barH = level * H
+      const gradient = lCtx.createLinearGradient(0, H, 0, 0)
       gradient.addColorStop(0, '#3e8f72')
       gradient.addColorStop(0.6, '#e8b84b')
       gradient.addColorStop(1, '#e05a3a')
       lCtx.fillStyle = gradient
-      lCtx.fillRect(0, 40 - barH, 24, barH)
+      lCtx.fillRect(0, H - barH, 24, barH)
 
-      // Clip flash
       if (level > 0.9) clipTimeRef.current = now
       const clipAge = now - clipTimeRef.current
       if (clipAge < 500) {
@@ -149,15 +141,14 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 2: Spectrum Analyzer ──
       const sCtx = specCanvas.getContext('2d')!
       const W = specCanvas.width
-      sCtx.fillStyle = bgColor
-      sCtx.fillRect(0, 0, W, 40)
+      sCtx.fillStyle = bg
+      sCtx.fillRect(0, 0, W, H)
 
       const binCount = analyser.frequencyBinCount
       const barsPerGroup = Math.floor(binCount / NUM_BARS)
       const barW = W / NUM_BARS
       const gap = 0.5
 
-      // Carrier marker bar index
       const hzPerBin = sampleRate / analyser.fftSize
       const carrierBin = Math.round(carrier / hzPerBin)
       const carrierBar = Math.round(carrierBin / barsPerGroup)
@@ -168,51 +159,48 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
           total += freqData[i * barsPerGroup + j]
         }
         const avg = total / barsPerGroup / 255
-        const h = avg * 40
+        const h = avg * H
 
         sCtx.fillStyle = color
-        sCtx.fillRect(i * barW, 40 - h, barW - gap, h)
+        sCtx.fillRect(i * barW, H - h, barW - gap, h)
 
-        // Peak decay
         if (avg > peaksRef.current[i]) {
           peaksRef.current[i] = avg
           peakHoldRef.current[i] = now
-        } else {
-          const holdAge = now - peakHoldRef.current[i]
-          if (holdAge > 600) {
-            peaksRef.current[i] = Math.max(0, peaksRef.current[i] - 0.008)
-          }
+        } else if (now - peakHoldRef.current[i] > 600) {
+          peaksRef.current[i] = Math.max(0, peaksRef.current[i] - 0.008)
         }
 
-        // Draw peak dot
-        const peakY = 40 - peaksRef.current[i] * 40
+        const peakY = H - peaksRef.current[i] * H
         sCtx.fillStyle = brightColor
         sCtx.fillRect(i * barW, Math.max(0, peakY - 2), barW - gap, 2)
       }
 
-      // Carrier marker — bright vertical line
       if (carrierBar >= 0 && carrierBar < NUM_BARS) {
-        const cx = carrierBar * barW + Math.floor((barW - gap) / 2)
+        const cx = carrierBar * barW + (barW - gap) / 2
         sCtx.strokeStyle = '#ffffff88'
         sCtx.lineWidth = 1
         sCtx.beginPath()
         sCtx.moveTo(cx, 0)
-        sCtx.lineTo(cx, 40)
+        sCtx.lineTo(cx, H)
         sCtx.stroke()
       }
 
       // ── Zone 3: Oscilloscope ──
       const oCtx = scopeCanvas.getContext('2d')!
-      oCtx.fillStyle = bgColor
-      oCtx.fillRect(0, 0, 140, 40)
+      const SW = scopeCanvas.width
+      oCtx.fillStyle = bg
+      oCtx.fillRect(0, 0, SW, H)
 
       oCtx.strokeStyle = brightColor
       oCtx.lineWidth = 1.5
       oCtx.beginPath()
-      const sliceW = 140 / timeData.length
+      const mid = H / 2
+      const amp = mid - 2
+      const sliceW = SW / timeData.length
       for (let i = 0; i < timeData.length; i++) {
         const v = (timeData[i] / 128) - 1
-        const y = (v * 60) + 20
+        const y = mid + v * amp * 3  // 3x boost so quiet signals are visible
         if (i === 0) oCtx.moveTo(0, y)
         else oCtx.lineTo(i * sliceW, y)
       }
@@ -224,18 +212,18 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     rafRef.current = requestAnimationFrame(draw)
     return () => {
       cancelAnimationFrame(rafRef.current)
-      resizeObserver.disconnect()
+      ro.disconnect()
     }
   }, [analyser, isRunning, ambientRunning, beat, carrier])
 
   return (
     <div className="audio-viz-strip">
-      <canvas ref={levelRef} className="audio-viz-level" width={24} height={40} />
+      <canvas ref={levelRef} className="audio-viz-level" width={24} height={36} />
       <div className="audio-viz-spectrum-wrap" ref={specWrapRef}>
-        <canvas ref={spectrumRef} className="audio-viz-spectrum" width={220} height={40} />
+        <canvas ref={spectrumRef} className="audio-viz-spectrum" width={300} height={36} />
       </div>
-      <div className="audio-viz-scope-wrap">
-        <canvas ref={scopeRef} className="audio-viz-scope" width={140} height={40} />
+      <div className="audio-viz-scope-wrap" ref={scopeWrapRef}>
+        <canvas ref={scopeRef} className="audio-viz-scope" width={140} height={36} />
       </div>
     </div>
   )

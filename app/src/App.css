@@ -2695,7 +2695,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   background: var(--bg-panel);
   border-top: 1px solid var(--border-card);
   box-shadow: 0 -4px 20px var(--shadow-panel);
-  max-height: 104px;
+  max-height: 112px;
   overflow: hidden;
   transition: max-height 0.35s ease;
   display: flex;
@@ -5197,49 +5197,60 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  min-height: 48px;
   flex-shrink: 0;
-  background: var(--bg-section);
-  border-bottom: 1px solid var(--border-section);
-  overflow: hidden;
-  gap: 2px;
+  background: transparent;
+  padding: 6px 8px;
+  gap: 6px;
+  box-sizing: border-box;
 }
 
 .audio-viz-level {
   flex: 0 0 24px;
   width: 24px;
-  height: 40px;
-  min-height: 40px;
+  height: 36px;
+  min-height: 36px;
   display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
 }
 
 .audio-viz-spectrum-wrap {
-  flex: 1;
-  height: 40px;
-  min-height: 40px;
+  flex: 2;
+  height: 36px;
+  min-height: 36px;
   position: relative;
   overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
 }
 
 .audio-viz-spectrum {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
+  height: 36px;
+  min-height: 36px;
   display: block;
 }
 
 .audio-viz-scope-wrap {
-  flex: 0 0 140px;
-  width: 140px;
-  height: 40px;
-  min-height: 40px;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  min-height: 36px;
   overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
 }
 
 .audio-viz-scope {
-  width: 140px;
-  height: 40px;
-  min-height: 40px;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  display: block;
+}
   display: block;
 }
