@@ -8,6 +8,8 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { Toast } from './components/Toast'
 import { InstallPrompt } from './components/InstallPrompt'
 import { useToast } from './hooks/useToast'
+import { useWakeLock } from './hooks/useWakeLock'
+import { useAudioVisibility } from './hooks/useAudioVisibility'
 import type {
   NoiseType, LfoWaveform, LfoTarget, FilterType, PadWaveform,
   AudioGraph, AutomationLanes, SessionPreset, JournalEntry, PadSynthGraph,
@@ -631,6 +633,13 @@ function AppInner() {
   const masterBusRef = useRef<MasterBus | null>(null)
   const graphRef = useRef<AudioGraph | null>(null)
   const padRef = useRef<PadSynthGraph | null>(null)
+
+  // Background playback: Wake Lock + Page Visibility for AudioContext
+  const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
+  // Note: AudioContext is created inside masterBusRef per-session, not exposed as a stable ref.
+  // useAudioVisibility is wired to masterBusRef's context via a stable proxy ref below.
+  const masterBusContextRef = useRef<AudioContext | null>(null)
+  useAudioVisibility(masterBusContextRef)
   const padStandaloneCtxRef = useRef<AudioContext | null>(null)
   const voiceBusRef = useRef<VoiceBus | null>(null)
   const isoGraphRef = useRef<IsochronicGraph | null>(null)
@@ -996,6 +1005,9 @@ function AppInner() {
       setMusicTrackId(null)
       setMusicPosition(0)
       setIsRunning(false)
+      // Release wake lock and clear AudioContext proxy ref
+      masterBusContextRef.current = null
+      void releaseWakeLock()
       if (withChime) playEndChime()
     }
 
@@ -1198,6 +1210,22 @@ function AppInner() {
 
     setIsRunning(true)
     audioStartingRef.current = false
+
+    // Background playback: keep screen on and update AudioContext proxy ref
+    masterBusContextRef.current = bus.context
+    void requestWakeLock()
+
+    // Media Session API — system-level now-playing notification
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: presetNameRef.current || 'Liminal Session',
+        artist: 'Liminal',
+        album: 'Binaural Beats',
+      })
+      navigator.mediaSession.setActionHandler('pause', () => { stopSession(true) })
+      navigator.mediaSession.setActionHandler('play', () => { void toggleAudio() })
+      navigator.mediaSession.setActionHandler('stop', () => { stopSession(true) })
+    }
 
     // Start music if Studio queued a track
     if (pendingMusicTrackIdRef.current) {
