@@ -55,6 +55,7 @@ import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer
 import { SessionPlanner } from './components/SessionPlanner'
 import type { SessionPlan } from './types'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
+import { BreathGuide } from './components/BreathGuide'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
@@ -1977,6 +1978,13 @@ function AppInner() {
                       </button>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              {/* Breath Guide */}
+              <div className="section-block">
+                <div className="section-card">
+                  <BreathGuide isRunning={isRunning} />
                 </div>
               </div>
 

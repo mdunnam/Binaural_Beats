@@ -4352,3 +4352,86 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ── Breath Guide ── */
+.breath-guide-wrap {
+  margin: 1rem 0;
+}
+
+.breath-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.breath-ring-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.breath-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  transition: transform 0.08s linear;
+}
+
+.breath-ring--inhale { border-color: var(--accent); }
+.breath-ring--hold   { border-color: #52c896; box-shadow: 0 0 12px rgba(82,200,150,0.3); }
+.breath-ring--exhale { border-color: #3e8f72; }
+.breath-ring--hold2  { border-color: var(--border-card); }
+
+.breath-ring-label {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.breath-phase-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.breath-countdown {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+/* ── VU Meter ── */
+.vu-meter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.vu-meter-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.vu-meter-canvas {
+  flex: 1;
+  height: 14px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: block;
+  max-width: 200px;
+}

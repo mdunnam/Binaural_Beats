@@ -46,7 +46,8 @@ export function createMasterBus(initialVolume: number, existingContext?: AudioCo
   analyser.fftSize = 256
   analyser.smoothingTimeConstant = 0.8
   limiter.connect(analyser)
-  analyser.connect(context.destination)
+  // analyser does NOT connect to destination — read-only tap for VU meter
+  limiter.connect(context.destination)
 
   return { context, masterGain, limiter, binauralBus, soundscapeBus, voiceBus, musicBus, analyser }
 }
