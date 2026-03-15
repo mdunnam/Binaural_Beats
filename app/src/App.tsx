@@ -1437,6 +1437,9 @@ function AppInner() {
           ctx = masterBusRef.current.context
           destination = masterBusRef.current.masterGain
         } else {
+          // Only auto-start standalone pad when user is on the Pad tab.
+          // Prevents quick starts (applyStudioLayers from Home) from triggering audio.
+          if (activeTabRef.current !== 'pad') return
           const standalone = new AudioContext()
           padStandaloneCtxRef.current = standalone
           ctx = standalone
