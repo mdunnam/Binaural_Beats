@@ -1714,52 +1714,58 @@ function AppInner() {
               <div className="dash-quick-grid">
                 {([
                   {
-                    emoji: '🌙', label: 'Deep Sleep', sub: '174 Hz · 2 Hz delta · ocean',
+                    emoji: '🌌', label: 'Cosmic Drift', sub: 'Space · delta · ambient pad',
                     layers: [
-                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 174 } },
-                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 2 } },
-                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.35, label: 'Ocean', settings: { scene: 'ocean' } },
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 936 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 3 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.4, label: 'Space', settings: { sceneId: 'space' } },
+                      { id: 'qs-p', type: 'pad' as const, enabled: true, volume: 0.3, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.85, breatheRate: 8 } },
                     ],
                   },
                   {
-                    emoji: '🎯', label: 'Deep Focus', sub: '396 Hz · 14 Hz beta · forest',
+                    emoji: '⚡', label: 'Thunder Focus', sub: 'Storm · beta · brown noise',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 396 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 14 } },
-                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Forest', settings: { scene: 'forest' } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.45, label: 'Storm', settings: { sceneId: 'storm' } },
+                      { id: 'qs-n', type: 'noise' as const, enabled: true, volume: 0.18, label: 'Brown', settings: { type: 'brown' } },
                     ],
                   },
                   {
-                    emoji: '🧘', label: 'Meditation', sub: '528 Hz · 6 Hz theta · cave',
+                    emoji: '🏔️', label: 'Cave Theta', sub: '4 layers · theta · full stack',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 528 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 6 } },
-                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Cave', settings: { scene: 'cave' } },
-                      { id: 'qs-n', type: 'noise' as const, enabled: true, volume: 0.08, label: 'Pink', settings: { noiseType: 'pink' } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Cave', settings: { sceneId: 'cave' } },
+                      { id: 'qs-n', type: 'noise' as const, enabled: true, volume: 0.08, label: 'Pink', settings: { type: 'pink' } },
+                      { id: 'qs-p', type: 'pad' as const, enabled: true, volume: 0.25, label: 'Pad', settings: { waveform: 'triangle', reverbMix: 0.7, breatheRate: 6 } },
                     ],
                   },
                   {
-                    emoji: '✨', label: 'Creative Flow', sub: '741 Hz · 10 Hz alpha · storm',
+                    emoji: '🌊', label: 'Ocean Deep', sub: 'Delta · ocean · brown noise',
                     layers: [
-                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 741 } },
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 174 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 2 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.5, label: 'Ocean', settings: { sceneId: 'ocean' } },
+                      { id: 'qs-n', type: 'noise' as const, enabled: true, volume: 0.12, label: 'Brown', settings: { type: 'brown' } },
+                    ],
+                  },
+                  {
+                    emoji: '🌿', label: 'Forest Alpha', sub: 'Alpha · forest · pad synth',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 639 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 10 } },
-                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.35, label: 'Storm', settings: { scene: 'storm' } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.35, label: 'Forest', settings: { sceneId: 'forest' } },
+                      { id: 'qs-p', type: 'pad' as const, enabled: true, volume: 0.22, label: 'Pad', settings: { waveform: 'triangle', reverbMix: 0.6, breatheRate: 10 } },
                     ],
                   },
                   {
-                    emoji: '🌌', label: 'Lucid Dream', sub: '936 Hz · 4 Hz theta · space',
+                    emoji: '🎵', label: 'Void Drone', sub: 'Pad only · no nature · pure tone',
                     layers: [
-                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: 936 } },
-                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: 4 } },
-                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.4, label: 'Space', settings: { scene: 'space' } },
-                    ],
-                  },
-                  {
-                    emoji: '☀️', label: 'Morning Rise', sub: '396 Hz · 18 Hz beta · forest',
-                    layers: [
-                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 396 } },
-                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 18 } },
-                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Forest', settings: { scene: 'forest' } },
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: 432 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: 7 } },
+                      { id: 'qs-n', type: 'noise' as const, enabled: true, volume: 0.1, label: 'Brown', settings: { type: 'brown' } },
+                      { id: 'qs-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
                     ],
                   },
                 ] as { emoji: string; label: string; sub: string; layers: StudioLayer[] }[]).map(({ emoji, label, sub, layers }) => (
