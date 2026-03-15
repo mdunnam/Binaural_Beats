@@ -4958,15 +4958,25 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 .dash-explore-card {
   flex: 0 0 140px;
-  background: var(--bg-3);
-  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
   border-radius: 12px;
   padding: 0.85rem 0.75rem;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.dash-explore-card:hover { border-color: var(--accent); }
+.dash-explore-card:hover {
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(62,143,114,0.2);
+}
+.dash-explore-card:hover .dash-explore-title,
+.dash-explore-card:hover .dash-explore-sub {
+  color: #fff;
+}
 .dash-explore-icon { font-size: 1.6rem; display: block; margin-bottom: 0.3rem; }
 .dash-explore-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; }
 .dash-explore-sub { font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.15rem; line-height: 1.3; }
