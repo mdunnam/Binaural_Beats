@@ -162,8 +162,9 @@ export function FrequencyVerifier() {
     setErrorMsg(null)
     ;(navigator.mediaDevices as MediaDevices & {
       getDisplayMedia: (constraints: MediaStreamConstraints) => Promise<MediaStream>
-    }).getDisplayMedia({ video: false, audio: true })
+    }).getDisplayMedia({ video: true, audio: true })
       .then(stream => {
+        stream.getVideoTracks().forEach(t => t.stop())
         const audioTracks = stream.getAudioTracks()
         if (audioTracks.length === 0) {
           stream.getTracks().forEach(t => t.stop())
