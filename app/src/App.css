@@ -4605,3 +4605,140 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
 }
+
+/* ── Education Tab ── */
+.edu-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.6rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.edu-expand-content {
+  padding-top: 0.5rem;
+}
+
+.edu-band-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.edu-band-card {
+  background: var(--bg-section);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  border-left: 4px solid var(--band-color, var(--accent));
+}
+
+.edu-band-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.edu-band-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.edu-band-hz {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.edu-band-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.4rem 0;
+}
+
+.edu-band-tag {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 20px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.edu-band-desc {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.edu-solfeggio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.edu-solfeggio-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-card);
+}
+
+.edu-solfeggio-hz {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 3.5rem;
+}
+
+.edu-solfeggio-label {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+}
+
+.edu-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edu-step {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.edu-step-num {
+  width: 1.6rem;
+  height: 1.6rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.edu-step-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.edu-step-text strong {
+  color: var(--text-primary);
+}

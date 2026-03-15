@@ -48,6 +48,7 @@ import { startJourney, stopJourney } from './engine/journeyEngine'
 import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
+import { EducationTab } from './components/EducationTab'
 import { StudioTab } from './components/StudioTab'
 import { PadSynth } from './components/PadSynth'
 import type { StudioLayer } from './types'
@@ -66,6 +67,7 @@ const TABS = [
   { id: 'studio',    icon: '🎛', label: 'Studio'    },
   { id: 'pad',       icon: '🎹', label: 'Pad'       },
   { id: 'focus',     icon: '👁', label: 'Focus'     },
+  { id: 'education', icon: '📖', label: 'Learn'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
   { id: 'music',     icon: '🎵', label: 'Music'     },
@@ -2189,6 +2191,13 @@ function AppInner() {
                 </div>
               </div>
             </div>
+            </div>
+          )}
+
+          {/* ──────────────── EDUCATION TAB ──────────────── */}
+          {activeTab === 'education' && (
+            <div className="tab-sections">
+              <EducationTab />
             </div>
           )}
 
