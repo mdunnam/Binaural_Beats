@@ -34,6 +34,7 @@ import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
 import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
+import { VuMeter } from './components/VuMeter'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
 import { VisualTab } from './components/VisualTab'
@@ -2337,6 +2338,7 @@ function AppInner() {
                     disabled={isRunning || isExporting} style={{ width: '100%' }}>
                     {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
                   </button>
+                  <VuMeter analyser={masterBusRef.current?.analyser ?? null} isRunning={isRunning} />
                 </div>
               </div>
 
