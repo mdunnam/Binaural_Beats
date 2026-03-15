@@ -6,6 +6,7 @@ type AudioVisualizerProps = {
   ambientRunning: boolean
   beat: number
   carrier: number
+  darkMode: boolean
 }
 
 function getBrainwaveColor(beat: number): string {
@@ -24,7 +25,7 @@ function getBrainwaveBrightColor(beat: number): string {
   return '#ff7a5a'
 }
 
-export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, carrier }: AudioVisualizerProps) {
+export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, carrier, darkMode }: AudioVisualizerProps) {
   const levelRef = useRef<HTMLCanvasElement>(null)
   const spectrumRef = useRef<HTMLCanvasElement>(null)
   const scopeRef = useRef<HTMLCanvasElement>(null)
@@ -66,10 +67,9 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     const brightColor = getBrainwaveBrightColor(beat)
 
     const getTheme = () => {
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
       return {
-        bg: isDark ? '#0d1a14' : '#f0f7f3',
-        idleLine: isDark ? '#1e3a2a' : '#c8ddd5',
+        bg: darkMode ? '#0d1a14' : '#f0f7f3',
+        idleLine: darkMode ? '#1e3a2a' : '#c8ddd5',
       }
     }
 
@@ -214,7 +214,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       cancelAnimationFrame(rafRef.current)
       ro.disconnect()
     }
-  }, [analyser, isRunning, ambientRunning, beat, carrier])
+  }, [analyser, isRunning, ambientRunning, beat, carrier, darkMode])
 
   return (
     <div className="audio-viz-strip">

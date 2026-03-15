@@ -1,4 +1,4 @@
-const CACHE = 'liminal-v__BUILD_TIME__'
+const CACHE = 'liminal-v1773615655384'
 const SHELL = [
   '/app',
   '/app/',

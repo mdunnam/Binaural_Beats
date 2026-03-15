@@ -31,6 +31,7 @@ interface MiniPlayerProps {
   isExpanded: boolean
   onToggleExpand: () => void
   onOpenVisual: () => void
+  darkMode: boolean
 }
 
 function getBrainwaveLabel(beat: number): string {
@@ -58,6 +59,7 @@ export function MiniPlayer(props: MiniPlayerProps) {
     voiceReverb, setVoiceReverb,
     analyserNode, voiceObjectUrl,
     setCarrier, setBeat, setWobbleRate,
+    darkMode,
   } = props
 
   const brainwaveLabel = getBrainwaveLabel(beat)
@@ -104,6 +106,7 @@ export function MiniPlayer(props: MiniPlayerProps) {
         ambientRunning={ambientRunning}
         beat={beat}
         carrier={carrier}
+        darkMode={darkMode}
       />
 
       {/* Bar always at bottom */}

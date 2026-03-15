@@ -2597,6 +2597,7 @@ function AppInner() {
       isExpanded={playerExpanded}
       onToggleExpand={() => setPlayerExpanded(v => !v)}
       onOpenVisual={() => { setActiveTab('focus'); setPlayerExpanded(false) }}
+      darkMode={darkMode}
     />
     </main>
 
