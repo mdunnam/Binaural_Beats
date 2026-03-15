@@ -615,6 +615,9 @@ function AppInner() {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [proToast, setProToast] = useState(false)
 
+  // Toast notifications
+  const { toasts, addToast, removeToast } = useToast()
+
   // Handle upgrade=success / cancelled URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -1110,6 +1113,8 @@ function AppInner() {
       setAmbientRunning(false)
     }
 
+    try {
+
     // Read all audio params from refs so we always get the latest state,
     // even when called from a stale closure (e.g. after SessionPlanner sets state)
     const aiConfig = pendingAiSessionRef.current
@@ -1220,6 +1225,11 @@ function AppInner() {
       }, bus)
     }
     startSessionTimers(graph, automationLanesRef.current)
+    } catch (err) {
+      console.error('Audio failed to start', err)
+      addToast('Audio failed to start. Check your browser permissions.', 'error')
+      audioStartingRef.current = false
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1397,6 +1407,7 @@ function AppInner() {
       downloadBlob(blob, `binaural-session-${presetName.replace(/\s+/g, '-')}.wav`)
     } catch (err) {
       console.error('WAV export failed', err)
+      addToast('Export failed. Please try again.', 'error')
     }
     setIsExporting(false)
   }
@@ -2616,11 +2627,14 @@ function AppInner() {
 
       {/* ── Settings Panel ── */}
       {showSettingsPanel && user && (
-        <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
+        <SettingsPanel onClose={() => setShowSettingsPanel(false)} onError={(msg) => addToast(msg, 'error')} />
       )}
 
       {/* ── Upgrade Modal ── */}
       <UpgradeModal />
+
+      {/* ── Toast Notifications ── */}
+      <Toast toasts={toasts} onRemove={removeToast} />
 
       {/* ── Pro Toast ── */}
       {proToast && (

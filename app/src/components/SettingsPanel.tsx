@@ -4,9 +4,10 @@ import { useSubscription } from '../contexts/SubscriptionContext'
 
 type SettingsPanelProps = {
   onClose: () => void
+  onError?: (msg: string) => void
 }
 
-export function SettingsPanel({ onClose }: SettingsPanelProps) {
+export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
   const { user, isPro } = useAuth()
   const { openUpgradeModal } = useSubscription()
 
@@ -50,10 +51,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       if (data.url) {
         window.location.href = data.url
       } else {
-        alert(data.error ?? 'Could not open billing portal')
+        const msg = data.error ?? 'Could not open billing portal'
+        if (onError) onError(msg); else alert(msg)
       }
     } catch {
-      alert('Could not open billing portal')
+      const msg = 'Could not open billing portal'
+      if (onError) onError(msg); else alert(msg)
     } finally {
       setPortalLoading(false)
     }
