@@ -1739,48 +1739,49 @@ function AppInner() {
         />
       )}
     <main className="app-shell">
-      <section className="hero" style={{ position: 'relative' }}>
-        <p className="eyebrow">Binaural Beats · Brainwave Journeys · Soundscapes</p>
-        <h1>Liminal</h1>
-        <p className="subtitle">
-          Shift your mental state. Choose a goal, tune your frequencies, and drift into focus, calm, or sleep.
-        </p>
-        <button
-          className="theme-toggle"
-          onClick={() => setDarkMode(d => !d)}
-          title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          aria-label="Toggle dark mode"
-        >
-          {darkMode ? '☀️' : '🌙'}
-        </button>
-        {/* User / Auth button */}
-        {user ? (
-          <div className="user-menu-wrap">
-            <button className="user-btn" onClick={() => setShowUserMenu(m => !m)}>
-              <span className="user-btn-avatar">{(user.email ?? 'U')[0].toUpperCase()}</span>
-              {isPro && <span className="pro-badge">PRO</span>}
-            </button>
-            {showUserMenu && (
-              <>
-                <div className="user-menu-overlay" onClick={() => setShowUserMenu(false)} />
-                <div className="user-dropdown">
-                  <button className="user-dropdown-item" onClick={() => { setShowUserMenu(false); setShowSettingsPanel(true) }}>
-                    ⚙️ Settings
-                  </button>
-                  <button className="user-dropdown-item user-dropdown-item--danger" onClick={() => { setShowUserMenu(false); void signOut() }}>
-                    ↩ Sign Out
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="user-menu-wrap">
+      <section className="hero">
+        <div className="hero-main">
+          <p className="eyebrow">Binaural Beats · Brainwave Journeys · Soundscapes</p>
+          <h1>Liminal</h1>
+          <p className="subtitle">
+            Shift your mental state. Choose a goal, tune your frequencies, and drift into focus, calm, or sleep.
+          </p>
+        </div>
+        <div className="hero-controls">
+          <button
+            className="theme-toggle"
+            onClick={() => setDarkMode(d => !d)}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          {user ? (
+            <div className="user-menu-wrap">
+              <button className="user-btn" onClick={() => setShowUserMenu(m => !m)}>
+                <span className="user-btn-avatar">{(user.email ?? 'U')[0].toUpperCase()}</span>
+                {isPro && <span className="pro-badge">PRO</span>}
+              </button>
+              {showUserMenu && (
+                <>
+                  <div className="user-menu-overlay" onClick={() => setShowUserMenu(false)} />
+                  <div className="user-dropdown">
+                    <button className="user-dropdown-item" onClick={() => { setShowUserMenu(false); setShowSettingsPanel(true) }}>
+                      ⚙️ Settings
+                    </button>
+                    <button className="user-dropdown-item user-dropdown-item--danger" onClick={() => { setShowUserMenu(false); void signOut() }}>
+                      ↩ Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
             <button className="user-btn" onClick={() => setShowAuthModal(true)}>
               Sign In
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </section>
 
       <section className="panel">

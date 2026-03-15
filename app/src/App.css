@@ -55,6 +55,23 @@ body {
 
 .hero {
   margin-bottom: 1.2rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hero-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
 }
 
 .eyebrow {
@@ -2531,9 +2548,6 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* ── Dark mode toggle ── */
 .theme-toggle {
-  position: absolute;
-  top: 0;
-  right: 3.5rem;
   background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 50%;
@@ -2545,6 +2559,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   align-items: center;
   justify-content: center;
   transition: background 0.2s, transform 0.15s;
+  flex-shrink: 0;
 }
 
 .theme-toggle:hover {
@@ -3598,10 +3613,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* User button in header */
 .user-menu-wrap {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .user-btn {
@@ -3740,7 +3753,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 /* ── User dropdown ── */
-.user-menu-wrap { /* duplicate removed */ }
+/* user-menu-wrap duplicate removed */
 
 .user-menu-overlay {
   position: fixed;
