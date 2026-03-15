@@ -197,7 +197,7 @@ export function JourneyBuilder({
           })}
         </div>
       ) : (
-        <div className="journey-timeline" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '80px', color: '#6e8f7d', fontSize: '0.9rem' }}>
+        <div className="journey-timeline" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '80px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           No stages yet — pick a preset below or click <strong>+ New Stage</strong>
         </div>
       )}
@@ -276,7 +276,7 @@ export function JourneyBuilder({
             </button>
           </div>
           {!isRunning && (
-            <p style={{ fontSize: '0.75rem', color: '#6e8f7d', margin: '0.4rem 0 0' }}>Start a session to preview this stage live.</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.4rem 0 0' }}>Start a session to preview this stage live.</p>
           )}
         </div>
       )}
@@ -289,11 +289,11 @@ export function JourneyBuilder({
           onClick={() => setAiOpen(o => !o)}
         >
           <span className="journey-ai-title">✨ AI Journey Designer</span>
-          <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#5a7a6e' }}>{aiOpen ? '▾' : '▸'}</span>
+          <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{aiOpen ? '▾' : '▸'}</span>
         </button>
         {aiOpen && (
           <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1e4a36', gap: '0.35rem' }}>
+            <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', gap: '0.35rem' }}>
               What do you want to achieve?
               <textarea
                 className="journey-ai-textarea"
@@ -305,7 +305,7 @@ export function JourneyBuilder({
             </label>
 
             <div className="journey-ai-options">
-              <label style={{ fontWeight: 600, fontSize: '0.78rem', color: '#3a5a4e', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.78rem', color: 'var(--text-label)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 Duration
                 <select
                   className="text-input"
@@ -317,7 +317,7 @@ export function JourneyBuilder({
                   ))}
                 </select>
               </label>
-              <label style={{ fontWeight: 600, fontSize: '0.78rem', color: '#3a5a4e', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.78rem', color: 'var(--text-label)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 Stages
                 <select
                   className="text-input"
@@ -330,7 +330,7 @@ export function JourneyBuilder({
                 </select>
               </label>
               <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <span style={{ fontWeight: 600, fontSize: '0.78rem', color: '#3a5a4e' }}>Style</span>
+                <span style={{ fontWeight: 600, fontSize: '0.78rem', color: 'var(--text-label)' }}>Style</span>
                 <div className="seg-control">
                   {(['gentle', 'balanced', 'deep'] as const).map(s => (
                     <button
@@ -407,7 +407,7 @@ export function JourneyBuilder({
       </div>
 
       {journey && (
-        <p style={{ fontSize: '0.78rem', color: '#3e7060', marginTop: '0.6rem', background: '#eaf4ee', borderRadius: '8px', padding: '0.5rem 0.75rem' }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.6rem', background: 'var(--accent-light)', borderRadius: '8px', padding: '0.5rem 0.75rem' }}>
           ✅ <strong>{journey.name}</strong> loaded — will run automatically when you start a session.
         </p>
       )}
