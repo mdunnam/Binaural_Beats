@@ -1682,15 +1682,32 @@ function AppInner() {
           {activeTab === 'dashboard' && (
             <div className="dashboard">
               {/* Hero state card */}
-              <div className={`dash-state-card ${graphRef.current ? 'dash-state-card--active' : ''}`}>
-                <div className="dash-state-icon">{graphRef.current ? '🎧' : '🧘'}</div>
-                <div className="dash-state-label">{graphRef.current ? 'Session Active' : 'Ready to Begin'}</div>
+              <div className={`dash-state-card ${isRunning ? 'dash-state-card--active' : ''}`}>
+                <div className="dash-state-icon">{isRunning ? '🎧' : '🧘'}</div>
+                <div className="dash-state-label">{isRunning ? 'Session Active' : 'Ready to Begin'}</div>
                 <div className="dash-state-sub">
-                  {graphRef.current
+                  {isRunning
                     ? `${carrier.toFixed(1)} Hz carrier · ${beat.toFixed(2)} Hz beat`
                     : 'Configure your session and press Start'}
                 </div>
               </div>
+
+              {/* Now Playing — only when running */}
+              {isRunning && (
+                <div className="dash-now-playing">
+                  <div className="dash-now-row"><span>Carrier</span><strong>{carrier.toFixed(1)} Hz</strong></div>
+                  <div className="dash-now-row"><span>Beat</span><strong>{beat.toFixed(2)} Hz</strong></div>
+                  <div className="dash-now-row"><span>Brainwave</span><strong>
+                    {beat < 4 ? 'Delta — deep sleep' : beat < 8 ? 'Theta — meditation' : beat < 14 ? 'Alpha — relax' : beat < 30 ? 'Beta — focus' : 'Gamma — peak'}
+                  </strong></div>
+                  <div className="dash-now-row"><span>Soundscape</span><strong>
+                    {soundsceneId === 'off' ? 'None' : SOUNDSCAPE_SCENES.find(s => s.id === soundsceneId)?.label ?? 'Custom'}
+                  </strong></div>
+                  {sessionMinutes > 0 && (
+                    <div className="dash-now-row"><span>Session</span><strong>{sessionMinutes} min</strong></div>
+                  )}
+                </div>
+              )}
 
               {/* Quick-start scene cards */}
               <div className="section-label" style={{ marginTop: '1rem' }}>Quick Start</div>
@@ -1720,37 +1737,50 @@ function AppInner() {
                 ))}
               </div>
 
-              {/* Current settings summary */}
-              <div className="section-label" style={{ marginTop: '1.25rem' }}>Current Setup</div>
-              <div className="dash-summary">
-                <div className="dash-summary-row"><span>Carrier</span><strong>{carrier.toFixed(1)} Hz</strong></div>
-                <div className="dash-summary-row"><span>Beat</span><strong>{beat.toFixed(2)} Hz</strong></div>
-                <div className="dash-summary-row"><span>Brainwave</span><strong>
-                  {beat < 4 ? 'Delta (deep sleep)' : beat < 8 ? 'Theta (meditation)' : beat < 14 ? 'Alpha (relax)' : beat < 30 ? 'Beta (focus)' : 'Gamma (peak)'}
-                </strong></div>
-                <div className="dash-summary-row"><span>Soundscape</span><strong>{soundsceneId === 'off' ? 'None' : SOUNDSCAPE_SCENES.find(s => s.id === soundsceneId)?.label ?? 'Custom'}</strong></div>
-                <div className="dash-summary-row"><span>Pad Synth</span><strong>{padEnabled ? 'On' : 'Off'}</strong></div>
-                <div className="dash-summary-row"><span>Session</span><strong>{sessionMinutes} min</strong></div>
+              {/* Explore — feature spotlight */}
+              <div className="section-label" style={{ marginTop: '1.25rem' }}>Explore</div>
+              <div className="dash-explore-row">
+                {([
+                  { icon: '🎹', title: 'Pad Synth',  sub: 'Design atmospheric textures',         tab: 'pad'       },
+                  { icon: '🎙', title: 'Verify Hz',   sub: 'Is your audio really that frequency?', tab: 'focus'     },
+                  { icon: '🗺', title: 'Studio',      sub: 'Build multi-layer journeys',           tab: 'studio'    },
+                  { icon: '🧘', title: 'Meditate',    sub: 'AI-generated guided sessions',         tab: 'ai'        },
+                  { icon: '📖', title: 'Learn',       sub: 'Science behind the sounds',            tab: 'education' },
+                  { icon: '💨', title: 'Breathe',     sub: 'Guided breath work',                   tab: 'focus'     },
+                ] as { icon: string; title: string; sub: string; tab: string }[]).map(({ icon, title, sub, tab }) => (
+                  <button key={title} className="dash-explore-card" onClick={() => setActiveTab(tab as Parameters<typeof setActiveTab>[0])}>
+                    <span className="dash-explore-icon">{icon}</span>
+                    <span className="dash-explore-title">{title}</span>
+                    <span className="dash-explore-sub">{sub}</span>
+                  </button>
+                ))}
               </div>
 
               {/* Recent journal entries preview */}
-              {journalEntries.length > 0 && (<>
-                <div className="section-label" style={{ marginTop: '1.25rem' }}>Recent Sessions</div>
-                <div className="dash-recent">
-                  {journalEntries.slice(0, 3).map(entry => (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '1.25rem' }}>
+                <div className="section-label" style={{ marginTop: 0 }}>Recent Sessions</div>
+                <button className="dash-recent-viewall" onClick={() => setActiveTab('journal')}>View All →</button>
+              </div>
+              <div className="dash-recent">
+                {journalEntries.length === 0 ? (
+                  <div className="dash-recent-row" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    No sessions logged yet — your history will appear here.
+                  </div>
+                ) : (
+                  journalEntries.slice(0, 3).map(entry => (
                     <div key={entry.id} className="dash-recent-row">
                       <span className="dash-recent-date">{new Date(entry.date).toLocaleDateString()}</span>
                       <span className="dash-recent-note">{entry.notes?.slice(0, 60) || entry.presetName}</span>
                     </div>
-                  ))}
-                </div>
-              </>)}
+                  ))
+                )}
+              </div>
 
               {/* Nav hints */}
               <div className="dash-nav-hints">
-                <button className="dash-hint-btn" onClick={() => setActiveTab('tones')}>🎵 Tones</button>
-                <button className="dash-hint-btn" onClick={() => setActiveTab('sound')}>🌊 Sound</button>
-                <button className="dash-hint-btn" onClick={() => setActiveTab('ai')}>🧘 Meditate</button>
+                <button className="dash-hint-btn" onClick={() => setActiveTab('education')}>📖 Learn</button>
+                <button className="dash-hint-btn" onClick={() => setActiveTab('studio')}>🗺 Studio</button>
+                <button className="dash-hint-btn" onClick={() => setActiveTab('journal')}>📓 Journal</button>
               </div>
             </div>
           )}

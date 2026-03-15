@@ -4837,3 +4837,55 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   align-items: center;
   margin-bottom: 0.5rem;
 }
+
+/* ── Dashboard: Explore cards ── */
+.dash-explore-row {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+.dash-explore-card {
+  flex: 0 0 140px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.dash-explore-card:hover { border-color: var(--accent); }
+.dash-explore-icon { font-size: 1.6rem; display: block; margin-bottom: 0.3rem; }
+.dash-explore-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; }
+.dash-explore-sub { font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.15rem; line-height: 1.3; }
+
+/* ── Dashboard: Now Playing ── */
+.dash-now-playing {
+  background: var(--bg-3);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-top: 0.75rem;
+}
+.dash-now-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  padding: 0.2rem 0;
+  color: var(--text-secondary);
+}
+.dash-now-row strong { color: var(--text-primary); }
+
+/* ── Dashboard: Journal view-all ── */
+.dash-recent-viewall {
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0;
+  text-align: right;
+  width: 100%;
+}
