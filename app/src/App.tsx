@@ -34,7 +34,6 @@ import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
 import { createMasterBus, setMasterVolume } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
-import { VuMeter } from './components/VuMeter'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
 import { VisualTab } from './components/VisualTab'
@@ -473,7 +472,7 @@ function AppInner() {
   const [pendingJournalEntry, setPendingJournalEntry] = useState<Omit<JournalEntry, 'id' | 'notes' | 'mood' | 'tags' | 'completedAt'> | null>(null)
 
   // WAV export
-  const [isExporting, setIsExporting] = useState(false)
+  // isExporting state managed inline in exportWav
 
   // AI Meditation
   const [aiApiKey, setAiApiKey] = useState<string>('')
@@ -1228,7 +1227,6 @@ function AppInner() {
   // WAV Export
   // ---------------------------------------------------------------------------
   const exportWav = async (): Promise<void> => {
-    setIsExporting(true)
     try {
       const totalSec = sessionMinutes * 60
       const sampleRate = 44100
@@ -1291,7 +1289,6 @@ function AppInner() {
       console.error('WAV export failed', err)
       addToast('Export failed. Please try again.', 'error')
     }
-    setIsExporting(false)
   }
 
   // ---------------------------------------------------------------------------
@@ -1905,6 +1902,16 @@ function AppInner() {
           {/* ──────────────── TONES TAB ──────────────── */}
           {activeTab === 'tones' && (
             <div className="tab-sections">
+              {/* Start/Stop Session */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                <button
+                  className={`start-button${isRunning ? ' start-button--active' : ''}`}
+                  style={{ minWidth: '180px', fontSize: '1rem' }}
+                  onClick={() => isRunning ? stopSession(true) : void toggleAudio()}
+                >
+                  {isRunning ? '■ Stop Session' : '▶ Start Session'}
+                </button>
+              </div>
               {/* Session Library */}
               <div className="section-block">
                 <div className="section-title">Quick Start</div>
@@ -1981,6 +1988,44 @@ function AppInner() {
                     <small className="control-hint">Applied at session start - restart to hear change</small>
                     <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
                   </label>
+                  {/* Tones Presets */}
+                  {(() => {
+                    const tPresets = (() => { try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') as Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> } catch { return [] } })()
+                    return (<>
+                      {tPresets.length > 0 && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <div className="section-label">Saved Presets</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.3rem' }}>
+                            {tPresets.map((p: { name: string; carrier: number; beat: number; wobbleRate: number }) => (
+                              <button key={p.name} className="studio-preset-btn" onClick={() => { setCarrier(p.carrier); setBeat(p.beat); setWobbleRate(p.wobbleRate) }}>
+                                {p.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', alignItems: 'center' }}>
+                        <input
+                          className="text-input"
+                          type="text"
+                          placeholder="Preset name"
+                          id="tones-preset-name-input"
+                          style={{ flex: 1, fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
+                        />
+                        <button className="soft-button" style={{ fontSize: '0.83rem', whiteSpace: 'nowrap' }}
+                          onClick={() => {
+                            const inp = document.getElementById('tones-preset-name-input') as HTMLInputElement | null
+                            const name = inp?.value?.trim()
+                            if (!name) return
+                            const existing: Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> = (() => { try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] } })()
+                            const next = [...existing.filter(p => p.name !== name), { name, carrier, beat, wobbleRate }]
+                            localStorage.setItem('liminal-tones-presets', JSON.stringify(next))
+                            if (inp) inp.value = ''
+                          }}
+                        >Save Preset</button>
+                      </div>
+                    </>)
+                  })()}
                 </div>
               </div>
 
@@ -2247,6 +2292,17 @@ function AppInner() {
               musicTracks={MUSIC_TRACKS}
               onExportWav={() => void exportWav()}
               initialLayers={studioQuickStartLayers}
+              fadeInSeconds={fadeInSeconds}
+              fadeOutSeconds={fadeOutSeconds}
+              onFadeInChange={setFadeInSeconds}
+              onFadeOutChange={setFadeOutSeconds}
+              sessionMinutes={sessionMinutes}
+              isPro={isPro}
+              onSessionMinutesChange={(val) => {
+                if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
+                setSessionMinutes(val)
+              }}
+              onOpenUpgrade={() => openUpgradeModal('Sessions > 15 minutes')}
               onPreview={(studioLayers) => {
                 if (graphRef.current) stopSession(false)
                 // Create AudioContext synchronously inside the user gesture
@@ -2308,31 +2364,6 @@ function AppInner() {
               }}
             />
             <div className="tab-sections">
-              <div className="section-block">
-                <div className="section-title">Session</div>
-                <div className="section-card">
-                  <label>Session Length ({sessionMinutes.toFixed(0)} min{!isPro && sessionMinutes > 15 ? ' - ⚠️ Pro required for >15 min' : ''})
-                    <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
-                      onChange={(e) => {
-                        const val = Number(e.target.value)
-                        if (!isPro && val > 15) { openUpgradeModal('Sessions > 15 minutes'); return }
-                        setSessionMinutes(val)
-                      }} />
-                    {!isPro && <span className="control-hint">🔒 <button className="link-btn" onClick={() => openUpgradeModal('Sessions > 15 minutes')}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
-                  </label>
-                  <label>Fade In ({fadeInSeconds.toFixed(0)} sec)
-                    <input type="range" min={0} max={60} step={1} value={fadeInSeconds} onChange={(e) => setFadeInSeconds(Number(e.target.value))} />
-                  </label>
-                  <label>Fade Out ({fadeOutSeconds.toFixed(0)} sec)
-                    <input type="range" min={0} max={60} step={1} value={fadeOutSeconds} onChange={(e) => setFadeOutSeconds(Number(e.target.value))} />
-                  </label>
-                  <button className="soft-button export-button" onClick={() => void exportWav()}
-                    disabled={isRunning || isExporting} style={{ width: '100%' }}>
-                    {isExporting ? '⏳ Rendering…' : '⬇ Export WAV'}
-                  </button>
-                  <VuMeter analyser={masterBusRef.current?.analyser ?? null} isRunning={isRunning} />
-                </div>
-              </div>
 
               <div className="section-block">
                 <div className="section-title">Automation</div>

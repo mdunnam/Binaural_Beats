@@ -5046,6 +5046,10 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .seq-timeline-wrap {
   position: relative;
   margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
 }
 
 .seq-timeline-bar {

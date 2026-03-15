@@ -132,9 +132,21 @@ type StudioTabProps = {
   musicTracks: MusicTrack[]
   onExportWav?: () => void
   initialLayers?: StudioLayer[]
+  fadeInSeconds?: number
+  fadeOutSeconds?: number
+  onFadeInChange?: (v: number) => void
+  onFadeOutChange?: (v: number) => void
+  sessionMinutes?: number
+  isPro?: boolean
+  onSessionMinutesChange?: (v: number) => void
+  onOpenUpgrade?: () => void
 }
 
-export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav, initialLayers }: StudioTabProps) {
+function loadTonesPresets(): Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> {
+  try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] }
+}
+
+export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav, initialLayers, fadeInSeconds, fadeOutSeconds, onFadeInChange, onFadeOutChange, sessionMinutes, isPro, onSessionMinutesChange, onOpenUpgrade }: StudioTabProps) {
   const [layers, setLayers] = useState<StudioLayer[]>(
     initialLayers && initialLayers.length > 0
       ? initialLayers
@@ -495,6 +507,17 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                         </button>
                       ))}
                     </div>
+                    {(() => { const tp = loadTonesPresets(); return tp.length > 0 ? (
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem', display: 'block' }}>Load Preset →</label>
+                        <select style={{ fontSize: '0.82rem', padding: '0.2rem 0.4rem', width: '100%' }}
+                          defaultValue=""
+                          onChange={e => { const p = tp.find(x => x.name === e.target.value); if (p) updateSettings(layer.id, { hz: p.carrier }); e.target.value = '' }}>
+                          <option value="" disabled>— select preset —</option>
+                          {tp.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    ) : null })()}
                   </>
                 )}
                 {layer.type === 'beat' && (
@@ -521,6 +544,17 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                         onChange={e => updateSettings(layer.id, { wobbleRate: Number(e.target.value) })}
                       />
                     </label>
+                    {(() => { const tp = loadTonesPresets(); return tp.length > 0 ? (
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <label style={{ fontSize: '0.8rem', marginBottom: '0.2rem', display: 'block' }}>Load Preset →</label>
+                        <select style={{ fontSize: '0.82rem', padding: '0.2rem 0.4rem', width: '100%' }}
+                          defaultValue=""
+                          onChange={e => { const p = tp.find(x => x.name === e.target.value); if (p) updateSettings(layer.id, { hz: p.beat, wobbleRate: p.wobbleRate }); e.target.value = '' }}>
+                          <option value="" disabled>— select preset —</option>
+                          {tp.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    ) : null })()}
                   </>
                 )}
                 {layer.type === 'soundscape' && (
@@ -728,6 +762,18 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
             {savedFlag ? '✓ Saved!' : '💾 Save Scene'}
           </button>
         </div>
+        {sessionMinutes !== undefined && onSessionMinutesChange && (
+          <label>
+            Session Length ({sessionMinutes} min){!isPro && sessionMinutes > 15 ? ' — ⚠️ Pro required for &gt;15 min' : ''}
+            <input type="range" min={1} max={isPro ? 180 : 15} step={1} value={Math.min(sessionMinutes, isPro ? 180 : 15)}
+              onChange={e => {
+                const val = Number(e.target.value)
+                if (!isPro && val > 15) { onOpenUpgrade?.(); return }
+                onSessionMinutesChange(val)
+              }} />
+            {!isPro && <span className="control-hint">🔒 <button className="link-btn" type="button" onClick={() => onOpenUpgrade?.()}>Upgrade to Pro</button> for sessions up to 3 hours</span>}
+          </label>
+        )}
         <label>
           Duration: {durationMinutes} min
           <input type="range" min={1} max={180} step={1} value={durationMinutes}
@@ -738,6 +784,20 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           <input type="range" min={0} max={60} step={1} value={crossfadeSec}
             onChange={e => setCrossfadeSec(Number(e.target.value))} />
         </label>
+        {fadeInSeconds !== undefined && onFadeInChange && (
+          <label>
+            Fade In ({fadeInSeconds} sec)
+            <input type="range" min={0} max={60} step={1} value={fadeInSeconds}
+              onChange={e => onFadeInChange(Number(e.target.value))} />
+          </label>
+        )}
+        {fadeOutSeconds !== undefined && onFadeOutChange && (
+          <label>
+            Fade Out ({fadeOutSeconds} sec)
+            <input type="range" min={0} max={60} step={1} value={fadeOutSeconds}
+              onChange={e => onFadeOutChange(Number(e.target.value))} />
+          </label>
+        )}
 
         {savedScenes.length > 0 && (
           <div className="studio-saved-scenes">
