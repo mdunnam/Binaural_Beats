@@ -1,4 +1,5 @@
 import { PlayerTab } from './PlayerTab'
+import { VuMeter } from './VuMeter'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -98,6 +99,9 @@ export function MiniPlayer(props: MiniPlayerProps) {
 
       {/* Bar always at bottom */}
       <div className="mini-player-bar">
+        {(isRunning || ambientRunning) && (
+          <VuMeter analyser={analyserNode} isRunning={isRunning || ambientRunning} mini />
+        )}
         <div className="mini-player-info">
           {ambientRunning && !isRunning ? (
             <span className="mini-player-hz">🌊 Ambient</span>

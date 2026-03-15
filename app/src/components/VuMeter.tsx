@@ -3,9 +3,10 @@ import { useEffect, useRef } from 'react'
 type Props = {
   analyser: AnalyserNode | null
   isRunning: boolean
+  mini?: boolean
 }
 
-export function VuMeter({ analyser, isRunning }: Props) {
+export function VuMeter({ analyser, isRunning, mini = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
 
@@ -13,7 +14,6 @@ export function VuMeter({ analyser, isRunning }: Props) {
     const canvas = canvasRef.current
     if (!canvas || !analyser || !isRunning) {
       cancelAnimationFrame(rafRef.current)
-      // Draw empty meter
       const ctx = canvas?.getContext('2d')
       if (ctx && canvas) {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -29,7 +29,6 @@ export function VuMeter({ analyser, isRunning }: Props) {
       if (!canvas || !analyser) return
       analyser.getByteTimeDomainData(dataArray)
 
-      // RMS calculation
       let sum = 0
       for (let i = 0; i < dataArray.length; i++) {
         const sample = (dataArray[i] - 128) / 128
@@ -37,18 +36,16 @@ export function VuMeter({ analyser, isRunning }: Props) {
       }
       const rms = Math.sqrt(sum / dataArray.length)
       const db = 20 * Math.log10(rms + 0.00001)
-      const normalized = Math.max(0, Math.min(1, (db + 60) / 60)) // -60dBFS to 0dBFS
+      const normalized = Math.max(0, Math.min(1, (db + 60) / 60))
 
       const ctx = canvas.getContext('2d')!
       const w = canvas.width
       const h = canvas.height
       ctx.clearRect(0, 0, w, h)
 
-      // Background
       ctx.fillStyle = '#1a2420'
       ctx.fillRect(0, 0, w, h)
 
-      // Meter bar
       const barW = normalized * w
       const gradient = ctx.createLinearGradient(0, 0, w, 0)
       gradient.addColorStop(0, '#3e8f72')
@@ -56,14 +53,26 @@ export function VuMeter({ analyser, isRunning }: Props) {
       gradient.addColorStop(0.9, '#e8b84b')
       gradient.addColorStop(1, '#e05555')
       ctx.fillStyle = gradient
-      ctx.fillRect(0, 2, barW, h - 4)
+      ctx.fillRect(0, mini ? 0 : 2, barW, mini ? h : h - 4)
 
       rafRef.current = requestAnimationFrame(draw)
     }
 
     rafRef.current = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [analyser, isRunning])
+  }, [analyser, isRunning, mini])
+
+  if (mini) {
+    return (
+      <canvas
+        ref={canvasRef}
+        className="vu-meter-mini"
+        width={300}
+        height={3}
+        title="Output level"
+      />
+    )
+  }
 
   return (
     <div className="vu-meter-wrap">
