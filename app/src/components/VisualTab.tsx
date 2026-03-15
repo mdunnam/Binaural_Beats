@@ -212,7 +212,9 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
   const [mode, setMode] = useState<'lissajous' | 'pulse' | 'mandala' | 'spectrum'>('lissajous')
-  const [colorTheme, setColorTheme] = useState<'emerald' | 'violet' | 'gold' | 'void'>('emerald')
+  const [colorTheme, setColorTheme] = useState<'emerald' | 'violet' | 'gold' | 'void'>(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'void' : 'emerald'
+  )
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
@@ -266,7 +268,7 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
           {(['lissajous', 'pulse', 'mandala', 'spectrum'] as const).map(m => (
             <button key={m} className={mode === m ? 'seg-btn seg-btn--active' : 'seg-btn'}
               onClick={() => setMode(m)}>
-              {m === 'lissajous' ? '∿ Lissajous' : m === 'pulse' ? '◉ Pulse' : m === 'mandala' ? '❋ Mandala' : '◎ Spectrum'}
+              {m.charAt(0).toUpperCase() + m.slice(1)}
             </button>
           ))}
         </div>
