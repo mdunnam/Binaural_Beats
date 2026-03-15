@@ -230,7 +230,7 @@ export function FrequencyVerifier() {
       )}
 
       {errorMsg && (
-        <p style={{ color: '#f44336', margin: 0 }}>{errorMsg}</p>
+        <p style={{ color: 'var(--danger)', margin: 0 }}>{errorMsg}</p>
       )}
 
       {listening && (

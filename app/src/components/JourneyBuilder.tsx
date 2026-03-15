@@ -396,7 +396,7 @@ export function JourneyBuilder({
             {journey && (
               <button
                 className="journey-preset-btn"
-                style={{ background: 'rgba(224,92,92,0.15)', color: '#e05c5c', border: '1px solid rgba(224,92,92,0.3)' }}
+                style={{ background: 'rgba(224,92,92,0.15)', color: 'var(--danger)', border: '1px solid rgba(224,92,92,0.3)' }}
                 onClick={() => { setJourney(null); setSelectedIdx(null) }}
               >
                 ✕ Clear Journey

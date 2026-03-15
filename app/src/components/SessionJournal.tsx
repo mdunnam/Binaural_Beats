@@ -342,7 +342,7 @@ function EntryCard({
               <button
                 type="button"
                 className="soft-button"
-                style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem', color: 'var(--error, #e57373)' }}
+                style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem', color: 'var(--danger)' }}
                 onClick={() => onDelete(entry.id)}
               >Confirm</button>
               <button

@@ -313,7 +313,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
                       <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => void handleTogglePreview(session.id)}>
                         {isExpanded ? '▲ Hide' : '▼ Preview'}
                       </button>
-                      <button className="soft-button" style={{ fontSize: '0.85rem', color: '#e55' }} onClick={() => handleDeleteSaved(session.id)}>🗑</button>
+                      <button className="soft-button" style={{ fontSize: '0.85rem', color: 'var(--danger)' }} onClick={() => handleDeleteSaved(session.id)}>🗑</button>
                     </div>
                   </div>
                   )

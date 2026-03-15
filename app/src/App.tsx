@@ -2621,7 +2621,7 @@ function JournalModal({
       <div className="modal-box">
         <h2 className="modal-title">Session Complete 🎧</h2>
         <p className="modal-meta">{entry.presetName} · {entry.durationMinutes} min · {entry.date}</p>
-        <label style={{ fontWeight: 600, color: '#244336' }}>
+        <label style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
           How did that feel?
           <textarea
             className="journal-textarea"
