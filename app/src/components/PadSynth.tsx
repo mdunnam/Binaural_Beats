@@ -253,7 +253,7 @@ export function PadSynth() {
     setTimeout(() => { startPad() }, 100)
   }, [isPlaying, stopPad, startPad])
 
-  useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="tab-sections">
       {/* Root & Chord */}
