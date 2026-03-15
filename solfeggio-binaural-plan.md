@@ -922,31 +922,32 @@ Three tiers of parity, in order of impact:
 ### Tier 1 — Must-Have MVP Parity
 These are table-stakes. Without them, the app can't compete.
 
-- [ ] **Goal-based onboarding flow** — first screen is "What do you want?" (Sleep / Relax / Focus / Meditate / Explore). No Hz values, no sliders. Just intent.
+- [x] **Goal-based onboarding flow** — 3-step first-run carousel (Welcome / How It Works / Free & Pro) ✅
 - [ ] **Curated session library per goal** — pre-built sessions organized by outcome, not by frequency
-- [ ] **Headphone guidance** — persistent first-launch reminder, with isochronic fallback CTA for speaker users
-- [ ] **Isochronic mode** — speaker-friendly, no headphones required (already on roadmap, now a parity requirement)
-- [ ] **Quick-start sessions** — tap goal → session starts in under 5 seconds, no configuration required
-- [ ] **Background playback** — audio context keeps running when screen is off / app is backgrounded (PWA + wake lock API)
-- [ ] **Session timer + fade** — already built
-- [ ] **Favorites / presets** — already built, needs goal-tagging
-- [ ] **Educational layer** — what binaural beats are, brainwave ranges, headphone requirements. Inline tooltips or a "Learn" tab
-- [ ] **Benefit-first UI copy** — replace "Carrier Frequency: 432 Hz" with "Deep Meditation Tone" as the default label. Technical values visible in Pro mode only
-- [ ] **Compliance-safe claims** — audit all copy for medical claims; add "for relaxation and entertainment" disclaimer
+- [x] **Headphone guidance** — persistent first-launch reminder ✅
+- [ ] **Isochronic mode** — speaker-friendly, no headphones required (on roadmap)
+- [x] **Quick-start sessions** — Quick Presets in Studio tab (Focus/Sleep/Relax/Energy) ✅
+- [ ] **Background playback** — audio context keeps running when screen is off (PWA + wake lock API)
+- [x] **Session timer + fade** — already built ✅
+- [x] **Favorites / presets** — built, in Studio tab ✅
+- [ ] **Educational layer** — what binaural beats are, brainwave ranges, headphone requirements
+- [ ] **Benefit-first UI copy** — replace Hz values with intent labels in simple mode
+- [ ] **Compliance-safe claims** — audit all copy for medical claims; add disclaimer
 
 ### Tier 2 — Subscription-Ready Parity
 Required before charging money.
 
-- [ ] **Auth system** — email sign-in (magic link or password). Supabase or Firebase Auth
-- [ ] **Free vs. Pro entitlement** — feature gating, server-side entitlement check
-- [ ] **Subscription plans** — monthly + annual (annual = highlighted as popular), free trial
-- [ ] **Web checkout** — Stripe or RevenueCat integration
-- [ ] **Cross-device activation** — entitlement tied to account, not device
+- [x] **Auth system** — Supabase email/password auth ✅
+- [x] **Free vs. Pro entitlement** — feature gating via `is_pro` in Supabase DB, PRO_TABS intercept in App.tsx ✅
+- [x] **Subscription plans** — Pro Monthly $5.99 / Pro Annual $39.99 (no free trial, no lifetime) ✅
+- [x] **Web checkout** — Stripe Checkout (prebuilt redirect), serverless API route ✅
+- [x] **Billing portal** — Manage Subscription via Stripe portal, serverless API route ✅
+- [ ] **Cross-device activation** — entitlement tied to account (Supabase), but not tested cross-device
 - [ ] **Restore purchases** flow
-- [ ] **Simple cancellation** — no dark patterns
+- [ ] **Simple cancellation** — via Stripe billing portal (no dark patterns)
 - [ ] **Money-back guarantee** handling
 - [ ] **Privacy policy + Terms of Service + Fulfillment policy** — visible in app and on web
-- [ ] **Social proof block** — ratings, testimonials, user counts on landing/paywall
+- [x] **Social proof block** — testimonials on landing page ✅
 
 ### Tier 3 — Retention + Content Parity
 Required to keep users coming back.
@@ -966,8 +967,8 @@ Required to keep users coming back.
 ✅ Done:   Binaural core + modulation controls
 ✅ Done:   Noise layers + filter + pad synth
 ✅ Done:   Automation ramp lanes (SVG editor)
-✅ Done:   WAV export
-✅ Done:   Session journal
+✅ Done:   WAV export (Session tab + Studio tab, gated on enabled layers)
+✅ Done:   Session journal — full build (mood 1–5, tags, notes, streak, search, manual add)
 ✅ Done:   Solfeggio + brainwave presets
 ✅ Done:   Isochronic tone generator (with live param updates)
 ✅ Done:   Mood EQ (5-slider blend: Ground/Relax/Focus/Dream/Ascend)
@@ -981,12 +982,30 @@ Required to keep users coming back.
 ✅ Done:   Pad synth standalone mode (runs without a binaural session)
 ✅ Done:   Mini-player bar (persistent bottom bar, replaces Player/Visual tabs)
 ✅ Done:   AI Guided Meditation (GPT-4o-mini + OpenAI TTS, voice bus, saved sessions)
-✅ Done:   Vercel deployment (auto-deploy on push to main)
+✅ Done:   Studio tab (Session Builder) — layer stack, scenes, journeys, presets, live preview
+✅ Done:   Studio tutorial overlay (first-run, 5-step, localStorage dismiss)
+✅ Done:   Journey builder — scene queue, sequential playback, countdown, crossfade controls
+✅ Done:   Freemium paywall — Supabase auth, Stripe Checkout, free vs Pro feature gating
+✅ Done:   Auth system — email/password, magic link, sign in/out, pro badge, poll-until-pro
+✅ Done:   Stripe billing portal — Manage Subscription button, serverless API route
+✅ Done:   Settings panel — Account, Subscription, Preferences, About; user dropdown
+✅ Done:   Dark mode — full CSS vars overhaul, 4-step bg palette, consistent across all tabs
+✅ Done:   Landing page — full green-theme rebuild, hero, features, 3-tier pricing, social proof
+✅ Done:   Onboarding modal — 3-step first-run carousel (Welcome / How It Works / Free & Pro)
+✅ Done:   Toast notification system — error states for audio, WAV export, billing portal
+✅ Done:   SEO — Open Graph, Twitter Card, structured data JSON-LD, canonical URLs
+✅ Done:   PWA — manifest, service worker (cache-first), install prompt banner
+✅ Done:   Vercel deployment (auto-deploy on push to main, serverless API routes)
+
+Pending assets (design work):
+→  OG image (1200×630, dark bg, "Liminal" serif, green glow) → app/public/og-image.png
+→  PWA icons → app/public/icons/icon-192.png + icon-512.png
 
 In Progress:
-→  Session Planner (Phase 1 — form-based layer composer, see below)
+→  AI Meditation — assessing what needs more (flow works end-to-end)
 
 Next:
+→  Journey UX improvements (awaiting user feedback)
 →  Session Planner Phase 2 — timeline canvas with drag-and-drop blocks
 →  Master limiter + VU meter
 →  Stereo width (mid/side) control
@@ -994,15 +1013,15 @@ Next:
 →  Breath synchronization guide
 →  Visual resonance interface (Canvas Lissajous first)
 →  Ritual / dark mode
-→  Daily state tracking (mood log)
 →  Sleep mode + Focus mode + Lucid dream mode
 →  Song overlay + BPM sync
 →  Auto BPM detection (Meyda)
 →  Hardware integration (HRV/EEG)
 →  Content platform + marketplace
-→  Goal-based onboarding (Moongate parity)
-→  Auth + subscription layer (Stripe)
 →  Background playback (Media Session API + Wake Lock)
+→  Daily state tracking with trends / heatmap (journal data exists, needs viz)
+→  Supabase cloud journal sync (optional, for cross-device)
+→  Stripe live mode + real money testing
 ```
 
 ---
@@ -1228,7 +1247,10 @@ Blend smoothly from one soundscape scene to another over 30 seconds.
 - Different target frequencies (e.g. binaural for theta, isochronic pulse for alpha entrainment check)
 - Independent buses, mixed at master
 
-### 🛜 Offline PWA (In Progress)
-- Service Worker caching all assets
+### 🛜 Offline PWA (Done ✅)
+- Service Worker (cache-first) caching app shell
+- Web App Manifest — name, icons, theme color, standalone display
+- Install prompt banner (dismissible, localStorage)
 - Works with zero network after first load
+- PWA icons needed: icon-192.png + icon-512.png (design pending)
 - Backdrop mode requires PWA install for full background audio
