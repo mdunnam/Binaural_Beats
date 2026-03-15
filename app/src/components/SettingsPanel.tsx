@@ -69,7 +69,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               placeholder="Your name"
               style={{ marginBottom: '0.75rem' }}
             />
-            <button className="soft-button" onClick={saveDisplayName}>Save</button>
+            <button className="soft-button soft-button--accent" onClick={saveDisplayName}>Save</button>
           </div>
         </div>
 

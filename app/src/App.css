@@ -269,15 +269,15 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .soft-button--accent {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: linear-gradient(90deg, #3e8f72, var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
   font-weight: 600;
 }
 
 .soft-button--accent:hover {
-  background: var(--accent);
-  color: #fff;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .progress-bar-track {
