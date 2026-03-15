@@ -1775,9 +1775,11 @@ function AppInner() {
             )}
           </div>
         ) : (
-          <button className="user-btn" onClick={() => setShowAuthModal(true)}>
-            Sign In
-          </button>
+          <div className="user-menu-wrap">
+            <button className="user-btn" onClick={() => setShowAuthModal(true)}>
+              Sign In
+            </button>
+          </div>
         )}
       </section>
 

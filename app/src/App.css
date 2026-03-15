@@ -3740,7 +3740,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 /* ── User dropdown ── */
-.user-menu-wrap { position: relative; }
+.user-menu-wrap { /* duplicate removed */ }
 
 .user-menu-overlay {
   position: fixed;
