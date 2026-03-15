@@ -135,6 +135,13 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
     { id: '1', type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 432 } },
     { id: '2', type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 6, wobbleRate: 0.4 } },
   ])
+  const [showTutorial, setShowTutorial] = useState(
+    () => localStorage.getItem('liminal-studio-tutorial-seen') !== 'true'
+  )
+  function dismissTutorial() {
+    localStorage.setItem('liminal-studio-tutorial-seen', 'true')
+    setShowTutorial(false)
+  }
   const [expandedLayerId, setExpandedLayerId] = useState<string | null>(null)
   const [expandedAdvancedId, setExpandedAdvancedId] = useState<string | null>(null)
   const [sceneName, setSceneName] = useState('My Scene')
@@ -363,6 +370,27 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
 
   return (
     <div className="studio-tab">
+      {/* Tutorial overlay */}
+      {showTutorial && (
+        <div className="studio-tutorial-overlay">
+          <div className="studio-tutorial-card">
+            <div className="studio-tutorial-header">
+              <span>🎛️ Welcome to Studio</span>
+              <button className="settings-close" onClick={dismissTutorial}>×</button>
+            </div>
+            <ol className="studio-tutorial-steps">
+              <li><strong>Quick Start</strong> — Pick a preset to load a ready-made layer stack instantly.</li>
+              <li><strong>Layers</strong> — Add, tweak, or remove audio layers. Each layer has its own volume, type, and settings.</li>
+              <li><strong>Scenes</strong> — Save your current layer stack as a named scene to reuse later.</li>
+              <li><strong>Journey</strong> — Add scenes to a sequence. They'll play one after another automatically.</li>
+              <li><strong>Export</strong> — Download a WAV of your session when you're happy with it.</li>
+            </ol>
+            <button className="soft-button soft-button--accent" style={{ width: '100%', marginTop: '0.75rem' }} onClick={dismissTutorial}>
+              Got it — let's build
+            </button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="studio-layer-header" style={{ cursor: 'default', background: 'none', padding: 0 }}>
         <span style={{ flex: 1, fontSize: '1.1rem', fontWeight: 700 }}>Session Builder</span>
@@ -761,9 +789,21 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
       </div>{/* tab-sections */}
       {onExportWav && (
         <div className="section-block" style={{ marginTop: '1rem' }}>
-          <button className="soft-button soft-button--accent" onClick={onExportWav} style={{ width: '100%' }}>
-            💾 Export WAV
-          </button>
+          <div className="section-title">Export</div>
+          <div className="section-card">
+            <p className="control-hint" style={{ marginBottom: '0.6rem' }}>
+              Exports a 60-second WAV of the current layer stack.
+            </p>
+            <button
+              className="soft-button soft-button--accent"
+              onClick={onExportWav}
+              style={{ width: '100%' }}
+              disabled={!layers.some(l => l.enabled) && journeyScenes.length === 0}
+              title={!layers.some(l => l.enabled) ? 'Add at least one enabled layer to export' : ''}
+            >
+              💾 Export WAV
+            </button>
+          </div>
         </div>
       )}
     </div>
