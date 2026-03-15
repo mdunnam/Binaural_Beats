@@ -4694,6 +4694,13 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   color: var(--text-muted);
 }
 
+.pad-sharp.pad-note-btn--active,
+.pad-sharp:hover {
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  color: #fff;
+}
+
 .pad-play-btn {
   display: block;
   width: 100%;
