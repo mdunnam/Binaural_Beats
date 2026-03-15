@@ -655,6 +655,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   resize: vertical;
   margin-top: 0.3rem;
   box-sizing: border-box;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .modal-actions {
@@ -887,6 +889,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   font: inherit;
   resize: vertical;
   box-sizing: border-box;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .ai-generate-btn {
@@ -2315,6 +2319,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 8px;
   font: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
   resize: vertical;
   box-sizing: border-box;
   background: var(--bg-card);
