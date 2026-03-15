@@ -385,9 +385,10 @@ function AppInner() {
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [playerExpanded, setPlayerExpanded] = useState(false)
 
-  // Dark mode
+  // Dark mode — default dark unless user has explicitly chosen light
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('binaural-theme') === 'dark'
+    const saved = localStorage.getItem('binaural-theme')
+    return saved !== 'light'
   })
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
