@@ -167,6 +167,11 @@ export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
             <div>Liminal v1.0</div>
             <div><a href="https://theliminal.app" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>theliminal.app</a></div>
             <div>© 2025 Liminal. All rights reserved.</div>
+            <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <a href="/landing/terms.html" target="_blank" rel="noopener" className="link-btn">Terms of Service</a>
+              <a href="/landing/privacy.html" target="_blank" rel="noopener" className="link-btn">Privacy Policy</a>
+              <a href="/landing/eula.html" target="_blank" rel="noopener" className="link-btn">EULA</a>
+            </div>
           </div>
         </div>
       </div>
