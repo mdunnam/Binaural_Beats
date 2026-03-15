@@ -77,12 +77,12 @@ const MAX_HZ = 100
 
 // Quick preset pills
 const QUICK_PILLS = [
-  { emoji: '😴', label: 'Sleep',    carrier: 174, beat: 2.0,  mood: { ground: 0.8, relax: 0.6, focus: 0, dream: 0.3, ascend: 0 } },
-  { emoji: '🎯', label: 'Focus',    carrier: 396, beat: 14.0, mood: { ground: 0, relax: 0, focus: 0.9, dream: 0, ascend: 0.2 } },
-  { emoji: '🧘', label: 'Meditate', carrier: 528, beat: 6.0,  mood: { ground: 0.2, relax: 0.5, focus: 0, dream: 0.7, ascend: 0.1 } },
-  { emoji: '💡', label: 'Flow',     carrier: 741, beat: 10.0, mood: { ground: 0, relax: 0.4, focus: 0.4, dream: 0.2, ascend: 0 } },
-  { emoji: '✨', label: 'Lucid',    carrier: 936, beat: 4.0,  mood: { ground: 0, relax: 0.3, focus: 0, dream: 0.8, ascend: 0.3 } },
-  { emoji: '🌅', label: 'Rise',     carrier: 396, beat: 18.0, mood: { ground: 0, relax: 0, focus: 0.7, dream: 0, ascend: 0.5 } },
+  { emoji: '😴', label: 'Sleep',    desc: 'Deep delta waves for restful sleep',       carrier: 174, beat: 2.0,  mood: { ground: 0.8, relax: 0.6, focus: 0, dream: 0.3, ascend: 0 } },
+  { emoji: '🎯', label: 'Focus',    desc: 'Beta focus for work & study',              carrier: 396, beat: 14.0, mood: { ground: 0, relax: 0, focus: 0.9, dream: 0, ascend: 0.2 } },
+  { emoji: '🧘', label: 'Meditate', desc: 'Theta stillness for deep meditation',      carrier: 528, beat: 6.0,  mood: { ground: 0.2, relax: 0.5, focus: 0, dream: 0.7, ascend: 0.1 } },
+  { emoji: '💡', label: 'Flow',     desc: 'Alpha-beta blend for creative flow',       carrier: 741, beat: 10.0, mood: { ground: 0, relax: 0.4, focus: 0.4, dream: 0.2, ascend: 0 } },
+  { emoji: '✨', label: 'Lucid',    desc: 'Theta dreaming & vivid imagination',       carrier: 936, beat: 4.0,  mood: { ground: 0, relax: 0.3, focus: 0, dream: 0.8, ascend: 0.3 } },
+  { emoji: '🌅', label: 'Rise',     desc: 'Energising beta to start your day',        carrier: 396, beat: 18.0, mood: { ground: 0, relax: 0, focus: 0.7, dream: 0, ascend: 0.5 } },
 ]
 
 // Mood slider metadata
@@ -668,9 +668,9 @@ function MoodEqualizer({
 }
 
 // ---------------------------------------------------------------------------
-// Quick Preset Pills
+// Intent Cards (replaces Quick Preset Pills as hero UI)
 // ---------------------------------------------------------------------------
-function QuickPills({
+function IntentCards({
   activePill,
   onPill,
 }: {
@@ -678,14 +678,16 @@ function QuickPills({
   onPill: (pill: typeof QUICK_PILLS[number]) => void
 }) {
   return (
-    <div className="player-quick-pills">
+    <div className="player-intent-grid">
       {QUICK_PILLS.map(p => (
         <button
           key={p.label}
-          className={`player-quick-pill ${activePill === p.label ? 'player-quick-pill--active' : ''}`}
+          className={`player-intent-card ${activePill === p.label ? 'player-intent-card--active' : ''}`}
           onClick={() => onPill(p)}
         >
-          {p.emoji} {p.label}
+          <span className="player-intent-emoji">{p.emoji}</span>
+          <span className="player-intent-label">{p.label}</span>
+          <span className="player-intent-desc">{p.desc}</span>
         </button>
       ))}
     </div>
@@ -746,6 +748,9 @@ export function PlayerTab(props: PlayerTabProps) {
   const [moodMode, setMoodMode] = useState<'mood' | 'anti'>('mood')
   const [antiSliders, setAntiSliders] = useState<AntiMoodSliders>({
     angry: 0, anxious: 0, sad: 0, scattered: 0, exhausted: 0,
+  })
+  const [showHzControls, setShowHzControls] = useState<boolean>(() => {
+    try { return localStorage.getItem('liminal-power-user') === 'true' } catch { return false }
   })
 
   const brainwave = getBrainwaveName(beat)
@@ -845,18 +850,62 @@ export function PlayerTab(props: PlayerTabProps) {
       {/* ── 7. Brainwave Band ── */}
       <BrainwaveBand beat={beat} />
 
-      {/* ── 8. Mood Equalizer ── */}
-      <MoodEqualizer
-        sliders={moodSliders}
-        antiSliders={antiSliders}
-        mode={moodMode}
-        onMode={setMoodMode}
-        onChange={handleMoodChange}
-        onAntiChange={handleAntiMoodChange}
-      />
+      {/* ── 8. Intent Cards (hero UI) ── */}
+      <div className="player-section-label">Choose Your Intent</div>
+      <IntentCards activePill={activePill} onPill={handlePill} />
 
-      {/* ── 9. Quick Preset Pills ── */}
-      <QuickPills activePill={activePill} onPill={handlePill} />
+      {/* ── 9. Hz Power-user panel ── */}
+      <div className="player-hz-header">
+        <span className="player-section-label" style={{ marginBottom: 0 }}>Frequency</span>
+        <button
+          className={`player-hz-toggle ${showHzControls ? 'player-hz-toggle--active' : ''}`}
+          onClick={() => {
+            const next = !showHzControls
+            setShowHzControls(next)
+            try { localStorage.setItem('liminal-power-user', String(next)) } catch { /* ignore */ }
+          }}
+        >
+          ⚙ Hz
+        </button>
+      </div>
+
+      {showHzControls && (
+        <div className="player-hz-panel">
+          {/* Carrier slider */}
+          <div className="player-vol-row">
+            <span className="player-vol-label">CARRIER</span>
+            <input
+              className="player-vol-slider"
+              type="range"
+              min={40} max={1200} step={1}
+              value={carrier}
+              onChange={e => { setCarrier(Number(e.target.value)); setActivePill(null) }}
+            />
+            <span className="player-vol-value">{carrier} Hz</span>
+          </div>
+          {/* Beat slider */}
+          <div className="player-vol-row">
+            <span className="player-vol-label">BEAT</span>
+            <input
+              className="player-vol-slider"
+              type="range"
+              min={0} max={40} step={0.1}
+              value={beat}
+              onChange={e => { setBeat(Number(e.target.value)); setActivePill(null) }}
+            />
+            <span className="player-vol-value">{beat.toFixed(1)} Hz</span>
+          </div>
+          {/* Mood EQ */}
+          <MoodEqualizer
+            sliders={moodSliders}
+            antiSliders={antiSliders}
+            mode={moodMode}
+            onMode={setMoodMode}
+            onChange={handleMoodChange}
+            onAntiChange={handleAntiMoodChange}
+          />
+        </div>
+      )}
 
       {/* ── 10. Volume sliders ── */}
       <div className="player-vol-section">

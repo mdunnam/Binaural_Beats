@@ -50,6 +50,7 @@ import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmb
 import { MusicTab } from './components/MusicTab'
 import { EducationTab } from './components/EducationTab'
 import { StudioTab } from './components/StudioTab'
+import { SequencerTab } from './components/SequencerTab'
 import { PadSynth } from './components/PadSynth'
 import type { StudioLayer } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
@@ -69,6 +70,7 @@ const TABS = [
   { id: 'pad',       icon: '🎹', label: 'Pad'       },
   { id: 'music',     icon: '🎵', label: 'Music'     },
   { id: 'studio',    icon: '🎛', label: 'Studio'    },
+  { id: 'sequencer', icon: '🎚', label: 'Sequencer' },
   { id: 'focus',     icon: '👁', label: 'Focus'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
@@ -2406,6 +2408,52 @@ function AppInner() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ──────────────── SEQUENCER TAB ──────────────── */}
+          {activeTab === 'sequencer' && (
+            <SequencerTab
+              isRunning={isRunning}
+              onStop={() => stopSession(true)}
+              onBeatUpdate={(hz) => {
+                setBeat(hz)
+                beatRef.current = hz
+                const graph = graphRef.current
+                if (graph) {
+                  const lf = leftFrequencyRef.current
+                  graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+                  graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+                  graph.leftOsc.frequency.setValueAtTime(lf, graph.context.currentTime)
+                  graph.rightOsc.frequency.setValueAtTime(lf + hz, graph.context.currentTime)
+                }
+              }}
+              onCarrierUpdate={(hz) => {
+                setCarrier(hz)
+                carrierRef.current = hz
+                setLeftFrequency(hz)
+                setRightFrequency(hz + beatRef.current)
+                leftFrequencyRef.current = hz
+                rightFrequencyRef.current = hz + beatRef.current
+                const graph = graphRef.current
+                if (graph) {
+                  graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+                  graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
+                  graph.leftOsc.frequency.setValueAtTime(hz, graph.context.currentTime)
+                  graph.rightOsc.frequency.setValueAtTime(hz + beatRef.current, graph.context.currentTime)
+                }
+              }}
+              onStartSequence={(_stages) => {
+                if (graphRef.current) stopSession(false)
+                if (prewarmedContextRef.current) { void prewarmedContextRef.current.close() }
+                prewarmedContextRef.current = new AudioContext()
+                fadeInSecondsRef.current = 0
+                sessionMinutesRef.current = 60
+                setSessionMinutes(60)
+                window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+                  if (!graphRef.current && !audioStartingRef.current) void toggleAudio()
+                }))
+              }}
+            />
           )}
 
           {/* ──────────────── MUSIC TAB ──────────────── */}
