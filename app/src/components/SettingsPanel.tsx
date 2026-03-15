@@ -19,6 +19,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [theme, setTheme] = useState(
     () => localStorage.getItem('liminal-theme') ?? 'dark'
   )
+  const [portalLoading, setPortalLoading] = useState(false)
 
   function saveDisplayName() {
     localStorage.setItem('liminal-display-name', displayName)
@@ -34,6 +35,28 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     const next = !headphoneReminder
     setHeadphoneReminder(next)
     localStorage.setItem('liminal-headphone-reminder', String(next))
+  }
+
+  async function openBillingPortal() {
+    if (!user?.email) return
+    setPortalLoading(true)
+    try {
+      const res = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert(data.error ?? 'Could not open billing portal')
+      }
+    } catch {
+      alert('Could not open billing portal')
+    } finally {
+      setPortalLoading(false)
+    }
   }
 
   return (
@@ -80,8 +103,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             {isPro ? (
               <>
                 <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>✅ Pro subscriber</p>
-                <a className="soft-button soft-button--accent" href="#" style={{ display: 'inline-block', textDecoration: 'none' }}>
-                  Manage subscription
+                <a className="soft-button soft-button--accent" href="#" style={{ display: 'inline-block', textDecoration: 'none' }}
+                  onClick={e => { e.preventDefault(); void openBillingPortal() }}>
+                  {portalLoading ? 'Opening…' : 'Manage subscription'}
                 </a>
               </>
             ) : (
