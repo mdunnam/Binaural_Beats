@@ -362,6 +362,8 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
 function AppInner() {
   // Tab navigation
   const [activeTab, setActiveTab] = useState('dashboard')
+  const activeTabRef = useRef('dashboard')
+  useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [playerExpanded, setPlayerExpanded] = useState(false)
 
   // Dark mode
