@@ -62,15 +62,15 @@ const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
 const TABS = [
   { id: 'dashboard', icon: '🏠', label: 'Home'      },
+  { id: 'education', icon: '📖', label: 'Learn'     },
   { id: 'tones',     icon: '🎵', label: 'Tones'     },
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
-  { id: 'studio',    icon: '🎛', label: 'Studio'    },
   { id: 'pad',       icon: '🎹', label: 'Pad'       },
+  { id: 'music',     icon: '🎵', label: 'Music'     },
+  { id: 'studio',    icon: '🎛', label: 'Studio'    },
   { id: 'focus',     icon: '👁', label: 'Focus'     },
-  { id: 'education', icon: '📖', label: 'Learn'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
-  { id: 'music',     icon: '🎵', label: 'Music'     },
 ]
 
 // ---------------------------------------------------------------------------
