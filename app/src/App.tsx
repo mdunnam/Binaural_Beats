@@ -1712,31 +1712,85 @@ function AppInner() {
               {/* Quick-start scene cards */}
               <div className="section-label" style={{ marginTop: '1rem' }}>Quick Start</div>
               <div className="dash-quick-grid">
-                {[
-                  { emoji: '😴', label: 'Deep Sleep',    carrier: 174, beat: 2.0,  scene: 'ocean'  },
-                  { emoji: '🎯', label: 'Focus',          carrier: 396, beat: 14.0, scene: 'forest' },
-                  { emoji: '🧘', label: 'Meditation',     carrier: 528, beat: 6.0,  scene: 'cave'   },
-                  { emoji: '💡', label: 'Creative Flow',  carrier: 741, beat: 10.0, scene: 'storm'  },
-                  { emoji: '✨', label: 'Lucid Dream',    carrier: 936, beat: 4.0,  scene: 'space'  },
-                  { emoji: '🌅', label: 'Morning Rise',   carrier: 396, beat: 18.0, scene: 'forest' },
-                ].map(({ emoji, label, carrier: c, beat: b, scene: s }) => (
+                {([
+                  {
+                    emoji: '🌙', label: 'Deep Sleep', sub: '174 Hz · 2 Hz delta · ocean',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 174 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 2 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.35, label: 'Ocean', settings: { scene: 'ocean' } },
+                    ],
+                  },
+                  {
+                    emoji: '🎯', label: 'Deep Focus', sub: '396 Hz · 14 Hz beta · forest',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 396 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 14 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Forest', settings: { scene: 'forest' } },
+                    ],
+                  },
+                  {
+                    emoji: '🧘', label: 'Meditation', sub: '528 Hz · 6 Hz theta · cave',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 528 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 6 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Cave', settings: { scene: 'cave' } },
+                      { id: 'qs-n', type: 'noise' as const, enabled: true, volume: 0.08, label: 'Pink', settings: { noiseType: 'pink' } },
+                    ],
+                  },
+                  {
+                    emoji: '✨', label: 'Creative Flow', sub: '741 Hz · 10 Hz alpha · storm',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 741 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 10 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.35, label: 'Storm', settings: { scene: 'storm' } },
+                    ],
+                  },
+                  {
+                    emoji: '🌌', label: 'Lucid Dream', sub: '936 Hz · 4 Hz theta · space',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: 936 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: 4 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.4, label: 'Space', settings: { scene: 'space' } },
+                    ],
+                  },
+                  {
+                    emoji: '☀️', label: 'Morning Rise', sub: '396 Hz · 18 Hz beta · forest',
+                    layers: [
+                      { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 396 } },
+                      { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 18 } },
+                      { id: 'qs-s', type: 'soundscape' as const, enabled: true, volume: 0.3, label: 'Forest', settings: { scene: 'forest' } },
+                    ],
+                  },
+                ] as { emoji: string; label: string; sub: string; layers: StudioLayer[] }[]).map(({ emoji, label, sub, layers }) => (
                   <button key={label} className="dash-quick-card" onClick={() => {
-                    setCarrier(c); setBeat(b)
-                    const scn = SOUNDSCAPE_SCENES.find(sc => sc.id === s)
-                    if (scn) {
-                      const gains = { ...DEFAULT_GAINS }
-                      Object.entries(scn.gains).forEach(([k, v]) => { (gains as Record<string, number>)[k] = v as number })
-                      setLayerGains(gains); setSoundsceneId(s)
-                    }
-                    setActiveTab('tones')
+                    applyStudioLayers(layers, {
+                      setCarrier, setBeat, setWobbleRate,
+                      setNoiseType, setNoiseVolume,
+                      setBinauralVolume, setSoundscapeVolume,
+                      setPadEnabled, setPadVolume, setPadWaveform, setPadReverbMix, setPadBreatheRate,
+                      setLeftFrequency, setRightFrequency,
+                      setMusicVolume,
+                      playMusicTrack: (id) => { const t = MUSIC_TRACKS.find(tr => tr.id === id); if (t) void playMusicTrack(t) },
+                      pendingMusicTrackIdRef,
+                      applySoundscapeScene, setSoundsceneId, setLayerGains,
+                      carrierRef, beatRef, noiseTypeRef, noiseVolumeRef,
+                      padEnabledRef, padVolumeRef,
+                      leftFrequencyRef, rightFrequencyRef,
+                      layerGainsRef, fadeInSecondsRef, wobbleRateRef,
+                      binauralVolumeRef, soundscapeVolumeRef,
+                      graphRef, masterBusRef, mixerNodesRef,
+                      SOUNDSCAPE_SCENES, DEFAULT_GAINS,
+                      setAutomationLanes,
+                    })
+                    setActiveTab('studio')
                   }}>
                     <span className="dash-quick-emoji">{emoji}</span>
                     <span className="dash-quick-label">{label}</span>
-                    <span className="dash-quick-meta">{c} Hz · {b} Hz beat</span>
+                    <span className="dash-quick-meta">{sub}</span>
                   </button>
                 ))}
               </div>
-
               {/* Explore — feature spotlight */}
               <div className="section-label" style={{ marginTop: '1.25rem' }}>Explore</div>
               <div className="dash-explore-row">
