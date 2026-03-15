@@ -4689,8 +4689,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 .pad-sharp {
-  background: var(--bg-deep, #111918);
-  border-color: var(--border-card);
+  background: var(--bg-card);
+  border-color: var(--border-section);
+  color: var(--text-muted);
 }
 
 .pad-play-btn {
