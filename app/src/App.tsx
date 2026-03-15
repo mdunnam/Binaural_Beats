@@ -109,6 +109,18 @@ function writeSavedPresets(presets: SessionPreset[]): void {
   localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets))
 }
 
+// ---------------------------------------------------------------------------
+// Custom soundscape presets
+// ---------------------------------------------------------------------------
+const CUSTOM_SOUNDSCAPE_KEY = 'liminal-custom-soundscapes'
+type CustomSoundscapePreset = { name: string; gains: Partial<Record<string, number>> }
+function readCustomSoundscapes(): CustomSoundscapePreset[] {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_SOUNDSCAPE_KEY) ?? '[]') } catch { return [] }
+}
+function writeCustomSoundscapes(list: CustomSoundscapePreset[]): void {
+  localStorage.setItem(CUSTOM_SOUNDSCAPE_KEY, JSON.stringify(list))
+}
+
 
 // ---------------------------------------------------------------------------
 // End chime
@@ -414,6 +426,8 @@ function AppInner() {
   // Presets
   const [presetName, setPresetName] = useState('My Session')
   const [savedPresets, setSavedPresets] = useState<SessionPreset[]>([])
+  const [customSoundscapes, setCustomSoundscapes] = useState<CustomSoundscapePreset[]>(() => readCustomSoundscapes())
+  const [soundscapePresetName, setSoundscapePresetName] = useState('')
   const [selectedPresetName, setSelectedPresetName] = useState('')
 
   // Visual resonance
@@ -1966,37 +1980,6 @@ function AppInner() {
                 </div>
               </div>
 
-              {/* Pad Synth */}
-              <div className="section-block">
-                <div className="section-title">Pad Synth</div>
-                <div className="section-card">
-                  <label className="toggle-row">
-                    <input type="checkbox" checked={padEnabled} onChange={(e) => setPadEnabled(e.target.checked)} />
-                    Enable Pad Synth
-                  </label>
-                  {padEnabled && (<>
-                    <label>Pad Volume ({Math.round(padVolume * 100)}%)
-                      <input type="range" min={0} max={1} step={0.01} value={padVolume} onChange={(e) => setPadVolume(Number(e.target.value))} />
-                    </label>
-                    <label>Pad Reverb Mix ({Math.round(padReverbMix * 100)}%)
-                      <input type="range" min={0} max={1} step={0.01} value={padReverbMix} onChange={(e) => setPadReverbMix(Number(e.target.value))} />
-                    </label>
-                    <label>Pad Waveform
-                      <div className="seg-control">
-                        {(['sine', 'triangle'] as PadWaveform[]).map((w) => (
-                          <button key={w} type="button" className={padWaveform === w ? 'active' : ''} onClick={() => setPadWaveform(w)}>
-                            {w.charAt(0).toUpperCase() + w.slice(1)}
-                          </button>
-                        ))}
-                      </div>
-                    </label>
-                    <label>Breathe Rate ({padBreatheRate.toFixed(2)} Hz)
-                      <input type="range" min={0.05} max={0.5} step={0.01} value={padBreatheRate} onChange={(e) => setPadBreatheRate(Number(e.target.value))} />
-                    </label>
-                  </>)}
-                </div>
-              </div>
-
               {/* Soundscape */}
               <div className="section-block">
                 <div className="section-title">Soundscape</div>
@@ -2025,10 +2008,50 @@ function AppInner() {
                     }}
                     disabled={false}
                   />
+                  {/* Custom soundscape save/load */}
+                  <hr className="section-divider" />
+                  <div className="soundscape-preset-row">
+                    <input
+                      className="text-input"
+                      type="text"
+                      placeholder="Name this mix..."
+                      value={soundscapePresetName}
+                      onChange={e => setSoundscapePresetName(e.target.value)}
+                      style={{ flex: 1, minWidth: 0 }}
+                    />
+                    <button className="soft-button" onClick={() => {
+                      const name = soundscapePresetName.trim()
+                      if (!name) return
+                      const updated = [...customSoundscapes.filter(s => s.name !== name), { name, gains: { ...layerGains } }]
+                      writeCustomSoundscapes(updated)
+                      setCustomSoundscapes(updated)
+                      setSoundscapePresetName("")
+                    }}>Save Mix</button>
+                  </div>
+                  {customSoundscapes.length > 0 && (
+                    <div style={{ marginTop: "0.5rem" }}>
+                      <label className="section-label" style={{ display: "block", marginBottom: "0.35rem" }}>SAVED MIXES</label>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                        {customSoundscapes.map(s => (
+                          <div key={s.name} style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                            <button className="soft-button" style={{ flex: 1, textAlign: "left" }} onClick={() => {
+                              setLayerGains(s.gains as LayerGains)
+                              setSoundsceneId("custom")
+                            }}>{s.name}</button>
+                            <button className="soft-button soft-button--danger" style={{ padding: "0.2rem 0.5rem", fontSize: "0.78rem" }} onClick={() => {
+                              const updated = customSoundscapes.filter(x => x.name !== s.name)
+                              writeCustomSoundscapes(updated)
+                              setCustomSoundscapes(updated)
+                            }}>x</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {!isPro && (
                     <div className="soundscape-unlock-row" onClick={() => openUpgradeModal('All Soundscapes')} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && openUpgradeModal('All Soundscapes')}>
-                      <span>🔒 Unlock all soundscapes with Pro</span>
-                      <span style={{ color: '#a78bfa', fontWeight: 600 }}>Upgrade ✨</span>
+                      <span>Unlock all soundscapes with Pro</span>
+                      <span style={{ color: "#a78bfa", fontWeight: 600 }}>Upgrade</span>
                     </div>
                   )}
                 </div>

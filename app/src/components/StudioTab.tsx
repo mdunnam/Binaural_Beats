@@ -4,7 +4,7 @@ import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 import { LaneEditor } from './AutomationEditor'
 import { PREBUILT_JOURNEYS, JOURNEY_EMOJIS } from '../data/prebuiltJourneys'
 import type { StudioJourney } from '../types'
-import { loadPadPresets } from '../data/padPresets'
+import { loadPadPresets, loadCustomSoundscapes } from '../data/padPresets'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
 const STUDIO_JOURNEYS_KEY = 'liminal-studio-journeys'
@@ -516,16 +516,31 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                       <select value={(layer.settings.sceneId as string) ?? 'forest'}
                         onChange={e => {
                           const sceneId = e.target.value
-                          const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
                           const gains: Record<string, number> = {}
-                          if (scene) {
-                            Object.entries(scene.gains).forEach(([id, v]) => { gains[id] = v as number })
+                          if (sceneId.startsWith('custom:')) {
+                            const customName = sceneId.slice(7)
+                            const custom = loadCustomSoundscapes().find(c => c.name === customName)
+                            if (custom) Object.assign(gains, custom.gains)
+                            updateSettings(layer.id, { sceneId: 'custom', layerGains: gains })
+                          } else {
+                            const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
+                            if (scene) Object.entries(scene.gains).forEach(([id, v]) => { gains[id] = v as number })
+                            updateSettings(layer.id, { sceneId, layerGains: gains })
                           }
-                          updateSettings(layer.id, { sceneId, layerGains: gains })
                         }}>
                         {SOUNDSCAPE_SCENES.filter(s => s.id !== 'custom').map(s => (
                           <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
                         ))}
+                        {(() => {
+                          const custom = loadCustomSoundscapes()
+                          if (custom.length === 0) return null
+                          return (<>
+                            <option disabled>── Saved Mixes ──</option>
+                            {custom.map(c => (
+                              <option key={`custom:${c.name}`} value={`custom:${c.name}`}>🎨 {c.name}</option>
+                            ))}
+                          </>)
+                        })()}
                       </select>
                     </label>
                     {SOUND_LAYERS.map(sl => {

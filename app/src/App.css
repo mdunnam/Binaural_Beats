@@ -4829,3 +4829,11 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .breath-solo-start-btn--stop {
   background: linear-gradient(135deg, #7a3e3e, #c85252);
 }
+
+/* ── Custom Soundscape Presets ── */
+.soundscape-preset-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}

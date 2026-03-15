@@ -36,3 +36,14 @@ export function deletePadPreset(name: string): void {
     localStorage.setItem(PAD_PRESETS_KEY, JSON.stringify(existing))
   } catch { /* ignore */ }
 }
+
+// ---------------------------------------------------------------------------
+// Custom soundscape presets (shared with App.tsx)
+// ---------------------------------------------------------------------------
+const CUSTOM_SOUNDSCAPE_KEY = 'liminal-custom-soundscapes'
+
+export type CustomSoundscapePreset = { name: string; gains: Record<string, number> }
+
+export function loadCustomSoundscapes(): CustomSoundscapePreset[] {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_SOUNDSCAPE_KEY) ?? '[]') } catch { return [] }
+}
