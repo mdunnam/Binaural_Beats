@@ -1532,6 +1532,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   display: block;
   min-width: 0;
   width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
 }
 
 /* ── LCD / Info Display ── */
@@ -1619,7 +1621,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .player-scrub-time {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #3e8f72;
+  color: var(--accent);
   flex-shrink: 0;
   min-width: 3rem;
   text-align: right;

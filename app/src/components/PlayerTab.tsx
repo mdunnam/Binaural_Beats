@@ -196,11 +196,6 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
 
     if (!analyserNode) {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      // transparent — bg from CSS
-      ctx.fillStyle = '#9ab5aa'
-      ctx.font = '9px system-ui'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('OFF', 6, canvas.height / 2)
       return
     }
 
@@ -216,8 +211,6 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
       const w = canvas.width
       const h = canvas.height
       ctx.clearRect(0, 0, w, h)
-      ctx.fillStyle = '#e8f4ee'
-      ctx.fillRect(0, 0, w, h)
       const fillW = Math.round(avg * w)
       const grad = ctx.createLinearGradient(0, 0, w, 0)
       grad.addColorStop(0, '#3e8f72')
@@ -226,7 +219,7 @@ function VuMeter({ analyserNode }: { analyserNode: AnalyserNode | null }) {
       grad.addColorStop(1.0, '#e05a3a')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, fillW, h)
-      ctx.fillStyle = '#e8f4ee'
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'
       for (let i = 1; i < 20; i++) {
         const x = Math.round((i / 20) * w)
         ctx.fillRect(x, 0, 1, h)
