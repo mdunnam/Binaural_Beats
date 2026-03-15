@@ -4247,3 +4247,66 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+
+/* ── Journal Trends ── */
+.journal-trends {
+  margin-bottom: 1.5rem;
+}
+
+.journal-heatmap {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.journal-heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.journal-heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--bg-section);
+  cursor: default;
+  position: relative;
+  transition: transform 0.1s;
+}
+
+.journal-heatmap-cell:hover {
+  transform: scale(1.3);
+}
+
+.journal-heatmap-cell--1 { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.journal-heatmap-cell--2 { background: color-mix(in srgb, var(--accent) 60%, transparent); }
+.journal-heatmap-cell--3 { background: var(--accent); }
+
+.journal-heatmap-labels {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.journal-heatmap-month {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  min-width: 12px;
+}
+
+.journal-mood-chart {
+  margin-top: 1rem;
+}
+
+.journal-mood-chart-title {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.journal-trends-toggle {
+  margin-bottom: 0.75rem;
+}
