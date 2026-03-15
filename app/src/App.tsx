@@ -1776,12 +1776,6 @@ function AppInner() {
                 )}
               </div>
 
-              {/* Nav hints */}
-              <div className="dash-nav-hints">
-                <button className="dash-hint-btn" onClick={() => setActiveTab('education')}>📖 Learn</button>
-                <button className="dash-hint-btn" onClick={() => setActiveTab('studio')}>🗺 Studio</button>
-                <button className="dash-hint-btn" onClick={() => setActiveTab('journal')}>📓 Journal</button>
-              </div>
             </div>
           )}
 
