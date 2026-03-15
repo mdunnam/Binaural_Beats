@@ -1,5 +1,5 @@
 import { PlayerTab } from './PlayerTab'
-import { VuMeter } from './VuMeter'
+import { AudioVisualizer } from './AudioVisualizer'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -97,11 +97,17 @@ export function MiniPlayer(props: MiniPlayerProps) {
         </div>
       )}
 
+      {/* Audio visualizer strip — always rendered above controls */}
+      <AudioVisualizer
+        analyser={analyserNode}
+        isRunning={isRunning}
+        ambientRunning={ambientRunning}
+        beat={beat}
+        carrier={carrier}
+      />
+
       {/* Bar always at bottom */}
       <div className="mini-player-bar">
-        {(isRunning || ambientRunning) && (
-          <VuMeter analyser={analyserNode} isRunning={isRunning || ambientRunning} mini />
-        )}
         <div className="mini-player-info">
           {ambientRunning && !isRunning ? (
             <span className="mini-player-hz">🌊 Ambient</span>
