@@ -53,7 +53,7 @@ import { EducationTab } from './components/EducationTab'
 import { StudioTab } from './components/StudioTab'
 import { SequencerTab } from './components/SequencerTab'
 import { PadSynth } from './components/PadSynth'
-import type { StudioLayer } from './types'
+import type { StudioLayer, StudioScene } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 import { BreathGuide } from './components/BreathGuide'
@@ -1302,6 +1302,95 @@ function AppInner() {
     }
   }
 
+  const exportSceneWav = async (scene: StudioScene): Promise<void> => {
+    try {
+      const totalSec = (scene.durationMinutes || 5) * 60
+      const sampleRate = 44100
+      const offCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalSec), sampleRate)
+      const now = offCtx.currentTime
+      const masterGain = offCtx.createGain()
+      masterGain.gain.value = 1
+      masterGain.connect(offCtx.destination)
+
+      for (const layer of scene.layers) {
+        if (!layer.enabled) continue
+        const vol = layer.volume ?? 1
+
+        if (layer.type === 'carrier' || layer.type === 'beat') {
+          // carrier + beat together form the binaural pair
+          const carrierHz = (layer.settings.carrierFrequency as number) ?? 432
+          const beatHz = (layer.settings.beatFrequency as number) ?? 6
+          const leftHz = carrierHz
+          const rightHz = carrierHz + beatHz
+          const lOsc = offCtx.createOscillator()
+          const rOsc = offCtx.createOscillator()
+          lOsc.type = 'sine'; lOsc.frequency.value = leftHz
+          rOsc.type = 'sine'; rOsc.frequency.value = rightHz
+          const merger = offCtx.createChannelMerger(2)
+          const lGain = offCtx.createGain(); lGain.gain.value = vol
+          const rGain = offCtx.createGain(); rGain.gain.value = vol
+          lOsc.connect(lGain); rOsc.connect(rGain)
+          lGain.connect(merger, 0, 0); rGain.connect(merger, 0, 1)
+          merger.connect(masterGain)
+          lOsc.start(now); rOsc.start(now)
+
+        } else if (layer.type === 'noise') {
+          const noiseT = (layer.settings.noiseType as string) ?? 'white'
+          const validNoise = ['white','pink','brown','blue','violet']
+          if (noiseT !== 'none' && validNoise.includes(noiseT)) {
+            const noiseSrc = createNoiseBuffer(offCtx as unknown as AudioContext, noiseT as Exclude<NoiseType, 'none'>)
+            const nGain = offCtx.createGain(); nGain.gain.value = vol
+            noiseSrc.connect(nGain); nGain.connect(masterGain)
+          }
+
+        } else if (layer.type === 'soundscape') {
+          // Soundscape layers are audio files — skip for offline render
+          // (OfflineAudioContext can't fetch external URLs in this context)
+
+        } else if (layer.type === 'pad') {
+          // Render pad chord via oscillators
+          const NOTE_FREQS_LOCAL: Record<string, number> = {
+            'C':261.63,'C#':277.18,'D':293.66,'D#':311.13,'E':329.63,'F':349.23,
+            'F#':369.99,'G':392.00,'G#':415.30,'A':440.00,'A#':466.16,'B':493.88,
+          }
+          const CHORD_INTERVALS_LOCAL: Record<string, number[]> = {
+            'Root':[0],'Power':[0,7],'Major':[0,4,7],'Minor':[0,3,7],
+            'Sus4':[0,5,7],'Major 7':[0,4,7,11],
+          }
+          const rootNote = (layer.settings.rootNote as string) ?? 'A'
+          const octave = (layer.settings.octave as number) ?? 3
+          const chordMode = (layer.settings.chordMode as string) ?? 'Major'
+          const waveform = (layer.settings.waveform as OscillatorType) ?? 'triangle'
+          const detuneSpread = (layer.settings.detune as number) ?? 20
+          const reverbMix = (layer.settings.reverbMix as number) ?? 0.5
+          const intervals = CHORD_INTERVALS_LOCAL[chordMode] ?? [0]
+          const PANS = [-0.6, -0.2, 0.2, 0.6]
+          const padMaster = offCtx.createGain(); padMaster.gain.value = vol * (1 - reverbMix * 0.4)
+          padMaster.connect(masterGain)
+          intervals.forEach(semitones => {
+            const baseFreq = NOTE_FREQS_LOCAL[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
+            const detuneOffsets = [-detuneSpread * 0.5, detuneSpread * 0.5, -detuneSpread * 0.15, detuneSpread * 0.15]
+            PANS.forEach((pan, i) => {
+              const osc = offCtx.createOscillator()
+              osc.type = waveform; osc.frequency.value = baseFreq; osc.detune.value = detuneOffsets[i]
+              const panner = offCtx.createStereoPanner(); panner.pan.value = pan
+              const g = offCtx.createGain(); g.gain.value = 0.25
+              osc.connect(g); g.connect(panner); panner.connect(padMaster)
+              osc.start(now)
+            })
+          })
+        }
+      }
+
+      const renderedBuffer = await offCtx.startRendering()
+      const blob = encodeWav(renderedBuffer)
+      downloadBlob(blob, `liminal-${scene.name.replace(/\s+/g, '-').toLowerCase()}.wav`)
+    } catch (err) {
+      console.error('Scene WAV export failed', err)
+      addToast('Export failed. Please try again.', 'error')
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Journal
   // ---------------------------------------------------------------------------
@@ -2375,6 +2464,7 @@ function AppInner() {
               isRunning={isRunning}
               musicTracks={MUSIC_TRACKS}
               onExportWav={() => void exportWav()}
+              onExportScene={(scene) => void exportSceneWav(scene)}
               initialLayers={studioQuickStartLayers}
               fadeInSeconds={fadeInSeconds}
               fadeOutSeconds={fadeOutSeconds}
