@@ -33,8 +33,9 @@ function makeReverbIR(ctx: AudioContext, duration = 3, decay = 2): AudioBuffer {
   return buf
 }
 
-export function PadSynth({ onPlay, onStateChange }: {
+export function PadSynth({ onPlay, onStop, onStateChange }: {
   onPlay?: () => void
+  onStop?: () => void
   onStateChange?: (playing: boolean, hz: number, chord: string) => void
 }) {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -250,8 +251,9 @@ export function PadSynth({ onPlay, onStateChange }: {
       voiceGainsRef.current = []
       isPlayingRef.current = false
       setIsPlaying(false)
+      onStop?.()
     }, (release + 0.5) * 1000)
-  }, [release])
+  }, [release, onStop])
 
 
   // Live parameter updates — no restart needed

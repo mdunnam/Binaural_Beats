@@ -452,6 +452,7 @@ function AppInner() {
   const [padWaveform, setPadWaveform] = useState<PadWaveform>('sine')
   // Pad standalone display state for mini-player
   const [padStandaloneActive, setPadStandaloneActive] = useState(false)
+  const padStartedSessionRef = useRef(false)
   const [padStandaloneHz, setPadStandaloneHz] = useState(220)
   const [padStandaloneChord, setPadStandaloneChord] = useState('Major')
   const [padBreatheRate, setPadBreatheRate] = useState(0.1)
@@ -891,6 +892,7 @@ function AppInner() {
       setMusicTrackId(null)
       setMusicPosition(0)
       setIsRunning(false)
+      padStartedSessionRef.current = false
       // Release wake lock and clear AudioContext proxy ref
       masterBusContextRef.current = null
       void releaseWakeLock()
@@ -2332,7 +2334,18 @@ function AppInner() {
           {activeTab === 'pad' && (
             <div className="tab-sections">
               <PadSynth
-                onPlay={() => { if (!isRunning && !graphRef.current) void toggleAudio() }}
+                onPlay={() => {
+                  if (!isRunning && !graphRef.current) {
+                    padStartedSessionRef.current = true
+                    void toggleAudio()
+                  }
+                }}
+                onStop={() => {
+                  if (padStartedSessionRef.current) {
+                    padStartedSessionRef.current = false
+                    stopSession(false)
+                  }
+                }}
                 onStateChange={(playing, hz, chord) => {
                   setPadStandaloneActive(playing)
                   setPadStandaloneHz(hz)
