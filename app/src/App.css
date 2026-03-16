@@ -51,7 +51,13 @@ body {
   gap: 0.4rem;
 }
 
-.site-logo {
+.site-logo-banner {
+  height: 2rem;
+  width: auto;
+  display: block;
+}
+
+
   height: 1em;
   width: 1em;
   object-fit: contain;

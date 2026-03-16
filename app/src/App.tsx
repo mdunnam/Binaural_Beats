@@ -1819,7 +1819,7 @@ function AppInner() {
       <section className="hero">
         <div className="hero-main">
           <p className="eyebrow">Binaural Beats · Brainwave Journeys · Soundscapes</p>
-          <h1><img src="/icons/logo-512.png" alt="" className="site-logo" />&nbsp;Liminal</h1>
+          <h1><img src="/icons/logo_Banner.png" alt="Liminal" className="site-logo-banner" /></h1>
           <p className="subtitle">
             Shift your mental state. Choose a goal, tune your frequencies, and drift into focus, calm, or sleep.
           </p>
