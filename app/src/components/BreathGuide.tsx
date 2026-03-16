@@ -110,6 +110,19 @@ export function BreathGuide({ isRunning: _isRunning }: Props) {
     let stepIdx = 0
     let elapsed = 0
     const TICK = 50
+    // Clear prevPhase so the first phase transition always fires the sound effect
+    prevPhaseRef.current = ''
+    // Fire the first inhale sound immediately on start
+    if (soundEnabled) {
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        audioCtxRef.current = new AudioContext()
+      }
+      const firstStep = pattern.steps[0]
+      if (firstStep.phase === 'inhale' || firstStep.phase === 'exhale') {
+        createBreathSound(audioCtxRef.current, firstStep.phase, firstStep.seconds)
+      }
+      prevPhaseRef.current = firstStep.phase
+    }
 
     timerRef.current = window.setInterval(() => {
       const step = pattern.steps[stepIdx]
@@ -126,7 +139,7 @@ export function BreathGuide({ isRunning: _isRunning }: Props) {
     }, TICK)
 
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [enabled, isActive, patternName])
+  }, [enabled, isActive, patternName, soundEnabled])
 
   // Play sound on phase change
   useEffect(() => {
@@ -142,7 +155,7 @@ export function BreathGuide({ isRunning: _isRunning }: Props) {
       const step = pattern.steps.find(s => s.phase === phase)
       if (step) createBreathSound(audioCtxRef.current, phase, step.seconds)
     }
-  }, [phase, soundEnabled, enabled, patternName])
+  }, [phase, soundEnabled, enabled, patternName, isActive])
 
   // Fullscreen change listener
   useEffect(() => {
