@@ -756,11 +756,11 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   line-height: 1.5;
 }
 
-/* ── Mobile: bottom tab bar ── */
+/* ── Mobile: top tab bar ── */
 @media (max-width: 599px) {
   .app-shell {
     max-width: 100%;
-    margin: 0.75rem auto;
+    margin: 0;
 
   .session-quick-grid {
     grid-template-columns: 1fr;
