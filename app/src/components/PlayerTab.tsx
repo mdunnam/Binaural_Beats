@@ -881,17 +881,18 @@ export function PlayerTab(props: PlayerTabProps) {
             />
             <span className="player-vol-value">{beat.toFixed(1)} Hz</span>
           </div>
-          {/* Mood EQ */}
-          <MoodEqualizer
-            sliders={moodSliders}
-            antiSliders={antiSliders}
-            mode={moodMode}
-            onMode={setMoodMode}
-            onChange={handleMoodChange}
-            onAntiChange={handleAntiMoodChange}
-          />
         </div>
       )}
+
+      {/* Mood EQ — always visible */}
+      <MoodEqualizer
+        sliders={moodSliders}
+        antiSliders={antiSliders}
+        mode={moodMode}
+        onMode={setMoodMode}
+        onChange={handleMoodChange}
+        onAntiChange={handleAntiMoodChange}
+      />
 
       {/* ── 10. Volume sliders ── */}
       <div className="player-vol-section">
