@@ -50,6 +50,7 @@ import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
 import { EducationTab } from './components/EducationTab'
+import { HelpTab } from './components/HelpTab'
 import { StudioTab } from './components/StudioTab'
 import { SequencerTab } from './components/SequencerTab'
 import { PadSynth } from './components/PadSynth'
@@ -76,6 +77,8 @@ const TABS = [
   { id: 'focus',     icon: '👁', label: 'Focus'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
+  { id: 'help',      icon: '❓', label: 'Help'      },
+
 ]
 
 // ---------------------------------------------------------------------------
@@ -2582,6 +2585,12 @@ function AppInner() {
           {activeTab === 'education' && (
             <div className="tab-sections">
               <EducationTab />
+            </div>
+          )}
+
+          {activeTab === 'help' && (
+            <div className="tab-sections">
+              <HelpTab />
             </div>
           )}
 

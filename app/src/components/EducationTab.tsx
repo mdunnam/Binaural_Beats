@@ -123,7 +123,7 @@ export function EducationTab() {
                   <div
                     key={band.key}
                     className="edu-band-card"
-                    style={{ '--band-color': band.color } as React.CSSProperties}
+                    style={{ '--band-color': band.color, borderLeft: `3px solid ${band.color}` } as React.CSSProperties}
                   >
                     <div className="edu-band-header">
                       <span
@@ -191,7 +191,30 @@ export function EducationTab() {
         </div>
       </div>
 
-      {/* Section 5: Safety & Disclaimers */}
+      {/* Section 5: Science & Research */}
+      <div className="section-block">
+        <div className="section-card">
+          <button className="edu-expand-btn" onClick={() => toggle('science')}>
+            <span className="section-title" style={{ margin: 0 }}>Science &amp; Research</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{expanded['science'] ? '▲' : '▼'}</span>
+          </button>
+          {expanded['science'] && (
+            <div className="edu-expand-content" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                <strong style={{ color: 'var(--text-primary)' }}>Frequency Following Response (FFR)</strong> is the brain's tendency to synchronize its electrical activity to external rhythmic stimuli. When binaural beats present a steady difference frequency — say 10 Hz — the brain begins to produce more 10 Hz brainwave activity over time. This is well-documented in EEG research and forms the scientific basis of audio-guided entrainment.
+              </p>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                <strong style={{ color: 'var(--text-primary)' }}>What the research shows:</strong> Multiple peer-reviewed studies have found that binaural beats in the theta and alpha range (4–12 Hz) can meaningfully reduce anxiety and improve self-reported relaxation. Delta-range sessions (0.5–4 Hz) have been associated with improved sleep onset in some clinical trials. The effects are real, though individual responses vary — genetics, prior meditation experience, and session consistency all influence outcomes.
+              </p>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                <strong style={{ color: 'var(--text-primary)' }}>Important caveats:</strong> The research field is still maturing. Many studies have small sample sizes, and placebo effects are difficult to eliminate. Binaural beats are not a medical treatment and should not replace professional care for sleep disorders, anxiety, or other conditions. Think of them as a tool for mental hygiene — one that complements meditation, exercise, and good sleep habits rather than replacing them.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Section 6: Safety & Disclaimers */}
       <div className="section-block">
         <div className="section-card">
           <button className="edu-expand-btn" onClick={() => toggle('safety')}>

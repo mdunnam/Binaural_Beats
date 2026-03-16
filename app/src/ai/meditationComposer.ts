@@ -1,4 +1,6 @@
 import { matchTheme } from './meditationThemes'
+import { trackAiUsage } from '../lib/trackAiUsage'
+import { supabase } from '../lib/supabase'
 
 export type TtsVoice = 'shimmer' | 'nova' | 'alloy' | 'onyx' | 'echo' | 'fable'
 export type VoiceGender = 'female' | 'male'
@@ -182,8 +184,22 @@ Rules:
     throw new Error(`Script generation failed (${chatRes.status}): ${errText}`)
   }
 
-  const chatData = await chatRes.json() as { choices: { message: { content: string } }[] }
+  const chatData = await chatRes.json() as { choices: { message: { content: string } }[]; usage?: { prompt_tokens: number; completion_tokens: number } }
   const script = chatData.choices[0]?.message?.content ?? ''
+  const inputTokens = chatData.usage?.prompt_tokens ?? 0
+  const outputTokens = chatData.usage?.completion_tokens ?? 0
+
+  // Track GPT usage (non-blocking)
+  const { data: { user: authUser } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+  const userId = authUser?.id ?? null
+  void trackAiUsage({
+    userId,
+    feature: 'meditation_script',
+    model: 'gpt-4o-mini',
+    inputTokens,
+    outputTokens,
+    estimatedCostUsd: (inputTokens * 0.00000015) + (outputTokens * 0.0000006),
+  })
 
   // Step 2 — TTS (chunk if needed)
   const ttsInput = script.replace(/\[PAUSE \d+s\]/g, '').replace(/\s+/g, ' ').trim()
@@ -208,6 +224,16 @@ Rules:
 
   const audioBlob = await concatenateAudioBlobs(audioBlobs)
   const audioUrl = URL.createObjectURL(audioBlob)
+
+  // Track TTS usage (non-blocking)
+  const ttsChars = ttsInput.length
+  void trackAiUsage({
+    userId,
+    feature: 'meditation_tts',
+    model: 'tts-1-hd',
+    ttsChars,
+    estimatedCostUsd: ttsChars * 0.000015,
+  })
 
   // Apply soundscape override
   const SOUNDSCAPE_MAP: Record<string, { noiseType: string; noiseVolume: number }> = {
