@@ -187,7 +187,6 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
     intervals.forEach((semitones) => {
       const baseFreq = NOTE_FREQS[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
       const PANS = [-0.6, -0.2, 0.2, 0.6]
-      const DETUNE_OFFSETS = [-detune * 0.5, -detune * 0.15, detune * 0.15, detune * 0.5]
 
       const voiceGain = ctx.createGain()
       voiceGain.gain.setValueAtTime(0, ctx.currentTime)
@@ -204,7 +203,10 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
         const osc = ctx.createOscillator()
         osc.type = waveform
         osc.frequency.value = baseFreq
-        osc.detune.value = DETUNE_OFFSETS[i]
+        // Detune spread is symmetric — NOT correlated to pan position
+        // so both ears hear all voices and no accidental binaural beat is created
+        const detuneOffsets = [-detune * 0.5, detune * 0.5, -detune * 0.15, detune * 0.15]
+        osc.detune.value = detuneOffsets[i]
 
         const panner = ctx.createStereoPanner()
         panner.pan.value = pan
