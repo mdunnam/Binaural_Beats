@@ -2963,9 +2963,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
     width: 60px;
   }
 
-  /* On mobile the tab-nav is also fixed at bottom — shift mini-player above it */
+  /* Tab nav is now at top on mobile — mini-player sits flush at bottom */
   .mini-player {
-    bottom: 56px;
+    bottom: 0;
   }
 }
 
