@@ -33,7 +33,10 @@ function makeReverbIR(ctx: AudioContext, duration = 3, decay = 2): AudioBuffer {
   return buf
 }
 
-export function PadSynth({ onPlay }: { onPlay?: () => void }) {
+export function PadSynth({ onPlay, onStateChange }: {
+  onPlay?: () => void
+  onStateChange?: (playing: boolean, hz: number, chord: string) => void
+}) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [waveform, setWaveform] = useState<OscillatorType>('triangle')
   const [rootNote, setRootNote] = useState('A')
@@ -223,6 +226,12 @@ export function PadSynth({ onPlay }: { onPlay?: () => void }) {
 
   // Always keep ref pointing at latest startPad
   startPadRef.current = startPad
+
+  // Notify parent of pad state for mini-player display
+  useEffect(() => {
+    const hz = NOTE_FREQS[rootNote] * Math.pow(2, octave - 4)
+    onStateChange?.(isPlaying, Math.round(hz), chordMode)
+  }, [isPlaying, rootNote, octave, chordMode, onStateChange])
 
   const stopPad = useCallback(() => {
     if (!isPlayingRef.current || !ctxRef.current) return

@@ -450,6 +450,10 @@ function AppInner() {
   const [padVolume, setPadVolume] = useState(0.15)
   const [padReverbMix, setPadReverbMix] = useState(0.5)
   const [padWaveform, setPadWaveform] = useState<PadWaveform>('sine')
+  // Pad standalone display state for mini-player
+  const [padStandaloneActive, setPadStandaloneActive] = useState(false)
+  const [padStandaloneHz, setPadStandaloneHz] = useState(220)
+  const [padStandaloneChord, setPadStandaloneChord] = useState('Major')
   const [padBreatheRate, setPadBreatheRate] = useState(0.1)
 
   // Automation
@@ -2327,7 +2331,14 @@ function AppInner() {
           {/* ──────────────── PAD SYNTH TAB ──────────────── */}
           {activeTab === 'pad' && (
             <div className="tab-sections">
-              <PadSynth onPlay={() => { if (!isRunning && !graphRef.current) void toggleAudio() }} />
+              <PadSynth
+                onPlay={() => { if (!isRunning && !graphRef.current) void toggleAudio() }}
+                onStateChange={(playing, hz, chord) => {
+                  setPadStandaloneActive(playing)
+                  setPadStandaloneHz(hz)
+                  setPadStandaloneChord(chord)
+                }}
+              />
             </div>
           )}
 
@@ -2646,6 +2657,9 @@ function AppInner() {
         ambientRunning={ambientRunning}
         carrier={carrier}
         beat={beat}
+        padStandaloneActive={padStandaloneActive}
+        padStandaloneHz={padStandaloneHz}
+        padStandaloneChord={padStandaloneChord}
       remainingSeconds={remainingSeconds}
       sessionTotalSeconds={sessionTotalSeconds}
       soundsceneId={soundsceneId}

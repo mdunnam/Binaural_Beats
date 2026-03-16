@@ -9,6 +9,9 @@ interface MiniPlayerProps {
   ambientRunning: boolean
   carrier: number
   beat: number
+  padStandaloneActive?: boolean
+  padStandaloneHz?: number
+  padStandaloneChord?: string
   remainingSeconds: number
   sessionTotalSeconds: number
   soundsceneId: string
@@ -60,6 +63,7 @@ export function MiniPlayer(props: MiniPlayerProps) {
     analyserNode, voiceObjectUrl,
     setCarrier, setBeat, setWobbleRate,
     darkMode,
+    padStandaloneActive, padStandaloneHz, padStandaloneChord,
   } = props
 
   const brainwaveLabel = getBrainwaveLabel(beat)
@@ -112,8 +116,14 @@ export function MiniPlayer(props: MiniPlayerProps) {
       {/* Bar always at bottom */}
       <div className="mini-player-bar">
         <div className="mini-player-info">
-          {ambientRunning && !isRunning ? (
+          {ambientRunning && !isRunning && !padStandaloneActive ? (
             <span className="mini-player-hz">🌊 Ambient</span>
+          ) : padStandaloneActive && !isRunning ? (
+            <>
+              <span className="mini-player-hz">{padStandaloneHz} Hz</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-state">{padStandaloneChord} Pad</span>
+            </>
           ) : (
             <>
               <span className="mini-player-hz">{carrier.toFixed(0)} Hz</span>
