@@ -24,7 +24,8 @@ import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, set
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
-import { MoodEQ } from './components/MoodEQ'
+import { MoodEQ, defaultMoodSliders, defaultAntiSliders } from './components/MoodEQ'
+import type { MoodSliders, AntiMoodSliders } from './components/MoodEQ'
 import { SoundscapeMixer } from './components/SoundscapeMixer'
 import type { LayerGains, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
 import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
@@ -467,6 +468,9 @@ function AppInner() {
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [sessionTotalSeconds, setSessionTotalSeconds] = useState(0)
   const [tonesPresetBump, setTonesPresetBump] = useState(0)
+  const [moodMode, setMoodMode] = useState<'mood' | 'anti'>('mood')
+  const [moodSliders, setMoodSliders] = useState<MoodSliders>(defaultMoodSliders)
+  const [antiSliders, setAntiSliders] = useState<AntiMoodSliders>(defaultAntiSliders)
 
   // Journal
   const { entries: journalEntries, addEntry: journalAddEntry, updateEntry: journalUpdateEntry, deleteEntry: journalDeleteEntry } = useJournal()
@@ -1999,6 +2003,12 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-title">Mood EQ</div>
                 <MoodEQ
+                  mode={moodMode}
+                  moodSliders={moodSliders}
+                  antiSliders={antiSliders}
+                  onMode={setMoodMode}
+                  onMoodChange={setMoodSliders}
+                  onAntiChange={setAntiSliders}
                   setCarrier={setCarrier}
                   setBeat={setBeat}
                   setWobbleRate={setWobbleRate}
@@ -2102,6 +2112,7 @@ function AppInner() {
                   filterType: FilterType; filterFrequency: number; filterQ: number
                   isoEnabled: boolean; isoVolume: number; isoWaveform: OscillatorType; isoDutyCycle: number
                   useIndependentTuning: boolean; leftFrequency: number; rightFrequency: number; phaseOffset: number
+                  moodMode: 'mood' | 'anti'; moodSliders: MoodSliders; antiSliders: AntiMoodSliders
                 }
                 const loadPresets = (): TonesPreset[] => {
                   try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] }
@@ -2114,6 +2125,9 @@ function AppInner() {
                   setIsoEnabled(p.isoEnabled); setIsoVolume(p.isoVolume); setIsoWaveform(p.isoWaveform); setIsoDutyCycle(p.isoDutyCycle)
                   setUseIndependentTuning(p.useIndependentTuning)
                   setLeftFrequency(p.leftFrequency); setRightFrequency(p.rightFrequency); setPhaseOffset(p.phaseOffset)
+                  if (p.moodMode) setMoodMode(p.moodMode)
+                  if (p.moodSliders) setMoodSliders(p.moodSliders)
+                  if (p.antiSliders) setAntiSliders(p.antiSliders)
                 }
                 const savePreset = (name: string) => {
                   const preset: TonesPreset = {
@@ -2122,6 +2136,7 @@ function AppInner() {
                     filterType, filterFrequency, filterQ,
                     isoEnabled, isoVolume, isoWaveform, isoDutyCycle,
                     useIndependentTuning, leftFrequency, rightFrequency, phaseOffset,
+                    moodMode, moodSliders, antiSliders,
                   }
                   const existing = loadPresets()
                   localStorage.setItem('liminal-tones-presets', JSON.stringify([...existing.filter(p => p.name !== name), preset]))

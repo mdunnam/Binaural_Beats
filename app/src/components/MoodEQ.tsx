@@ -1,4 +1,4 @@
-import { useState } from 'react'
+// no local state
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export type MoodSliders = {
@@ -105,25 +105,27 @@ export const defaultAntiSliders = (): AntiMoodSliders => ({
 
 // ── Component ──────────────────────────────────────────────────────────────
 interface MoodEQProps {
+  mode: 'mood' | 'anti'
+  moodSliders: MoodSliders
+  antiSliders: AntiMoodSliders
+  onMode: (m: 'mood' | 'anti') => void
+  onMoodChange: (sliders: MoodSliders) => void
+  onAntiChange: (sliders: AntiMoodSliders) => void
   setCarrier: (v: number) => void
   setBeat: (v: number) => void
   setWobbleRate: (v: number) => void
 }
 
-export function MoodEQ({ setCarrier, setBeat, setWobbleRate }: MoodEQProps) {
-  const [mode, setMode] = useState<'mood' | 'anti'>('mood')
-  const [moodSliders, setMoodSliders] = useState<MoodSliders>(defaultMoodSliders())
-  const [antiSliders, setAntiSliders] = useState<AntiMoodSliders>(defaultAntiSliders())
-
+export function MoodEQ({ mode, moodSliders, antiSliders, onMode, onMoodChange, onAntiChange, setCarrier, setBeat, setWobbleRate }: MoodEQProps) {
   const handleMood = (k: keyof MoodSliders, v: number) => {
     const next = { ...moodSliders, [k]: v }
-    setMoodSliders(next)
+    onMoodChange(next)
     applyMoodSliders(next, setCarrier, setBeat, setWobbleRate)
   }
 
   const handleAnti = (k: AntiMoodKey, v: number) => {
     const next = { ...antiSliders, [k]: v }
-    setAntiSliders(next)
+    onAntiChange(next)
     applyAntiMoodSliders(next, setCarrier, setBeat, setWobbleRate)
   }
 
@@ -132,11 +134,11 @@ export function MoodEQ({ setCarrier, setBeat, setWobbleRate }: MoodEQProps) {
       <div className="mood-eq-tabs">
         <button
           className={`mood-eq-tab ${mode === 'mood' ? 'mood-eq-tab--active' : ''}`}
-          onClick={() => setMode('mood')}
+          onClick={() => onMode('mood')}
         >Mood EQ</button>
         <button
           className={`mood-eq-tab ${mode === 'anti' ? 'mood-eq-tab--active' : ''}`}
-          onClick={() => setMode('anti')}
+          onClick={() => onMode('anti')}
         >Anti-Mood</button>
       </div>
 
