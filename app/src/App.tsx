@@ -3045,6 +3045,12 @@ function App() {
 function AppRouter() {
   const { profile, loading, user } = useAuth()
 
+  // Apply theme immediately so admin console inherits it too
+  useEffect(() => {
+    const saved = localStorage.getItem('binaural-theme')
+    document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark')
+  }, [])
+
   if (window.location.pathname === '/admin') {
     // Still waiting for auth to initialise
     if (loading) {
