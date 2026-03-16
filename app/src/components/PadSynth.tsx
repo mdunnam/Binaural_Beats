@@ -462,6 +462,30 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
         </div>
       </div>
 
+      {/* Frequency Display */}
+      <div className="section-block">
+        <div className="section-card">
+          <div className="section-label">Active Frequencies</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.25rem' }}>
+            {CHORD_INTERVALS[chordMode].map((semitones, idx) => {
+              const baseHz = NOTE_FREQS[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
+              const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+              const midiNote = Math.round(69 + 12 * Math.log2(baseHz / 440))
+              const noteName = noteNames[midiNote % 12]
+              const noteOctave = Math.floor(midiNote / 12) - 1
+              const spread = detune > 0 ? ` ±${(detune * 0.5).toFixed(1)}¢` : ''
+              return (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{noteName}{noteOctave}</span>
+                  <span style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700 }}>{baseHz.toFixed(2)} Hz</span>
+                  {detune > 0 && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{spread}</span>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Output + Play */}
       <div className="section-block">
         <div className="section-card">
