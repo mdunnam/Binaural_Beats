@@ -1966,9 +1966,11 @@ function AppInner() {
               {(() => {
                 const { streak, weekCount } = computeStreak(journalEntries)
                 return (
-                  <div className="dash-streak-row">
-                    <div className="dash-streak-badge">
-                      {streak > 0 ? `🔥 ${streak} day streak` : '🔥 Start your streak today'}
+                  <div className="dash-card" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="dash-streak-row">
+                      <span className="dash-streak-badge">
+                        {streak > 0 ? `🔥 ${streak} day streak` : '🔥 Start your streak today'}
+                      </span>
                     </div>
                     {weekCount > 0 && <div className="dash-week-count">{weekCount} session{weekCount !== 1 ? 's' : ''} this week</div>}
                   </div>
@@ -1980,12 +1982,11 @@ function AppInner() {
                 const df = getDailyFrequency()
                 return (
                   <div className="dash-daily-freq-card">
-                    <div className="dash-daily-freq-header">{df.emoji} {df.name} <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600 }}>{df.wave}</span></div>
+                    <div className="dash-daily-freq-header">{df.emoji} {df.name} <span className="dash-daily-freq-wave">{df.wave}</span></div>
                     <div className="dash-daily-freq-desc">{df.desc}</div>
                     <div className="dash-daily-freq-hz">{df.carrier} Hz carrier · {df.beat} Hz beat</div>
                     <button
-                      className="soft-button soft-button--accent"
-                      style={{ marginTop: '0.25rem', alignSelf: 'flex-start', padding: '0.35rem 1rem', fontSize: '0.85rem' }}
+                      className="soft-button soft-button--accent soft-button--sm"
                       onClick={() => {
                         carrierRef.current = df.carrier
                         beatRef.current = df.beat
@@ -2007,8 +2008,7 @@ function AppInner() {
                 <div className="dash-ai-feature-actions">
                   {!isPro && <span className="pro-badge-inline">PRO</span>}
                   <button
-                    className="soft-button soft-button--accent"
-                    style={{ padding: '0.35rem 1rem', fontSize: '0.85rem' }}
+                    className="soft-button soft-button--accent soft-button--sm"
                     onClick={() => isPro ? setActiveTab('ai') : openUpgradeModal('AI-Guided Meditation')}
                   >
                     Generate Session
