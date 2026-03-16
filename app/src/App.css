@@ -5397,7 +5397,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 /* ── Dashboard card system ── */
 /* Base card used by all dashboard feature cards */
 .dash-card {
-  background: var(--bg-panel);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 1rem 1.25rem;
@@ -5467,7 +5467,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* Daily Frequency */
 .dash-daily-freq-card {
-  background: var(--bg-panel);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-left: 3px solid var(--accent);
   border-radius: 14px;
@@ -5507,7 +5507,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* AI Feature card */
 .dash-ai-feature-card {
-  background: var(--bg-panel);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-left: 3px solid var(--accent);
   border-radius: 14px;
@@ -5545,7 +5545,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* Quick Relief card */
 .dash-panic-card {
-  background: var(--bg-panel);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 0.9rem 1.25rem;
@@ -5585,7 +5585,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 /* 7-Day Program card */
 .dash-7day-card {
-  background: var(--bg-panel);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 1rem 1.25rem;
@@ -5701,3 +5701,4 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   align-items: center;
   gap: 1rem;
 }
+
