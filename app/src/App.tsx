@@ -2340,6 +2340,12 @@ function AppInner() {
                   setPadStandaloneChord(chord)
                 }}
               />
+              <div className="section-block">
+                <div className="section-title">Frequency Verifier</div>
+                <div className="section-card">
+                  <FrequencyVerifier />
+                </div>
+              </div>
             </div>
           )}
 
