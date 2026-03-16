@@ -249,6 +249,11 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transform: translateY(-1px);
 }
 
+.soft-button--sm {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.82rem;
+}
+
 .progress-bar-track {
   width: 100%;
   height: 6px;
@@ -5389,96 +5394,162 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 /* ── Dashboard extras ── */
-.dash-daily-freq-card {
-  background: linear-gradient(135deg, var(--bg-panel) 0%, color-mix(in srgb, var(--accent) 10%, var(--bg-panel)) 100%);
+/* ── Dashboard card system ── */
+/* Base card used by all dashboard feature cards */
+.dash-card {
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
-  border-radius: 1rem;
+  border-radius: 14px;
   padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
-.dash-daily-freq-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.15rem;
+.dash-card-title {
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
-.dash-daily-freq-desc {
-  font-size: 0.85rem;
+.dash-card-sub {
+  font-size: 0.82rem;
   color: var(--text-muted);
+  line-height: 1.4;
 }
-.dash-daily-freq-hz {
+.dash-card-meta {
   font-size: 0.8rem;
   color: var(--accent);
   font-weight: 600;
 }
-.dash-streak-badge {
-  display: inline-flex;
+.dash-card-actions {
+  display: flex;
   align-items: center;
-  gap: 0.35rem;
-  background: color-mix(in srgb, var(--accent) 15%, var(--bg-panel));
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  border-radius: 2rem;
-  padding: 0.3rem 0.8rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
 }
+.dash-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Accent-tinted card (Daily Frequency, AI Guide) */
+.dash-card--accent {
+  background: var(--bg-panel);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border-section));
+  border-left: 3px solid var(--accent);
+}
+
+/* Streak row — inside a card */
 .dash-streak-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
-  margin-bottom: 0.5rem;
+}
+.dash-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 .dash-week-count {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
-.dash-ai-feature-card {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 25%, var(--bg-panel)) 0%, color-mix(in srgb, var(--accent) 10%, var(--bg-panel)) 100%);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
+
+/* Daily Frequency */
+.dash-daily-freq-card {
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
+}
+.dash-daily-freq-header {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dash-daily-freq-wave {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dash-daily-freq-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.dash-daily-freq-hz {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* AI Feature card */
+.dash-ai-feature-card {
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 .dash-ai-feature-title {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 .dash-ai-feature-sub {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 .dash-ai-feature-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
 }
 .pro-badge-inline {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   background: var(--accent);
   color: white;
   border-radius: 0.3rem;
   padding: 0.1rem 0.4rem;
+  letter-spacing: 0.04em;
 }
+
+/* Quick Relief card */
 .dash-panic-card {
-  background: linear-gradient(135deg, rgba(200, 80, 60, 0.15) 0%, rgba(200, 120, 60, 0.08) 100%);
-  border: 1px solid rgba(200, 80, 60, 0.35);
-  border-radius: 1rem;
-  padding: 0.85rem 1.25rem;
-  margin-bottom: 1rem;
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
+  border-radius: 14px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5487,46 +5558,51 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .dash-panic-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 .dash-panic-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 .dash-panic-sub {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 .dash-panic-btn {
-  padding: 0.55rem 1.2rem;
+  padding: 0.5rem 1.1rem;
   border-radius: 2rem;
-  background: rgba(200, 80, 60, 0.75);
+  background: var(--accent);
   color: white;
   border: none;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
 }
+.dash-panic-btn:hover { opacity: 0.88; }
+
+/* 7-Day Program card */
 .dash-7day-card {
-  background: var(--bg-panel);
+  background: var(--bg-section);
   border: 1px solid var(--border-section);
-  border-radius: 1rem;
+  border-radius: 14px;
   padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 .dash-7day-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 .dash-7day-progress-bar-wrap {
-  background: var(--bg-page);
+  background: var(--bg-section);
   border-radius: 1rem;
-  height: 6px;
+  height: 5px;
   overflow: hidden;
 }
 .dash-7day-progress-bar {
@@ -5536,7 +5612,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: width 0.4s;
 }
 .dash-7day-sub {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -5625,3 +5701,4 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   align-items: center;
   gap: 1rem;
 }
+
