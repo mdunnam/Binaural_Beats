@@ -769,7 +769,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   .session-plan-actions {
     flex-direction: column;
   }
-    padding: 80px 0.75rem 120px;
+    padding: 80px 0.75rem 80px;
   }
 
   .tab-nav {
@@ -2731,7 +2731,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 @media (max-width: 599px) {
   .app-shell {
-    padding-bottom: 120px;
+    padding-bottom: 80px;
   }
 }
 
