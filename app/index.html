@@ -10,6 +10,7 @@
     <meta property="og:url" content="https://www.theliminal.app/app">
     <meta property="og:image" content="https://www.theliminal.app/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="/favicon.png" type="image/png">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#3e8f72">
@@ -18,6 +19,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Liminal">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <script>
+      // Apply theme before first paint to prevent flash
+      (function() {
+        var t = localStorage.getItem('binaural-theme');
+        document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

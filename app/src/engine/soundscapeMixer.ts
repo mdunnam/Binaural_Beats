@@ -1,7 +1,7 @@
 import { createSamplePlayer, setLayerGain as sampleSetLayerGain, stopSamplePlayer } from './samplePlayer'
 import type { SamplePlayer } from './samplePlayer'
 
-export type SoundLayerId = 'rain' | 'thunder' | 'wind' | 'waves' | 'fire' | 'forest' | 'space' | 'cave' | 'stream' | 'birds' | 'cafe' | 'night' | 'fan' | 'bowl' | 'beach' | 'city'
+export type SoundLayerId = 'rain' | 'thunder' | 'wind' | 'waves' | 'fire' | 'forest' | 'space' | 'cave' | 'stream' | 'birds' | 'cafe' | 'night' | 'fan' | 'bowl' | 'beach' | 'city' | 'underwater' | 'monastery' | 'train' | 'library' | 'storm-heavy' | 'meadow'
 
 export type SoundLayer = {
   id: SoundLayerId
@@ -31,6 +31,12 @@ export const SOUND_LAYERS: SoundLayer[] = [
   { id: 'bowl',    label: 'Bowl',     emoji: '🔔', noiseType: 'pink',  filterType: 'bandpass', filterFreq: 300,  filterQ: 3.0, defaultGain: 0 },
   { id: 'beach',   label: 'Beach',    emoji: '🏖', noiseType: 'brown', filterType: 'lowpass',  filterFreq: 500,  filterQ: 0.6, defaultGain: 0 },
   { id: 'city',    label: 'City Rain',emoji: '🏙', noiseType: 'pink',  filterType: 'bandpass', filterFreq: 900,  filterQ: 0.7, defaultGain: 0 },
+  { id: 'underwater',  label: 'Underwater',  emoji: '🐠', noiseType: 'brown', filterType: 'lowpass',  filterFreq: 200,  filterQ: 1.5, defaultGain: 0 },
+  { id: 'monastery',   label: 'Monastery',   emoji: '🏯', noiseType: 'pink',  filterType: 'bandpass', filterFreq: 500,  filterQ: 2.0, defaultGain: 0 },
+  { id: 'train',       label: 'Train',       emoji: '🚂', noiseType: 'brown', filterType: 'bandpass', filterFreq: 150,  filterQ: 1.0, defaultGain: 0 },
+  { id: 'library',     label: 'Library',     emoji: '📚', noiseType: 'pink',  filterType: 'lowpass',  filterFreq: 800,  filterQ: 0.5, defaultGain: 0 },
+  { id: 'storm-heavy', label: 'Heavy Storm', emoji: '🌩', noiseType: 'brown', filterType: 'lowpass',  filterFreq: 300,  filterQ: 0.8, defaultGain: 0 },
+  { id: 'meadow',      label: 'Meadow',      emoji: '🌿', noiseType: 'pink',  filterType: 'bandpass', filterFreq: 1500, filterQ: 0.6, defaultGain: 0 },
 ]
 
 export type SoundscapeScene = {
@@ -54,6 +60,10 @@ export const SOUNDSCAPE_SCENES: SoundscapeScene[] = [
   { id: 'night',  label: 'Night Crickets',emoji: '🌙', gains: { night: 0.8, wind: 0.1 } },
   { id: 'bowl',   label: 'Tibetan Bowl',  emoji: '🔔', gains: { bowl: 0.7, cave: 0.2 } },
   { id: 'beach',  label: 'Beach',         emoji: '🏖', gains: { beach: 0.7, waves: 0.3, wind: 0.1 } },
+  { id: 'underwater', label: 'Underwater',  emoji: '🌊', gains: { underwater: 0.8, space: 0.2 } },
+  { id: 'monastery',  label: 'Monastery',   emoji: '🏯', gains: { monastery: 0.7, bowl: 0.4 } },
+  { id: 'focus-train', label: 'Night Train', emoji: '🚂', gains: { train: 0.6, rain: 0.3 } },
+  { id: 'meadow',     label: 'Meadow',      emoji: '🌿', gains: { meadow: 0.7, birds: 0.3, wind: 0.1 } },
 ]
 
 export type LayerGains = Record<SoundLayerId, number>
@@ -61,6 +71,7 @@ export type LayerGains = Record<SoundLayerId, number>
 export const DEFAULT_GAINS: LayerGains = {
   rain: 0, thunder: 0, wind: 0, waves: 0, fire: 0, forest: 0, space: 0, cave: 0,
   stream: 0, birds: 0, cafe: 0, night: 0, fan: 0, bowl: 0, beach: 0, city: 0,
+  underwater: 0, monastery: 0, train: 0, library: 0, 'storm-heavy': 0, meadow: 0,
 }
 
 // SoundscapeMixerNodes wraps SamplePlayer — same external API

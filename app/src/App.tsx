@@ -62,11 +62,49 @@ import { FrequencyVerifier } from './components/FrequencyVerifier'
 import { SessionLibrary } from './components/SessionLibrary'
 import type { SessionCard } from './data/sessionLibrary'
 import { AdminConsole } from './components/AdminConsole'
+import { trackFeatureUsage } from './lib/trackFeatureUsage'
+import { SevenDayProgram, loadProgress as load7DayProgress } from './components/SevenDayProgram'
+
+// ---------------------------------------------------------------------------
+// Daily Frequency helper
+// ---------------------------------------------------------------------------
+function getDailyFrequency() {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 11)  return { name: 'Morning Activation', emoji: '🌅', carrier: 200, beat: 18, desc: 'Start your day with alertness',    wave: 'Beta'  }
+  if (h >= 11 && h < 15) return { name: 'Deep Focus',         emoji: '🎯', carrier: 200, beat: 14, desc: 'Peak productivity window',         wave: 'Beta'  }
+  if (h >= 15 && h < 18) return { name: 'Creative Flow',      emoji: '✨', carrier: 200, beat: 10, desc: 'Let ideas emerge',                  wave: 'Alpha' }
+  if (h >= 18 && h < 21) return { name: 'Wind Down',          emoji: '🌙', carrier: 200, beat: 6,  desc: 'Transition to evening',            wave: 'Theta' }
+  return                         { name: 'Deep Sleep',         emoji: '😴', carrier: 200, beat: 2,  desc: 'Prepare for rest',                 wave: 'Delta' }
+}
+
+// ---------------------------------------------------------------------------
+// Streak helper
+// ---------------------------------------------------------------------------
+function computeStreak(entries: { date: string }[]): { streak: number; weekCount: number } {
+  if (!entries.length) return { streak: 0, weekCount: 0 }
+  const today = new Date(); today.setHours(0,0,0,0)
+  const dayMs = 86400000
+  const days = new Set(entries.map(e => {
+    const d = new Date(e.date); d.setHours(0,0,0,0); return d.getTime()
+  }))
+  let streak = 0
+  let cur = today.getTime()
+  while (days.has(cur)) { streak++; cur -= dayMs }
+  // If today not yet logged, also check starting from yesterday
+  if (streak === 0) {
+    cur = today.getTime() - dayMs
+    while (days.has(cur)) { streak++; cur -= dayMs }
+  }
+  const weekAgo = today.getTime() - 6 * dayMs
+  const weekCount = [...days].filter(d => d >= weekAgo).length
+  return { streak, weekCount }
+}
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
 const TABS = [
   { id: 'dashboard', icon: '🏠', label: 'Home'      },
+  { id: 'journal',   icon: '📓', label: 'Journal'   },
   { id: 'education', icon: '📖', label: 'Learn'     },
   { id: 'tones',     icon: '🎵', label: 'Tones'     },
   { id: 'sound',     icon: '🌊', label: 'Sound'     },
@@ -75,8 +113,8 @@ const TABS = [
   { id: 'studio',    icon: '🎛', label: 'Studio'    },
   { id: 'sequencer', icon: '🎚', label: 'Sequencer' },
   { id: 'focus',     icon: '👁', label: 'Focus'     },
-  { id: 'ai',        icon: '🧘', label: 'Meditate'  },
-  { id: 'journal',   icon: '📓', label: 'Journal'   },
+  { id: 'ai',        icon: '✨', label: 'AI Guide'  },
+  { id: 'program',   icon: '📅', label: 'Program'   },
   { id: 'help',      icon: '❓', label: 'Help'      },
 
 ]
@@ -476,6 +514,10 @@ function AppInner() {
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [sessionTotalSeconds, setSessionTotalSeconds] = useState(0)
   const [tonesPresetBump, setTonesPresetBump] = useState(0)
+  // Panic mode
+  const [panicMode, setPanicMode] = useState(false)
+  const [panicComplete, setPanicComplete] = useState(false)
+  const panicTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [moodMode, setMoodMode] = useState<'mood' | 'anti'>('mood')
   const [moodSliders, setMoodSliders] = useState<MoodSliders>(defaultMoodSliders)
   const [antiSliders, setAntiSliders] = useState<AntiMoodSliders>(defaultAntiSliders)
@@ -987,6 +1029,33 @@ function AppInner() {
   }, [sessionMinutes, fadeOutSeconds, stopSession])
 
   // ---------------------------------------------------------------------------
+  // Panic mode
+  // ---------------------------------------------------------------------------
+  const startPanicMode = useCallback(() => {
+    if (panicTimerRef.current) clearTimeout(panicTimerRef.current)
+    setPanicMode(true)
+    setPanicComplete(false)
+    void trackFeatureUsage({ feature: 'panic_mode', action: 'start' })
+    carrierRef.current = 200
+    beatRef.current = 10
+    setCarrier(200)
+    setBeat(10)
+    void toggleAudio()
+    panicTimerRef.current = setTimeout(() => {
+      setPanicComplete(true)
+      stopSession(true)
+      setTimeout(() => setPanicMode(false), 4000)
+    }, 60000)
+  }, [stopSession]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stopPanicMode = useCallback(() => {
+    if (panicTimerRef.current) clearTimeout(panicTimerRef.current)
+    setPanicMode(false)
+    setPanicComplete(false)
+    stopSession(true)
+  }, [stopSession])
+
+  // ---------------------------------------------------------------------------
   // Toggle session
   // ---------------------------------------------------------------------------
   const audioStartingRef = useRef(false)
@@ -1100,6 +1169,7 @@ function AppInner() {
 
     setIsRunning(true)
     audioStartingRef.current = false
+    void trackFeatureUsage({ feature: 'session', action: 'start', metadata: { carrier: carrierRef.current, beat: beatRef.current } })
 
     // Save "continue listening" snapshot
     try {
@@ -1300,6 +1370,7 @@ function AppInner() {
       const renderedBuffer = await offCtx.startRendering()
       const blob = encodeWav(renderedBuffer)
       downloadBlob(blob, `binaural-session-${presetName.replace(/\s+/g, '-')}.wav`)
+      void trackFeatureUsage({ feature: 'export_wav', action: 'export' })
     } catch (err) {
       console.error('WAV export failed', err)
       addToast('Export failed. Please try again.', 'error')
@@ -1748,7 +1819,7 @@ function AppInner() {
       <section className="hero">
         <div className="hero-main">
           <p className="eyebrow">Binaural Beats · Brainwave Journeys · Soundscapes</p>
-          <h1>Liminal</h1>
+          <h1><img src="/icons/logo-512.png" alt="" className="site-logo" />&nbsp;Liminal</h1>
           <p className="subtitle">
             Shift your mental state. Choose a goal, tune your frequencies, and drift into focus, calm, or sleep.
           </p>
@@ -1813,6 +1884,7 @@ function AppInner() {
                     onClick={() => {
                       if (isLocked) { openUpgradeModal(tab.label); return }
                       setActiveTab(tab.id)
+                      void trackFeatureUsage({ feature: tab.id, action: 'open' })
                     }}
                     aria-current={activeTab === tab.id ? 'page' : undefined}
                   >
@@ -1889,6 +1961,93 @@ function AppInner() {
                   )}
                 </div>
               )}
+
+              {/* Streak */}
+              {(() => {
+                const { streak, weekCount } = computeStreak(journalEntries)
+                return (
+                  <div className="dash-streak-row">
+                    <div className="dash-streak-badge">
+                      {streak > 0 ? `🔥 ${streak} day streak` : '🔥 Start your streak today'}
+                    </div>
+                    {weekCount > 0 && <div className="dash-week-count">{weekCount} session{weekCount !== 1 ? 's' : ''} this week</div>}
+                  </div>
+                )
+              })()}
+
+              {/* Daily Frequency */}
+              {(() => {
+                const df = getDailyFrequency()
+                return (
+                  <div className="dash-daily-freq-card">
+                    <div className="dash-daily-freq-header">{df.emoji} {df.name} <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600 }}>{df.wave}</span></div>
+                    <div className="dash-daily-freq-desc">{df.desc}</div>
+                    <div className="dash-daily-freq-hz">{df.carrier} Hz carrier · {df.beat} Hz beat</div>
+                    <button
+                      className="soft-button soft-button--accent"
+                      style={{ marginTop: '0.25rem', alignSelf: 'flex-start', padding: '0.35rem 1rem', fontSize: '0.85rem' }}
+                      onClick={() => {
+                        carrierRef.current = df.carrier
+                        beatRef.current = df.beat
+                        setCarrier(df.carrier)
+                        setBeat(df.beat)
+                        void toggleAudio()
+                      }}
+                    >
+                      ▶ Start Now
+                    </button>
+                  </div>
+                )
+              })()}
+
+              {/* AI-Guided Meditation Feature Card */}
+              <div className="dash-ai-feature-card">
+                <div className="dash-ai-feature-title">✨ AI-Guided Meditation</div>
+                <div className="dash-ai-feature-sub">Personalized sessions crafted for your state of mind</div>
+                <div className="dash-ai-feature-actions">
+                  {!isPro && <span className="pro-badge-inline">PRO</span>}
+                  <button
+                    className="soft-button soft-button--accent"
+                    style={{ padding: '0.35rem 1rem', fontSize: '0.85rem' }}
+                    onClick={() => isPro ? setActiveTab('ai') : openUpgradeModal('AI-Guided Meditation')}
+                  >
+                    Generate Session
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Relief / Panic */}
+              <div className="dash-panic-card">
+                <div className="dash-panic-info">
+                  <div className="dash-panic-title">🆘 Quick Relief</div>
+                  <div className="dash-panic-sub">Instant calm · alpha waves · guided breathing</div>
+                </div>
+                <button className="dash-panic-btn" onClick={startPanicMode}>Begin</button>
+              </div>
+
+              {/* 7-Day Program card */}
+              {(() => {
+                const prog = load7DayProgress()
+                const done = prog.completedDays.length
+                return (
+                  <div className="dash-7day-card">
+                    <div className="dash-7day-title">📅 7 Days of Liminal</div>
+                    <div className="dash-7day-progress-bar-wrap">
+                      <div className="dash-7day-progress-bar" style={{ width: `${(done / 7) * 100}%` }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className="dash-7day-sub">{done === 7 ? 'Complete! 🎉' : `Day ${Math.min(done + 1, 7)} of 7`}</div>
+                      <button
+                        className="soft-button"
+                        style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                        onClick={() => setActiveTab('program')}
+                      >
+                        {done === 0 ? 'Start Program →' : done === 7 ? 'Review →' : 'Continue →'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Quick-start scene cards */}
               <div className="section-label" style={{ marginTop: '1rem' }}>Quick Start</div>
@@ -1978,6 +2137,14 @@ function AppInner() {
                     <span className="dash-explore-sub">{sub}</span>
                   </button>
                 ))}
+              </div>
+
+              {/* Breath Guide card */}
+              <div className="section-block" style={{ marginTop: '1.25rem' }}>
+                <div className="section-title">🫁 Breathe</div>
+                <div className="section-card">
+                  <BreathGuide compact />
+                </div>
               </div>
 
               {/* Recent journal entries preview */}
@@ -2671,6 +2838,24 @@ function AppInner() {
             />
           )}
 
+          {/* ──────────────── PROGRAM TAB ──────────────── */}
+          {activeTab === 'program' && (
+            <div className="tab-sections">
+              <SevenDayProgram
+                onStartSession={(carrier, beat) => {
+                  if (isRunning) stopSession(false)
+                  carrierRef.current = carrier
+                  beatRef.current = beat
+                  setCarrier(carrier)
+                  setBeat(beat)
+                  setActiveTab('tones')
+                  window.setTimeout(() => { if (!graphRef.current) void toggleAudio() }, 100)
+                }}
+                sessionStartedAt={isRunning ? (Date.now() - (sessionTotalSeconds - remainingSeconds) * 1000) : null}
+              />
+            </div>
+          )}
+
           {/* ──────────────── MUSIC TAB ──────────────── */}
           {activeTab === 'music' && (
             <MusicTab
@@ -2694,6 +2879,25 @@ function AppInner() {
           )}
         </div>
       </section>
+
+      {/* ── Panic Overlay ── */}
+      {panicMode && (
+        <div className="panic-overlay">
+          {panicComplete ? (
+            <>
+              <div className="panic-message">Session complete.</div>
+              <div className="panic-complete-msg">Take a moment. You did great.</div>
+            </>
+          ) : (
+            <>
+              <div className="panic-circle">Breathe.<br />You're safe.</div>
+              <div className="panic-message">You're okay. Just breathe.</div>
+              <BreathGuide compact />
+              <button className="panic-dismiss" onClick={stopPanicMode}>I'm okay ✓</button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Journal List ── */}
       {showJournalList && (
@@ -2840,6 +3044,12 @@ function App() {
 
 function AppRouter() {
   const { profile, loading, user } = useAuth()
+
+  // Apply theme immediately so admin console inherits it too
+  useEffect(() => {
+    const saved = localStorage.getItem('binaural-theme')
+    document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark')
+  }, [])
 
   if (window.location.pathname === '/admin') {
     // Still waiting for auth to initialise

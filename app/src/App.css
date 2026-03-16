@@ -46,6 +46,17 @@ body {
   font-size: clamp(1.8rem, 2.2vw + 1rem, 3rem);
   line-height: 1.05;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.site-logo {
+  height: 1em;
+  width: 1em;
+  object-fit: contain;
+  vertical-align: middle;
+  border-radius: 20%;
 }
 
 .subtitle {
@@ -747,18 +758,20 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   .session-plan-actions {
     flex-direction: column;
   }
-    padding: 0.75rem 0.75rem 80px;
+    padding: 80px 0.75rem 0.75rem;
   }
 
   .tab-nav {
     position: fixed;
-    bottom: 0;
+    top: 0;
     left: 0;
     right: 0;
+    bottom: auto;
     background: var(--bg-panel);
-    border-top: 1px solid var(--border-section);
-    border-bottom: none;
+    border-bottom: 1px solid var(--border-section);
+    border-top: none;
     padding: 0.25rem 0;
+    padding-top: env(safe-area-inset-top);
     z-index: 100;
     gap: 0;
     margin-bottom: 0;
@@ -5323,4 +5336,292 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 }
   display: block;
+}
+/* ── Panic Overlay ── */
+.panic-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.97);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+}
+.panic-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  animation: panic-pulse 4s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+@keyframes panic-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+.panic-message {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  text-align: center;
+}
+.panic-dismiss {
+  padding: 0.9rem 2.5rem;
+  border-radius: 2rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.panic-complete-msg {
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Dashboard extras ── */
+.dash-daily-freq-card {
+  background: linear-gradient(135deg, var(--bg-panel) 0%, color-mix(in srgb, var(--accent) 10%, var(--bg-panel)) 100%);
+  border: 1px solid var(--border-section);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.dash-daily-freq-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dash-daily-freq-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.dash-daily-freq-hz {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+.dash-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 2rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+.dash-streak-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.dash-week-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.dash-ai-feature-card {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 25%, var(--bg-panel)) 0%, color-mix(in srgb, var(--accent) 10%, var(--bg-panel)) 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.dash-ai-feature-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dash-ai-feature-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.dash-ai-feature-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+.pro-badge-inline {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: white;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.4rem;
+}
+.dash-panic-card {
+  background: linear-gradient(135deg, rgba(200, 80, 60, 0.15) 0%, rgba(200, 120, 60, 0.08) 100%);
+  border: 1px solid rgba(200, 80, 60, 0.35);
+  border-radius: 1rem;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.dash-panic-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.dash-panic-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dash-panic-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.dash-panic-btn {
+  padding: 0.55rem 1.2rem;
+  border-radius: 2rem;
+  background: rgba(200, 80, 60, 0.75);
+  color: white;
+  border: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dash-7day-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-section);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.dash-7day-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dash-7day-progress-bar-wrap {
+  background: var(--bg-page);
+  border-radius: 1rem;
+  height: 6px;
+  overflow: hidden;
+}
+.dash-7day-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 1rem;
+  transition: width 0.4s;
+}
+.dash-7day-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ── 7-Day Program Tab ── */
+.seven-day-program {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 2rem;
+}
+.seven-day-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.seven-day-progress-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.seven-day-progress-bar-wrap {
+  background: var(--bg-panel);
+  border-radius: 1rem;
+  height: 8px;
+  overflow: hidden;
+}
+.seven-day-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 1rem;
+  transition: width 0.4s;
+}
+.seven-day-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-section);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.2s;
+}
+.seven-day-card--current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.seven-day-card--completed {
+  opacity: 0.7;
+}
+.seven-day-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.seven-day-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.seven-day-card-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.seven-day-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary, var(--text-muted));
+}
+.seven-day-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.seven-day-congrats {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--bg-panel)), var(--bg-panel));
+  border: 1px solid var(--accent);
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
