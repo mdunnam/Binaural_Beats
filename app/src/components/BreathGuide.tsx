@@ -102,6 +102,7 @@ export function BreathGuide({ isRunning: _isRunning }: Props) {
       setPhase('inhale')
       setProgress(0)
       setCountdown(0)
+      prevPhaseRef.current = ''
       return
     }
 
@@ -129,7 +130,7 @@ export function BreathGuide({ isRunning: _isRunning }: Props) {
 
   // Play sound on phase change
   useEffect(() => {
-    if (!soundEnabled || !enabled) return
+    if (!soundEnabled || !enabled || !isActive) return
     if (phase === prevPhaseRef.current) return
     prevPhaseRef.current = phase
 
