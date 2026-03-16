@@ -2830,9 +2830,10 @@ function App() {
 }
 
 function AppRouter() {
-  const { profile, loading } = useAuth()
+  const { profile, loading, user } = useAuth()
 
   if (window.location.pathname === '/admin') {
+    // Still waiting for auth to initialise
     if (loading) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-app, #0d0d12)', color: 'var(--text-muted, #888)' }}>
@@ -2840,7 +2841,21 @@ function AppRouter() {
         </div>
       )
     }
-    if (!profile?.is_admin) {
+    // Auth resolved but no user at all — redirect
+    if (!user) {
+      window.location.href = '/app'
+      return null
+    }
+    // User is logged in but profile hasn't loaded yet — keep waiting
+    if (!profile) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-app, #0d0d12)', color: 'var(--text-muted, #888)' }}>
+          Loading profile…
+        </div>
+      )
+    }
+    // Profile loaded — check admin flag
+    if (!profile.is_admin) {
       window.location.href = '/app'
       return null
     }
