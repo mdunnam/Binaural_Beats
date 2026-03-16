@@ -101,6 +101,8 @@ export function PadSynth() {
   const startPadRef = useRef<(() => void) | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Ref-based guard so restartIfPlaying doesn't fight React's async state flush
+  const isPlayingRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -110,7 +112,7 @@ export function PadSynth() {
   }, [])
 
   const startPad = useCallback(() => {
-    if (isPlaying) return
+    if (isPlayingRef.current) return
 
     // Clear any pending release timeout from a previous stop
     if (releaseTimeoutRef.current) { clearTimeout(releaseTimeoutRef.current); releaseTimeoutRef.current = null }
@@ -214,14 +216,15 @@ export function PadSynth() {
     })
 
     voiceGainsRef.current = voiceGains
+    isPlayingRef.current = true
     setIsPlaying(true)
-  }, [isPlaying, waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume])
+  }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume])
 
   // Always keep ref pointing at latest startPad
   startPadRef.current = startPad
 
   const stopPad = useCallback(() => {
-    if (!isPlaying || !ctxRef.current) return
+    if (!isPlayingRef.current || !ctxRef.current) return
     const ctx = ctxRef.current
     const now = ctx.currentTime
 
@@ -235,9 +238,10 @@ export function PadSynth() {
       if (ctx.state !== 'closed') ctx.close().catch(() => {})
       if (ctxRef.current === ctx) { ctxRef.current = null }
       voiceGainsRef.current = []
+      isPlayingRef.current = false
       setIsPlaying(false)
     }, (release + 0.5) * 1000)
-  }, [isPlaying, release])
+  }, [release])
 
 
   // Live parameter updates — no restart needed
@@ -251,7 +255,7 @@ export function PadSynth() {
 
   // Params that require restart — auto-restart if playing
   const restartIfPlaying = useCallback(() => {
-    if (!isPlaying || !ctxRef.current) return
+    if (!isPlayingRef.current || !ctxRef.current) return
     const ctx = ctxRef.current
     const now = ctx.currentTime
 
@@ -265,14 +269,16 @@ export function PadSynth() {
     if (releaseTimeoutRef.current) clearTimeout(releaseTimeoutRef.current)
     ctxRef.current = null
     voiceGainsRef.current = []
+    // Flip ref synchronously so startPad won't bail when called
+    isPlayingRef.current = false
+    setIsPlaying(false)
 
     releaseTimeoutRef.current = setTimeout(() => {
       if (ctx.state !== 'closed') ctx.close().catch(() => {})
-      setIsPlaying(false)
-      // Use a second timeout so setIsPlaying flushes before startPad runs
-      setTimeout(() => startPadRef.current?.(), 20)
+      // startPadRef.current always points to latest startPad (no stale closure)
+      startPadRef.current?.()
     }, 80)
-  }, [isPlaying])
+  }, [])
 
   useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
