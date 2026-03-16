@@ -13,6 +13,15 @@
 //   tts_chars int DEFAULT 0,
 //   estimated_cost_usd numeric(10,6) DEFAULT 0
 // );
+// Feature usage events
+// CREATE TABLE IF NOT EXISTS feature_usage (
+//   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+//   user_id uuid REFERENCES profiles(id) ON DELETE SET NULL,
+//   created_at timestamptz DEFAULT now(),
+//   feature text NOT NULL,        -- e.g. 'tones', 'studio', 'soundscape', 'ai_meditation', 'journey', 'music', 'pad', 'breath_guide', 'panic_mode', 'export_wav'
+//   action text,                  -- e.g. 'start', 'stop', 'generate', 'export', 'open'
+//   metadata jsonb DEFAULT '{}'   -- optional extra data (duration_seconds, preset_name, etc.)
+// );
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
@@ -21,7 +30,7 @@ import './AdminConsole.css'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type Tab = 'customers' | 'revenue' | 'health' | 'controls' | 'reports' | 'ai' | 'faq'
+type Tab = 'customers' | 'revenue' | 'health' | 'controls' | 'reports' | 'ai' | 'faq' | 'usage'
 
 interface RevenueData {
   mrr: number
@@ -663,45 +672,228 @@ function FaqAdminTab() {
     </div>
   )
 }
-export function AdminConsole() {
-  const [activeTab, setActiveTab] = useState<Tab>('customers')
+// ─── Feature Usage Tab ────────────────────────────────────────────────────────
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'customers', label: '👥 Customers' },
-    { id: 'revenue', label: '💳 Revenue' },
-    { id: 'health', label: '🏥 Site Health' },
-    { id: 'controls', label: '⚙️ Controls' },
-    { id: 'reports', label: '📊 Reports' },
-  ]
+interface FeatureUsageRow {
+  id: string
+  user_id: string | null
+  created_at: string
+  feature: string
+  action: string | null
+  metadata: Record<string, unknown>
+}
+
+function FeatureUsageTab() {
+  const [rows, setRows] = useState<FeatureUsageRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    supabase.from('feature_usage')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500)
+      .then(({ data }) => { setRows((data as FeatureUsageRow[]) ?? []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const weekAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+  const todayRows = rows.filter(r => new Date(r.created_at) >= todayStart)
+  const weekRows = rows.filter(r => new Date(r.created_at) >= weekAgo)
+
+  // Most used feature
+  const featureCount = new Map<string, number>()
+  rows.forEach(r => featureCount.set(r.feature, (featureCount.get(r.feature) ?? 0) + 1))
+  const mostUsed = [...featureCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '-'
+
+  // Unique users today
+  const uniqueUsersToday = new Set(todayRows.map(r => r.user_id ?? 'anon')).size
+
+  // Feature breakdown
+  const featureStats = Array.from(featureCount.entries()).map(([feature, count]) => {
+    const featureRows = rows.filter(r => r.feature === feature)
+    const uniqueUsers = new Set(featureRows.map(r => r.user_id ?? 'anon')).size
+    const lastUsed = featureRows[0]?.created_at ?? ''
+    return { feature, count, uniqueUsers, lastUsed }
+  }).sort((a, b) => b.count - a.count)
+
+  const maxCount = featureStats[0]?.count ?? 1
+  const recent50 = rows.slice(0, 50)
+
+  if (loading) return <div className="admin-loading">Loading feature usage…</div>
 
   return (
-    <div className="admin-console">
-      <div className="admin-header">
-        <button className="admin-back-btn" onClick={() => { window.location.href = '/app' }}>← Back</button>
-        <h1>🔐 Admin Console</h1>
-      </div>
-
-      <div className="admin-tab-bar">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            className={`admin-tab-pill ${activeTab === t.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(t.id)}
-          >
-            {t.label}
-          </button>
+    <div>
+      {/* Stats cards */}
+      <div className="admin-stats-row">
+        {[
+          { label: 'Events Today', value: todayRows.length },
+          { label: 'Events This Week', value: weekRows.length },
+          { label: 'Most Used Feature', value: mostUsed },
+          { label: 'Unique Users Today', value: uniqueUsersToday },
+        ].map(s => (
+          <div className="admin-stat-card" key={s.label}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value" style={typeof s.value === 'string' && s.value.length > 8 ? { fontSize: '1.1rem' } : {}}>
+              {s.value}
+            </div>
+          </div>
         ))}
       </div>
 
-      <div className="admin-tab-content">
-        {activeTab === 'customers' && <CustomersTab />}
-        {activeTab === 'revenue' && <RevenueTab />}
-        {activeTab === 'health' && <HealthTab />}
-        {activeTab === 'controls' && <ControlsTab />}
-        {activeTab === 'reports' && <ReportsTab />}
-        {activeTab === 'ai' && <AiUsageTab />}
-        {activeTab === 'faq' && <FaqAdminTab />}
+      {/* Top features bar chart */}
+      {featureStats.length > 0 && (
+        <>
+          <div className="section-heading">Top Features</div>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '1rem', marginBottom: '1.5rem' }}>
+            {featureStats.slice(0, 10).map(({ feature, count }) => (
+              <div key={feature} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.6rem' }}>
+                <div style={{ width: '110px', fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
+                  {feature}
+                </div>
+                <div style={{ flex: 1, background: 'var(--bg-section)', borderRadius: 4, height: 20, overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.round((count / maxCount) * 100)}%`,
+                    background: 'var(--accent, #a78bfa)',
+                    height: '100%',
+                    borderRadius: 4,
+                    transition: 'width 0.3s',
+                  }} />
+                </div>
+                <div style={{ width: 32, fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
+                  {count}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Feature breakdown table */}
+      <div className="section-heading">Feature Breakdown</div>
+      <div className="admin-table-wrap" style={{ marginBottom: '1.5rem' }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Total Opens</th>
+              <th>Unique Users</th>
+              <th>Last Used</th>
+            </tr>
+          </thead>
+          <tbody>
+            {featureStats.map(({ feature, count, uniqueUsers, lastUsed }) => (
+              <tr key={feature}>
+                <td>{feature}</td>
+                <td>{count}</td>
+                <td>{uniqueUsers}</td>
+                <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {lastUsed ? new Date(lastUsed).toLocaleString() : '-'}
+                </td>
+              </tr>
+            ))}
+            {featureStats.length === 0 && (
+              <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No feature usage recorded yet</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Recent events */}
+      <div className="section-heading">Recent Events</div>
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>User</th>
+              <th>Feature</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recent50.map(r => (
+              <tr key={r.id}>
+                <td style={{ fontSize: '0.8rem' }}>{new Date(r.created_at).toLocaleString()}</td>
+                <td style={{ fontSize: '0.75rem', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {r.user_id ? r.user_id.slice(0, 8) + '…' : 'anon'}
+                </td>
+                <td>{r.feature}</td>
+                <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{r.action ?? '-'}</td>
+              </tr>
+            ))}
+            {recent50.length === 0 && (
+              <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No events yet</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+export function AdminConsole() {
+  const [activeTab, setActiveTab] = useState<Tab>('customers')
+
+  const navItems: { id: Tab; icon: string; label: string; title: string; subtitle: string }[] = [
+    { id: 'customers', icon: '👥', label: 'Customers',    title: 'Customer Management',  subtitle: 'View and manage all user accounts' },
+    { id: 'revenue',   icon: '💳', label: 'Revenue',      title: 'Revenue & Billing',     subtitle: 'Stripe subscription data and transactions' },
+    { id: 'health',    icon: '🏥', label: 'Site Health',  title: 'Site Health',           subtitle: 'System status and performance metrics' },
+    { id: 'controls',  icon: '⚙️', label: 'Controls',     title: 'App Controls',          subtitle: 'Global settings and kill switches' },
+    { id: 'ai',        icon: '🤖', label: 'AI Usage',     title: 'AI Usage',              subtitle: 'Meditation generation stats and costs' },
+    { id: 'reports',   icon: '📊', label: 'Reports',      title: 'Reports & Exports',     subtitle: 'Data exports and analytics summaries' },
+    { id: 'faq',       icon: '❓', label: 'FAQ',          title: 'Help Center FAQ',       subtitle: 'Manage user-facing FAQ content' },
+    { id: 'usage',     icon: '📈', label: 'Feature Usage',title: 'Feature Usage',         subtitle: 'See which features users are actually using' },
+  ]
+
+  const active = navItems.find(n => n.id === activeTab)!
+
+  return (
+    <div className="admin-layout">
+      {/* Sidebar */}
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-header">
+          <div className="admin-sidebar-title">Admin Console</div>
+          <div className="admin-sidebar-logo">🔐 Liminal</div>
+        </div>
+        <nav className="admin-nav">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              className={`admin-nav-item${activeTab === item.id ? ' active' : ''}`}
+              onClick={() => setActiveTab(item.id)}
+            >
+              <span className="admin-nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="admin-sidebar-footer">
+          <button className="admin-back-btn" onClick={() => { window.location.href = '/app' }}>
+            ← Back to App
+          </button>
+        </div>
+      </aside>
+
+      {/* Content */}
+      <main className="admin-content">
+        <div className="admin-content-header">
+          <h2 className="admin-content-title">{active.title}</h2>
+          <p className="admin-content-subtitle">{active.subtitle}</p>
+        </div>
+
+        {activeTab === 'customers' && <CustomersTab />}
+        {activeTab === 'revenue'   && <RevenueTab />}
+        {activeTab === 'health'    && <HealthTab />}
+        {activeTab === 'controls'  && <ControlsTab />}
+        {activeTab === 'reports'   && <ReportsTab />}
+        {activeTab === 'ai'        && <AiUsageTab />}
+        {activeTab === 'faq'       && <FaqAdminTab />}
+        {activeTab === 'usage'     && <FeatureUsageTab />}
+      </main>
     </div>
   )
 }

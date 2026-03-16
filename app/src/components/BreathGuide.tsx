@@ -77,9 +77,9 @@ function createBreathSound(ctx: AudioContext, phase: 'inhale' | 'exhale', durati
   source.stop(ctx.currentTime + durationSec)
 }
 
-type Props = { isRunning: boolean }
+type Props = { isRunning?: boolean; compact?: boolean }
 
-export function BreathGuide({ isRunning: _isRunning }: Props) {
+export function BreathGuide({ isRunning: _isRunning, compact = false }: Props) {
   const [enabled, setEnabled] = useState(false)
   const [isGuideActive, setIsGuideActive] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
@@ -188,6 +188,55 @@ export function BreathGuide({ isRunning: _isRunning }: Props) {
     : phase === 'hold' ? 1
     : phase === 'exhale' ? 1 - progress * 0.5
     : 0.5
+
+  if (compact) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+        {!enabled ? (
+          <button
+            className="soft-button soft-button--accent"
+            style={{ padding: '0.4rem 1.2rem', fontSize: '0.9rem' }}
+            onClick={() => { setEnabled(true); setIsGuideActive(true) }}
+          >
+            ▶ Start Breathing Guide
+          </button>
+        ) : (
+          <>
+            {isActive && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <div
+                  style={{
+                    width: 80, height: 80, borderRadius: '50%', border: '2px solid var(--accent)',
+                    transform: `scale(${ringScale})`, transition: 'transform 0.1s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center',
+                  }}
+                >
+                  <span>{PHASE_LABELS[phase]}<br />{countdown}</span>
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                className={`soft-button${isGuideActive ? ' soft-button--accent' : ''}`}
+                style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                onClick={() => setIsGuideActive(a => !a)}
+              >
+                {isGuideActive ? '■ Stop' : '▶ Start'}
+              </button>
+              <button
+                className="soft-button"
+                style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                onClick={() => { setEnabled(false); setIsGuideActive(false) }}
+              >
+                ✕
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="breath-guide-wrap">
