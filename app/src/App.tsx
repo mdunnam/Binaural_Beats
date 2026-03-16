@@ -63,7 +63,7 @@ import { SessionLibrary } from './components/SessionLibrary'
 import type { SessionCard } from './data/sessionLibrary'
 import { AdminConsole } from './components/AdminConsole'
 import { trackFeatureUsage } from './lib/trackFeatureUsage'
-import { SevenDayProgram, loadProgress as load7DayProgress, SEVEN_DAY_KEY } from './components/SevenDayProgram'
+import { SevenDayProgram, loadProgress as load7DayProgress } from './components/SevenDayProgram'
 
 // ---------------------------------------------------------------------------
 // Daily Frequency helper
@@ -2838,6 +2838,24 @@ function AppInner() {
             />
           )}
 
+          {/* ──────────────── PROGRAM TAB ──────────────── */}
+          {activeTab === 'program' && (
+            <div className="tab-sections">
+              <SevenDayProgram
+                onStartSession={(carrier, beat) => {
+                  if (isRunning) stopSession(false)
+                  carrierRef.current = carrier
+                  beatRef.current = beat
+                  setCarrier(carrier)
+                  setBeat(beat)
+                  setActiveTab('tones')
+                  window.setTimeout(() => { if (!graphRef.current) void toggleAudio() }, 100)
+                }}
+                sessionStartedAt={isRunning ? (Date.now() - (sessionTotalSeconds - remainingSeconds) * 1000) : null}
+              />
+            </div>
+          )}
+
           {/* ──────────────── MUSIC TAB ──────────────── */}
           {activeTab === 'music' && (
             <MusicTab
@@ -2861,6 +2879,25 @@ function AppInner() {
           )}
         </div>
       </section>
+
+      {/* ── Panic Overlay ── */}
+      {panicMode && (
+        <div className="panic-overlay">
+          {panicComplete ? (
+            <>
+              <div className="panic-message">Session complete.</div>
+              <div className="panic-complete-msg">Take a moment. You did great.</div>
+            </>
+          ) : (
+            <>
+              <div className="panic-circle">Breathe.<br />You're safe.</div>
+              <div className="panic-message">You're okay. Just breathe.</div>
+              <BreathGuide compact />
+              <button className="panic-dismiss" onClick={stopPanicMode}>I'm okay ✓</button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Journal List ── */}
       {showJournalList && (
