@@ -971,8 +971,8 @@ Required to keep users coming back.
 ✅ Done:   Session journal — full build (mood 1–5, tags, notes, streak, search, manual add)
 ✅ Done:   Solfeggio + brainwave presets
 ✅ Done:   Isochronic tone generator (with live param updates)
-✅ Done:   Mood EQ (5-slider blend: Ground/Relax/Focus/Dream/Ascend)
-✅ Done:   Anti-Mood EQ (5-slider: Angry/Anxious/Sad/Scattered/Exhausted → healing frequency recipes)
+✅ Done:   Mood EQ (5-slider blend: Ground/Relax/Focus/Dream/Ascend) — Tones tab, always visible
+✅ Done:   Anti-Mood EQ (5-slider: Angry/Anxious/Sad/Scattered/Exhausted → healing frequency recipes) — Tones tab, always visible
 ✅ Done:   Layered soundscape mixer (8 layers, 7 scene presets)
 ✅ Done:   Ambient mode (standalone soundscape + noise without binaural session)
 ✅ Done:   Colored noise (blue + violet added to white/pink/brown)
@@ -980,6 +980,7 @@ Required to keep users coming back.
 ✅ Done:   Music EQ (5-band: Sub/Bass/Mid/Presence/Air, ±12dB)
 ✅ Done:   Music seek bar (scrub with 250ms position updates, cached buffer)
 ✅ Done:   Pad synth standalone mode (runs without a binaural session)
+✅ Done:   Pad synth — all params live-update without restart (volume/filter/reverb); waveform/note/chord/detune crossfade-restart in ~100ms
 ✅ Done:   Mini-player bar (persistent bottom bar, replaces Player/Visual tabs)
 ✅ Done:   AI Guided Meditation (GPT-4o-mini + OpenAI TTS, voice bus, saved sessions)
 ✅ Done:   Studio tab (Session Builder) — layer stack, scenes, journeys, presets, live preview
@@ -990,19 +991,30 @@ Required to keep users coming back.
 ✅ Done:   Stripe billing portal — Manage Subscription button, serverless API route
 ✅ Done:   Settings panel — Account, Subscription, Preferences, About; user dropdown
 ✅ Done:   Dark mode — full CSS vars overhaul, 4-step bg palette, consistent across all tabs
+✅ Done:   Dark mode default — dark for new users, light pref respected
 ✅ Done:   Landing page — full green-theme rebuild, hero, features, 3-tier pricing, social proof
 ✅ Done:   Onboarding modal — 3-step first-run carousel (Welcome / How It Works / Free & Pro)
 ✅ Done:   Toast notification system — error states for audio, WAV export, billing portal
 ✅ Done:   SEO — Open Graph, Twitter Card, structured data JSON-LD, canonical URLs
-✅ Done:   PWA — manifest, service worker (cache-first), install prompt banner
+✅ Done:   PWA — manifest, service worker (network-first + build-time cache bust), install prompt banner
 ✅ Done:   Vercel deployment (auto-deploy on push to main, serverless API routes)
+✅ Done:   Stage Sequencer tab — brainwave journey timeline with ramps, pre-built stages, editable
+✅ Done:   Benefit-first Tones tab — intent cards as hero UI, Hz behind ⚙ toggle
+✅ Done:   Sound tab Animate! — slow organic drift per layer
+✅ Done:   Sound tab scene crossfade — morphs when non-silent, hard-cut from silence
+✅ Done:   Tones tab presets — saves full state (carrier/beat/wobble/filter/iso/tuning/Mood EQ), at bottom of tab
+✅ Done:   AudioVisualizer strip — 3-zone (level | FFT | oscilloscope), theme-aware, above mini-player
+✅ Done:   Unified button/tab theming — gradient active/hover, danger CSS vars, no hardcoded colors
+✅ Done:   Canvas backgrounds — all canvas draws clearRect; CSS bg-card/bg-section shows through
+✅ Done:   theme.css extracted — all CSS color vars in one file
+✅ Done:   Service worker network-first + build-time cache bust (stamp-sw.mjs)
 
 Pending assets (design work):
 →  OG image (1200×630, dark bg, "Liminal" serif, green glow) → app/public/og-image.png
 →  PWA icons → app/public/icons/icon-192.png + icon-512.png
 
 In Progress:
-→  AI Meditation — assessing what needs more (flow works end-to-end)
+→  (nothing actively in-flight)
 
 Next:
 →  Journey UX improvements (awaiting user feedback)
