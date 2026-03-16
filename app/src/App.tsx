@@ -24,6 +24,7 @@ import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, set
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
+import { MoodEQ } from './components/MoodEQ'
 import { SoundscapeMixer } from './components/SoundscapeMixer'
 import type { LayerGains, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
 import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
@@ -2028,6 +2029,16 @@ function AppInner() {
                     </>)
                   })()}
                 </div>
+              </div>
+
+              {/* Mood EQ */}
+              <div className="section-block">
+                <div className="section-title">Mood EQ</div>
+                <MoodEQ
+                  setCarrier={setCarrier}
+                  setBeat={setBeat}
+                  setWobbleRate={setWobbleRate}
+                />
               </div>
 
               {/* Filter */}
