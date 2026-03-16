@@ -60,6 +60,7 @@ import { BreathGuide } from './components/BreathGuide'
 import { FrequencyVerifier } from './components/FrequencyVerifier'
 import { SessionLibrary } from './components/SessionLibrary'
 import type { SessionCard } from './data/sessionLibrary'
+import { AdminConsole } from './components/AdminConsole'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
@@ -2822,10 +2823,31 @@ function App() {
   return (
     <AuthProvider>
       <SubscriptionProvider>
-        <AppInner />
+        <AppRouter />
       </SubscriptionProvider>
     </AuthProvider>
   )
+}
+
+function AppRouter() {
+  const { profile, loading } = useAuth()
+
+  if (window.location.pathname === '/admin') {
+    if (loading) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-app, #0d0d12)', color: 'var(--text-muted, #888)' }}>
+          Loading…
+        </div>
+      )
+    }
+    if (!profile?.is_admin) {
+      window.location.href = '/app'
+      return null
+    }
+    return <AdminConsole />
+  }
+
+  return <AppInner />
 }
 
 export default App

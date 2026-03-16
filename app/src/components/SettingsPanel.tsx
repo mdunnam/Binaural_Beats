@@ -8,7 +8,7 @@ type SettingsPanelProps = {
 }
 
 export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
-  const { user, isPro } = useAuth()
+  const { user, isPro, profile } = useAuth()
   const { openUpgradeModal } = useSubscription()
 
   const [displayName, setDisplayName] = useState(
@@ -171,6 +171,15 @@ export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
               <a href="/landing/terms.html" target="_blank" rel="noopener" className="link-btn">Terms of Service</a>
               <a href="/landing/privacy.html" target="_blank" rel="noopener" className="link-btn">Privacy Policy</a>
               <a href="/landing/eula.html" target="_blank" rel="noopener" className="link-btn">EULA</a>
+              {profile?.is_admin && (
+                <button
+                  className="link-btn"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, color: 'var(--accent, #a78bfa)' }}
+                  onClick={() => { window.location.href = '/admin' }}
+                >
+                  🔐 Admin Console
+                </button>
+              )}
             </div>
           </div>
         </div>

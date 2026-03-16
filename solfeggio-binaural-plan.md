@@ -1034,6 +1034,7 @@ Next:
 →  Daily state tracking with trends / heatmap (journal data exists, needs viz)
 →  Supabase cloud journal sync (optional, for cross-device)
 →  Stripe live mode + real money testing
+→  Admin Console (Phase 1: read-only dashboard; Phase 2: controls + AI usage tracking)
 ```
 
 ---
@@ -1097,6 +1098,110 @@ When the planner runs:
 2. For each layer transition: `linearRampToValueAtTime` to fade out current block, new source starts
 3. Binaural transitions use `setTargetAtTime` for smooth Hz ramps
 4. All scheduling done upfront using Web Audio timeline (sample-accurate, no JS timer drift)
+
+---
+
+## Admin Console
+
+A superuser dashboard at `/admin`, gated by `is_admin: boolean` on the Supabase `profiles` row. Only Michael's user ID gets this flag. Everything else — including any Pro user — gets a 403 redirect.
+
+### Access Control
+- Route: `/admin` inside the React app (same Vite build, no separate deploy)
+- Gate: `useAuth()` → check `is_admin === true`; redirect to `/app` if not
+- No public link to `/admin` anywhere in the UI
+
+---
+
+### Phase 1 — Read-Only Dashboard (quick win, ~1 session)
+
+#### 👥 Customers
+- Full user list: email, joined date, plan (free/pro), last active, is_admin flag
+- Search / filter by plan, date range, activity
+- Click into a user → detail view: subscription history, AI usage, session count
+- Export users to CSV
+
+#### 💳 Revenue (Stripe API)
+- MRR, ARR, total customers, churn estimate
+- Recent transactions (last 20)
+- Subscription breakdown: monthly vs. annual count
+- Failed payments list
+
+#### 🏥 Server / Site Health
+- Vercel deployment status (latest deploy, commit SHA, build time) — via Vercel API
+- Supabase health check (ping the PostgREST endpoint)
+- Site speed: PageSpeed Insights API call (free, no key needed) → Performance score, LCP, FID, CLS
+- Stripe webhook last received timestamp (from DB log or Stripe dashboard API)
+
+#### 📊 AI Usage (once tracking schema is added — see Phase 2)
+- Total AI calls today / week / month
+- Total token count + estimated cost
+- Top 10 users by AI usage
+- Per-user AI usage (in user detail view)
+
+---
+
+### Phase 2 — Controls + AI Tracking (~1 session)
+
+#### Schema Additions (Supabase)
+
+```sql
+-- AI usage log
+CREATE TABLE ai_usage (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now(),
+  feature text,          -- 'meditation', 'composer', etc.
+  model text,            -- 'gpt-4o-mini', 'tts-1-hd', etc.
+  input_tokens int,
+  output_tokens int,
+  tts_chars int,
+  estimated_cost_usd numeric(10,6)
+);
+
+-- Per-user limit overrides
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS limit_overrides jsonb DEFAULT '{}';
+-- e.g. { "sessionMinutes": 120, "soundscapeCount": 10 }
+
+-- Global app config (kill switches, flags)
+CREATE TABLE app_config (
+  key text PRIMARY KEY,
+  value text,
+  updated_at timestamptz DEFAULT now()
+);
+-- Keys: 'ai_enabled', 'new_signups_enabled', 'maintenance_mode', 'broadcast_message'
+```
+
+#### ⚙️ Account Controls
+- Per-user actions: Grant Pro / Revoke Pro / Override limits / Delete account
+- Limit overrides: set custom session length cap, soundscape count, AI calls/month
+- Force sign-out (invalidate all sessions via Supabase Admin API)
+
+#### 🔧 Global Controls
+- Kill switches (stored in `app_config`):
+  - Disable AI tab entirely
+  - Disable new signups
+  - Enable maintenance mode (shows banner to all users)
+- Broadcast message: text field → saves to `app_config['broadcast_message']` → app reads it and shows a dismissible toast to all users on next load
+
+#### 🤖 AI Usage Tracking
+- Every AI call (meditation generation, TTS) writes a row to `ai_usage`
+- Fields: user_id, feature, model, token counts, estimated cost
+- Admin dashboard aggregates this into charts + per-user breakdown
+
+#### 📋 Reports (Export)
+- Users: CSV of all users with plan, joined, last active, AI usage total
+- Revenue: CSV of Stripe transactions by date range
+- AI usage: CSV of all AI calls with cost breakdown
+- All exports use client-side CSV generation (no server needed)
+
+---
+
+### Implementation Notes
+- No separate backend needed — all data reads from Supabase (users, AI usage) and Stripe API (revenue)
+- Stripe API calls go through a serverless function (`/api/admin/stripe-summary`) so the secret key never hits the client
+- PageSpeed call is client-side (public API, no key)
+- `is_admin` check is both client-side (UX) and server-side (Supabase RLS on admin-only tables)
+- Admin-only RLS: `ai_usage`, `app_config` tables have `USING (is_admin(auth.uid()))` policies
 
 ---
 
