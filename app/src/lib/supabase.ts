@@ -9,6 +9,7 @@ export type Profile = {
   id: string
   email: string | null
   is_pro: boolean
+  is_admin: boolean
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   created_at: string

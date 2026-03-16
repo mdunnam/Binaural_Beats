@@ -6,6 +6,7 @@ type AudioVisualizerProps = {
   ambientRunning: boolean
   beat: number
   carrier: number
+  darkMode: boolean
 }
 
 function getBrainwaveColor(beat: number): string {
@@ -24,7 +25,7 @@ function getBrainwaveBrightColor(beat: number): string {
   return '#ff7a5a'
 }
 
-export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, carrier }: AudioVisualizerProps) {
+export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, carrier, darkMode }: AudioVisualizerProps) {
   const levelRef = useRef<HTMLCanvasElement>(null)
   const spectrumRef = useRef<HTMLCanvasElement>(null)
   const scopeRef = useRef<HTMLCanvasElement>(null)
@@ -66,27 +67,23 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
     const brightColor = getBrainwaveBrightColor(beat)
 
     const getTheme = () => {
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
       return {
-        bg: isDark ? '#0d1a14' : '#f0f7f3',
-        idleLine: isDark ? '#1e3a2a' : '#c8ddd5',
+        bg: darkMode ? '#0d1a14' : '#f0f7f3',
+        idleLine: darkMode ? '#1e3a2a' : '#c8ddd5',
       }
     }
 
     if (!analyser || !active) {
-      const { bg, idleLine } = getTheme()
+      const { idleLine } = getTheme()
       // Level
       const lCtx = levelCanvas.getContext('2d')!
-      lCtx.fillStyle = bg
-      lCtx.fillRect(0, 0, 24, H)
+      lCtx.clearRect(0, 0, 24, H)
       // Spectrum
       const sCtx = specCanvas.getContext('2d')!
-      sCtx.fillStyle = bg
-      sCtx.fillRect(0, 0, specCanvas.width, H)
+      sCtx.clearRect(0, 0, specCanvas.width, H)
       // Scope — flat dim line
       const oCtx = scopeCanvas.getContext('2d')!
-      oCtx.fillStyle = bg
-      oCtx.fillRect(0, 0, scopeCanvas.width, H)
+      oCtx.clearRect(0, 0, scopeCanvas.width, H)
       oCtx.strokeStyle = idleLine
       oCtx.lineWidth = 1.5
       oCtx.beginPath()
@@ -106,12 +103,11 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       analyser.getByteTimeDomainData(timeData)
 
       const now = performance.now()
-      const { bg } = getTheme()
+      // theme bg handled by CSS
 
       // ── Zone 1: Level Meter (vertical, fills upward) ──
       const lCtx = levelCanvas.getContext('2d')!
-      lCtx.fillStyle = bg
-      lCtx.fillRect(0, 0, 24, H)
+      lCtx.clearRect(0, 0, 24, H)
 
       let sum = 0
       for (let i = 0; i < timeData.length; i++) {
@@ -141,8 +137,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 2: Spectrum Analyzer ──
       const sCtx = specCanvas.getContext('2d')!
       const W = specCanvas.width
-      sCtx.fillStyle = bg
-      sCtx.fillRect(0, 0, W, H)
+      sCtx.clearRect(0, 0, W, H)
 
       const binCount = analyser.frequencyBinCount
       const barsPerGroup = Math.floor(binCount / NUM_BARS)
@@ -189,8 +184,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       // ── Zone 3: Oscilloscope ──
       const oCtx = scopeCanvas.getContext('2d')!
       const SW = scopeCanvas.width
-      oCtx.fillStyle = bg
-      oCtx.fillRect(0, 0, SW, H)
+      oCtx.clearRect(0, 0, SW, H)
 
       oCtx.strokeStyle = brightColor
       oCtx.lineWidth = 1.5
@@ -214,7 +208,7 @@ export function AudioVisualizer({ analyser, isRunning, ambientRunning, beat, car
       cancelAnimationFrame(rafRef.current)
       ro.disconnect()
     }
-  }, [analyser, isRunning, ambientRunning, beat, carrier])
+  }, [analyser, isRunning, ambientRunning, beat, carrier, darkMode])
 
   return (
     <div className="audio-viz-strip">

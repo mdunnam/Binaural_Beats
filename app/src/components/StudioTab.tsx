@@ -131,6 +131,7 @@ type StudioTabProps = {
   onLiveUpdate: (layers: StudioLayer[]) => void
   musicTracks: MusicTrack[]
   onExportWav?: () => void
+  onExportScene?: (scene: StudioScene) => void
   initialLayers?: StudioLayer[]
   fadeInSeconds?: number
   fadeOutSeconds?: number
@@ -146,7 +147,7 @@ function loadTonesPresets(): Array<{ name: string; carrier: number; beat: number
   try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] }
 }
 
-export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav, initialLayers, fadeInSeconds, fadeOutSeconds, onFadeInChange, onFadeOutChange, sessionMinutes, isPro, onSessionMinutesChange, onOpenUpgrade }: StudioTabProps) {
+export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTracks, onExportWav, onExportScene, initialLayers, fadeInSeconds, fadeOutSeconds, onFadeInChange, onFadeOutChange, sessionMinutes, isPro, onSessionMinutesChange, onOpenUpgrade }: StudioTabProps) {
   const [layers, setLayers] = useState<StudioLayer[]>(
     initialLayers && initialLayers.length > 0
       ? initialLayers
@@ -807,6 +808,9 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
                 <span className="studio-scene-card-meta">{scene.durationMinutes}m · {scene.crossfadeSec}s fade</span>
                 <button className="studio-journey-btn" onClick={() => loadScene(scene)}>✏️ Load</button>
                 <button className="studio-journey-btn" onClick={() => addToJourney(scene)}>Add to Journey +</button>
+                {onExportScene && (
+                  <button className="studio-journey-btn" onClick={() => onExportScene(scene)} title="Export this scene as WAV">💾 Export</button>
+                )}
               </div>
             ))}
           </div>

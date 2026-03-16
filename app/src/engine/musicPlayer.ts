@@ -1,3 +1,6 @@
+// TO ADD TRACKS: place MP3 in app/public/music/ and add entry to MUSIC_TRACKS array below
+// CC0 sources: freesound.org (search lofi, filter CC0), pixabay.com/music, soundbible.com
+
 export type MusicTrack = {
   id: string
   title: string

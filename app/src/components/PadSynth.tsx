@@ -33,7 +33,11 @@ function makeReverbIR(ctx: AudioContext, duration = 3, decay = 2): AudioBuffer {
   return buf
 }
 
-export function PadSynth() {
+export function PadSynth({ onPlay, onStop, onStateChange }: {
+  onPlay?: () => void
+  onStop?: () => void
+  onStateChange?: (playing: boolean, hz: number, chord: string) => void
+}) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [waveform, setWaveform] = useState<OscillatorType>('triangle')
   const [rootNote, setRootNote] = useState('A')
@@ -98,8 +102,11 @@ export function PadSynth() {
   const masterGainRef = useRef<GainNode | null>(null)
   const filterRef = useRef<BiquadFilterNode | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
+  const startPadRef = useRef<(() => void) | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Ref-based guard so restartIfPlaying doesn't fight React's async state flush
+  const isPlayingRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -109,7 +116,7 @@ export function PadSynth() {
   }, [])
 
   const startPad = useCallback(() => {
-    if (isPlaying) return
+    if (isPlayingRef.current) return
 
     // Clear any pending release timeout from a previous stop
     if (releaseTimeoutRef.current) { clearTimeout(releaseTimeoutRef.current); releaseTimeoutRef.current = null }
@@ -180,7 +187,6 @@ export function PadSynth() {
     intervals.forEach((semitones) => {
       const baseFreq = NOTE_FREQS[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
       const PANS = [-0.6, -0.2, 0.2, 0.6]
-      const DETUNE_OFFSETS = [-detune * 0.5, -detune * 0.15, detune * 0.15, detune * 0.5]
 
       const voiceGain = ctx.createGain()
       voiceGain.gain.setValueAtTime(0, ctx.currentTime)
@@ -197,7 +203,10 @@ export function PadSynth() {
         const osc = ctx.createOscillator()
         osc.type = waveform
         osc.frequency.value = baseFreq
-        osc.detune.value = DETUNE_OFFSETS[i]
+        // Detune spread is symmetric — NOT correlated to pan position
+        // so both ears hear all voices and no accidental binaural beat is created
+        const detuneOffsets = [-detune * 0.5, detune * 0.5, -detune * 0.15, detune * 0.15]
+        osc.detune.value = detuneOffsets[i]
 
         const panner = ctx.createStereoPanner()
         panner.pan.value = pan
@@ -213,11 +222,22 @@ export function PadSynth() {
     })
 
     voiceGainsRef.current = voiceGains
+    isPlayingRef.current = true
     setIsPlaying(true)
-  }, [isPlaying, waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume])
+    onPlay?.()
+  }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume, onPlay])
+
+  // Always keep ref pointing at latest startPad
+  startPadRef.current = startPad
+
+  // Notify parent of pad state for mini-player display
+  useEffect(() => {
+    const hz = NOTE_FREQS[rootNote] * Math.pow(2, octave - 4)
+    onStateChange?.(isPlaying, Math.round(hz), chordMode)
+  }, [isPlaying, rootNote, octave, chordMode, onStateChange])
 
   const stopPad = useCallback(() => {
-    if (!isPlaying || !ctxRef.current) return
+    if (!isPlayingRef.current || !ctxRef.current) return
     const ctx = ctxRef.current
     const now = ctx.currentTime
 
@@ -231,9 +251,11 @@ export function PadSynth() {
       if (ctx.state !== 'closed') ctx.close().catch(() => {})
       if (ctxRef.current === ctx) { ctxRef.current = null }
       voiceGainsRef.current = []
+      isPlayingRef.current = false
       setIsPlaying(false)
+      onStop?.()
     }, (release + 0.5) * 1000)
-  }, [isPlaying, release])
+  }, [release, onStop])
 
 
   // Live parameter updates — no restart needed
@@ -247,11 +269,30 @@ export function PadSynth() {
 
   // Params that require restart — auto-restart if playing
   const restartIfPlaying = useCallback(() => {
-    if (!isPlaying) return
-    stopPad()
-    // Small delay to let release begin, then restart
-    setTimeout(() => { startPad() }, 100)
-  }, [isPlaying, stopPad, startPad])
+    if (!isPlayingRef.current || !ctxRef.current) return
+    const ctx = ctxRef.current
+    const now = ctx.currentTime
+
+    // Quick 50ms fade out, then kill context and restart
+    voiceGainsRef.current.forEach(g => {
+      g.gain.cancelScheduledValues(now)
+      g.gain.setValueAtTime(g.gain.value, now)
+      g.gain.linearRampToValueAtTime(0, now + 0.05)
+    })
+
+    if (releaseTimeoutRef.current) clearTimeout(releaseTimeoutRef.current)
+    ctxRef.current = null
+    voiceGainsRef.current = []
+    // Flip ref synchronously so startPad won't bail when called
+    isPlayingRef.current = false
+    setIsPlaying(false)
+
+    releaseTimeoutRef.current = setTimeout(() => {
+      if (ctx.state !== 'closed') ctx.close().catch(() => {})
+      // startPadRef.current always points to latest startPad (no stale closure)
+      startPadRef.current?.()
+    }, 80)
+  }, [])
 
   useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
@@ -417,6 +458,30 @@ export function PadSynth() {
             <button className="soft-button soft-button--danger"
               onClick={handleDeletePreset}
               disabled={!selectedPreset}>Delete</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Frequency Display */}
+      <div className="section-block">
+        <div className="section-card">
+          <div className="section-label">Active Frequencies</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.25rem' }}>
+            {CHORD_INTERVALS[chordMode].map((semitones, idx) => {
+              const baseHz = NOTE_FREQS[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
+              const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+              const midiNote = Math.round(69 + 12 * Math.log2(baseHz / 440))
+              const noteName = noteNames[midiNote % 12]
+              const noteOctave = Math.floor(midiNote / 12) - 1
+              const spread = detune > 0 ? ` ±${(detune * 0.5).toFixed(1)}¢` : ''
+              return (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{noteName}{noteOctave}</span>
+                  <span style={{ color: 'var(--accent)', fontFamily: 'monospace', fontWeight: 700 }}>{baseHz.toFixed(2)} Hz</span>
+                  {detune > 0 && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{spread}</span>}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>

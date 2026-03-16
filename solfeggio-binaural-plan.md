@@ -971,8 +971,8 @@ Required to keep users coming back.
 ✅ Done:   Session journal — full build (mood 1–5, tags, notes, streak, search, manual add)
 ✅ Done:   Solfeggio + brainwave presets
 ✅ Done:   Isochronic tone generator (with live param updates)
-✅ Done:   Mood EQ (5-slider blend: Ground/Relax/Focus/Dream/Ascend)
-✅ Done:   Anti-Mood EQ (5-slider: Angry/Anxious/Sad/Scattered/Exhausted → healing frequency recipes)
+✅ Done:   Mood EQ (5-slider blend: Ground/Relax/Focus/Dream/Ascend) — Tones tab, always visible
+✅ Done:   Anti-Mood EQ (5-slider: Angry/Anxious/Sad/Scattered/Exhausted → healing frequency recipes) — Tones tab, always visible
 ✅ Done:   Layered soundscape mixer (8 layers, 7 scene presets)
 ✅ Done:   Ambient mode (standalone soundscape + noise without binaural session)
 ✅ Done:   Colored noise (blue + violet added to white/pink/brown)
@@ -980,6 +980,7 @@ Required to keep users coming back.
 ✅ Done:   Music EQ (5-band: Sub/Bass/Mid/Presence/Air, ±12dB)
 ✅ Done:   Music seek bar (scrub with 250ms position updates, cached buffer)
 ✅ Done:   Pad synth standalone mode (runs without a binaural session)
+✅ Done:   Pad synth — all params live-update without restart (volume/filter/reverb); waveform/note/chord/detune crossfade-restart in ~100ms
 ✅ Done:   Mini-player bar (persistent bottom bar, replaces Player/Visual tabs)
 ✅ Done:   AI Guided Meditation (GPT-4o-mini + OpenAI TTS, voice bus, saved sessions)
 ✅ Done:   Studio tab (Session Builder) — layer stack, scenes, journeys, presets, live preview
@@ -990,19 +991,30 @@ Required to keep users coming back.
 ✅ Done:   Stripe billing portal — Manage Subscription button, serverless API route
 ✅ Done:   Settings panel — Account, Subscription, Preferences, About; user dropdown
 ✅ Done:   Dark mode — full CSS vars overhaul, 4-step bg palette, consistent across all tabs
+✅ Done:   Dark mode default — dark for new users, light pref respected
 ✅ Done:   Landing page — full green-theme rebuild, hero, features, 3-tier pricing, social proof
 ✅ Done:   Onboarding modal — 3-step first-run carousel (Welcome / How It Works / Free & Pro)
 ✅ Done:   Toast notification system — error states for audio, WAV export, billing portal
 ✅ Done:   SEO — Open Graph, Twitter Card, structured data JSON-LD, canonical URLs
-✅ Done:   PWA — manifest, service worker (cache-first), install prompt banner
+✅ Done:   PWA — manifest, service worker (network-first + build-time cache bust), install prompt banner
 ✅ Done:   Vercel deployment (auto-deploy on push to main, serverless API routes)
+✅ Done:   Stage Sequencer tab — brainwave journey timeline with ramps, pre-built stages, editable
+✅ Done:   Benefit-first Tones tab — intent cards as hero UI, Hz behind ⚙ toggle
+✅ Done:   Sound tab Animate! — slow organic drift per layer
+✅ Done:   Sound tab scene crossfade — morphs when non-silent, hard-cut from silence
+✅ Done:   Tones tab presets — saves full state (carrier/beat/wobble/filter/iso/tuning/Mood EQ), at bottom of tab
+✅ Done:   AudioVisualizer strip — 3-zone (level | FFT | oscilloscope), theme-aware, above mini-player
+✅ Done:   Unified button/tab theming — gradient active/hover, danger CSS vars, no hardcoded colors
+✅ Done:   Canvas backgrounds — all canvas draws clearRect; CSS bg-card/bg-section shows through
+✅ Done:   theme.css extracted — all CSS color vars in one file
+✅ Done:   Service worker network-first + build-time cache bust (stamp-sw.mjs)
 
 Pending assets (design work):
 →  OG image (1200×630, dark bg, "Liminal" serif, green glow) → app/public/og-image.png
 →  PWA icons → app/public/icons/icon-192.png + icon-512.png
 
 In Progress:
-→  AI Meditation — assessing what needs more (flow works end-to-end)
+→  (nothing actively in-flight)
 
 Next:
 →  Journey UX improvements (awaiting user feedback)
@@ -1022,6 +1034,7 @@ Next:
 →  Daily state tracking with trends / heatmap (journal data exists, needs viz)
 →  Supabase cloud journal sync (optional, for cross-device)
 →  Stripe live mode + real money testing
+→  Admin Console (Phase 1: read-only dashboard; Phase 2: controls + AI usage tracking)
 ```
 
 ---
@@ -1085,6 +1098,110 @@ When the planner runs:
 2. For each layer transition: `linearRampToValueAtTime` to fade out current block, new source starts
 3. Binaural transitions use `setTargetAtTime` for smooth Hz ramps
 4. All scheduling done upfront using Web Audio timeline (sample-accurate, no JS timer drift)
+
+---
+
+## Admin Console
+
+A superuser dashboard at `/admin`, gated by `is_admin: boolean` on the Supabase `profiles` row. Only Michael's user ID gets this flag. Everything else — including any Pro user — gets a 403 redirect.
+
+### Access Control
+- Route: `/admin` inside the React app (same Vite build, no separate deploy)
+- Gate: `useAuth()` → check `is_admin === true`; redirect to `/app` if not
+- No public link to `/admin` anywhere in the UI
+
+---
+
+### Phase 1 — Read-Only Dashboard (quick win, ~1 session)
+
+#### 👥 Customers
+- Full user list: email, joined date, plan (free/pro), last active, is_admin flag
+- Search / filter by plan, date range, activity
+- Click into a user → detail view: subscription history, AI usage, session count
+- Export users to CSV
+
+#### 💳 Revenue (Stripe API)
+- MRR, ARR, total customers, churn estimate
+- Recent transactions (last 20)
+- Subscription breakdown: monthly vs. annual count
+- Failed payments list
+
+#### 🏥 Server / Site Health
+- Vercel deployment status (latest deploy, commit SHA, build time) — via Vercel API
+- Supabase health check (ping the PostgREST endpoint)
+- Site speed: PageSpeed Insights API call (free, no key needed) → Performance score, LCP, FID, CLS
+- Stripe webhook last received timestamp (from DB log or Stripe dashboard API)
+
+#### 📊 AI Usage (once tracking schema is added — see Phase 2)
+- Total AI calls today / week / month
+- Total token count + estimated cost
+- Top 10 users by AI usage
+- Per-user AI usage (in user detail view)
+
+---
+
+### Phase 2 — Controls + AI Tracking (~1 session)
+
+#### Schema Additions (Supabase)
+
+```sql
+-- AI usage log
+CREATE TABLE ai_usage (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now(),
+  feature text,          -- 'meditation', 'composer', etc.
+  model text,            -- 'gpt-4o-mini', 'tts-1-hd', etc.
+  input_tokens int,
+  output_tokens int,
+  tts_chars int,
+  estimated_cost_usd numeric(10,6)
+);
+
+-- Per-user limit overrides
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS limit_overrides jsonb DEFAULT '{}';
+-- e.g. { "sessionMinutes": 120, "soundscapeCount": 10 }
+
+-- Global app config (kill switches, flags)
+CREATE TABLE app_config (
+  key text PRIMARY KEY,
+  value text,
+  updated_at timestamptz DEFAULT now()
+);
+-- Keys: 'ai_enabled', 'new_signups_enabled', 'maintenance_mode', 'broadcast_message'
+```
+
+#### ⚙️ Account Controls
+- Per-user actions: Grant Pro / Revoke Pro / Override limits / Delete account
+- Limit overrides: set custom session length cap, soundscape count, AI calls/month
+- Force sign-out (invalidate all sessions via Supabase Admin API)
+
+#### 🔧 Global Controls
+- Kill switches (stored in `app_config`):
+  - Disable AI tab entirely
+  - Disable new signups
+  - Enable maintenance mode (shows banner to all users)
+- Broadcast message: text field → saves to `app_config['broadcast_message']` → app reads it and shows a dismissible toast to all users on next load
+
+#### 🤖 AI Usage Tracking
+- Every AI call (meditation generation, TTS) writes a row to `ai_usage`
+- Fields: user_id, feature, model, token counts, estimated cost
+- Admin dashboard aggregates this into charts + per-user breakdown
+
+#### 📋 Reports (Export)
+- Users: CSV of all users with plan, joined, last active, AI usage total
+- Revenue: CSV of Stripe transactions by date range
+- AI usage: CSV of all AI calls with cost breakdown
+- All exports use client-side CSV generation (no server needed)
+
+---
+
+### Implementation Notes
+- No separate backend needed — all data reads from Supabase (users, AI usage) and Stripe API (revenue)
+- Stripe API calls go through a serverless function (`/api/admin/stripe-summary`) so the secret key never hits the client
+- PageSpeed call is client-side (public API, no key)
+- `is_admin` check is both client-side (UX) and server-side (Supabase RLS on admin-only tables)
+- Admin-only RLS: `ai_usage`, `app_config` tables have `USING (is_admin(auth.uid()))` policies
 
 ---
 

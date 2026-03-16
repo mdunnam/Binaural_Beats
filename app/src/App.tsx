@@ -24,6 +24,8 @@ import { createVoiceBus, stopVoiceBus, setVoiceVolume as setVoiceVolume_bus, set
 import type { VoiceBus } from './engine/voiceBus'
 import { encodeWav, downloadBlob } from './engine/wavExport'
 import { AutomationEditor } from './components/AutomationEditor'
+import { MoodEQ, defaultMoodSliders, defaultAntiSliders } from './components/MoodEQ'
+import type { MoodSliders, AntiMoodSliders } from './components/MoodEQ'
 import { SoundscapeMixer } from './components/SoundscapeMixer'
 import type { LayerGains, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
 import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
@@ -48,16 +50,18 @@ import type { AmbientPlayer } from './engine/ambientPlayer'
 import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
 import { EducationTab } from './components/EducationTab'
+import { HelpTab } from './components/HelpTab'
 import { StudioTab } from './components/StudioTab'
 import { SequencerTab } from './components/SequencerTab'
 import { PadSynth } from './components/PadSynth'
-import type { StudioLayer } from './types'
+import type { StudioLayer, StudioScene } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
 import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 import { BreathGuide } from './components/BreathGuide'
 import { FrequencyVerifier } from './components/FrequencyVerifier'
 import { SessionLibrary } from './components/SessionLibrary'
 import type { SessionCard } from './data/sessionLibrary'
+import { AdminConsole } from './components/AdminConsole'
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
@@ -73,6 +77,8 @@ const TABS = [
   { id: 'focus',     icon: '👁', label: 'Focus'     },
   { id: 'ai',        icon: '🧘', label: 'Meditate'  },
   { id: 'journal',   icon: '📓', label: 'Journal'   },
+  { id: 'help',      icon: '❓', label: 'Help'      },
+
 ]
 
 // ---------------------------------------------------------------------------
@@ -385,9 +391,10 @@ function AppInner() {
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [playerExpanded, setPlayerExpanded] = useState(false)
 
-  // Dark mode
+  // Dark mode — default dark unless user has explicitly chosen light
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('binaural-theme') === 'dark'
+    const saved = localStorage.getItem('binaural-theme')
+    return saved !== 'light'
   })
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
@@ -447,6 +454,10 @@ function AppInner() {
   const [padVolume, setPadVolume] = useState(0.15)
   const [padReverbMix, setPadReverbMix] = useState(0.5)
   const [padWaveform, setPadWaveform] = useState<PadWaveform>('sine')
+  // Pad standalone display state for mini-player
+  const [padStandaloneActive, setPadStandaloneActive] = useState(false)
+  const [padStandaloneHz, setPadStandaloneHz] = useState(220)
+  const [padStandaloneChord, setPadStandaloneChord] = useState('Major')
   const [padBreatheRate, setPadBreatheRate] = useState(0.1)
 
   // Automation
@@ -464,6 +475,10 @@ function AppInner() {
   const [isRunning, setIsRunning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [sessionTotalSeconds, setSessionTotalSeconds] = useState(0)
+  const [tonesPresetBump, setTonesPresetBump] = useState(0)
+  const [moodMode, setMoodMode] = useState<'mood' | 'anti'>('mood')
+  const [moodSliders, setMoodSliders] = useState<MoodSliders>(defaultMoodSliders)
+  const [antiSliders, setAntiSliders] = useState<AntiMoodSliders>(defaultAntiSliders)
 
   // Journal
   const { entries: journalEntries, addEntry: journalAddEntry, updateEntry: journalUpdateEntry, deleteEntry: journalDeleteEntry } = useJournal()
@@ -1291,6 +1306,95 @@ function AppInner() {
     }
   }
 
+  const exportSceneWav = async (scene: StudioScene): Promise<void> => {
+    try {
+      const totalSec = (scene.durationMinutes || 5) * 60
+      const sampleRate = 44100
+      const offCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalSec), sampleRate)
+      const now = offCtx.currentTime
+      const masterGain = offCtx.createGain()
+      masterGain.gain.value = 1
+      masterGain.connect(offCtx.destination)
+
+      for (const layer of scene.layers) {
+        if (!layer.enabled) continue
+        const vol = layer.volume ?? 1
+
+        if (layer.type === 'carrier' || layer.type === 'beat') {
+          // carrier + beat together form the binaural pair
+          const carrierHz = (layer.settings.carrierFrequency as number) ?? 432
+          const beatHz = (layer.settings.beatFrequency as number) ?? 6
+          const leftHz = carrierHz
+          const rightHz = carrierHz + beatHz
+          const lOsc = offCtx.createOscillator()
+          const rOsc = offCtx.createOscillator()
+          lOsc.type = 'sine'; lOsc.frequency.value = leftHz
+          rOsc.type = 'sine'; rOsc.frequency.value = rightHz
+          const merger = offCtx.createChannelMerger(2)
+          const lGain = offCtx.createGain(); lGain.gain.value = vol
+          const rGain = offCtx.createGain(); rGain.gain.value = vol
+          lOsc.connect(lGain); rOsc.connect(rGain)
+          lGain.connect(merger, 0, 0); rGain.connect(merger, 0, 1)
+          merger.connect(masterGain)
+          lOsc.start(now); rOsc.start(now)
+
+        } else if (layer.type === 'noise') {
+          const noiseT = (layer.settings.noiseType as string) ?? 'white'
+          const validNoise = ['white','pink','brown','blue','violet']
+          if (noiseT !== 'none' && validNoise.includes(noiseT)) {
+            const noiseSrc = createNoiseBuffer(offCtx as unknown as AudioContext, noiseT as Exclude<NoiseType, 'none'>)
+            const nGain = offCtx.createGain(); nGain.gain.value = vol
+            noiseSrc.connect(nGain); nGain.connect(masterGain)
+          }
+
+        } else if (layer.type === 'soundscape') {
+          // Soundscape layers are audio files — skip for offline render
+          // (OfflineAudioContext can't fetch external URLs in this context)
+
+        } else if (layer.type === 'pad') {
+          // Render pad chord via oscillators
+          const NOTE_FREQS_LOCAL: Record<string, number> = {
+            'C':261.63,'C#':277.18,'D':293.66,'D#':311.13,'E':329.63,'F':349.23,
+            'F#':369.99,'G':392.00,'G#':415.30,'A':440.00,'A#':466.16,'B':493.88,
+          }
+          const CHORD_INTERVALS_LOCAL: Record<string, number[]> = {
+            'Root':[0],'Power':[0,7],'Major':[0,4,7],'Minor':[0,3,7],
+            'Sus4':[0,5,7],'Major 7':[0,4,7,11],
+          }
+          const rootNote = (layer.settings.rootNote as string) ?? 'A'
+          const octave = (layer.settings.octave as number) ?? 3
+          const chordMode = (layer.settings.chordMode as string) ?? 'Major'
+          const waveform = (layer.settings.waveform as OscillatorType) ?? 'triangle'
+          const detuneSpread = (layer.settings.detune as number) ?? 20
+          const reverbMix = (layer.settings.reverbMix as number) ?? 0.5
+          const intervals = CHORD_INTERVALS_LOCAL[chordMode] ?? [0]
+          const PANS = [-0.6, -0.2, 0.2, 0.6]
+          const padMaster = offCtx.createGain(); padMaster.gain.value = vol * (1 - reverbMix * 0.4)
+          padMaster.connect(masterGain)
+          intervals.forEach(semitones => {
+            const baseFreq = NOTE_FREQS_LOCAL[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
+            const detuneOffsets = [-detuneSpread * 0.5, detuneSpread * 0.5, -detuneSpread * 0.15, detuneSpread * 0.15]
+            PANS.forEach((pan, i) => {
+              const osc = offCtx.createOscillator()
+              osc.type = waveform; osc.frequency.value = baseFreq; osc.detune.value = detuneOffsets[i]
+              const panner = offCtx.createStereoPanner(); panner.pan.value = pan
+              const g = offCtx.createGain(); g.gain.value = 0.25
+              osc.connect(g); g.connect(panner); panner.connect(padMaster)
+              osc.start(now)
+            })
+          })
+        }
+      }
+
+      const renderedBuffer = await offCtx.startRendering()
+      const blob = encodeWav(renderedBuffer)
+      downloadBlob(blob, `liminal-${scene.name.replace(/\s+/g, '-').toLowerCase()}.wav`)
+    } catch (err) {
+      console.error('Scene WAV export failed', err)
+      addToast('Export failed. Please try again.', 'error')
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Journal
   // ---------------------------------------------------------------------------
@@ -1988,45 +2092,24 @@ function AppInner() {
                     <small className="control-hint">Applied at session start - restart to hear change</small>
                     <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
                   </label>
-                  {/* Tones Presets */}
-                  {(() => {
-                    const tPresets = (() => { try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') as Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> } catch { return [] } })()
-                    return (<>
-                      {tPresets.length > 0 && (
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <div className="section-label">Saved Presets</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.3rem' }}>
-                            {tPresets.map((p: { name: string; carrier: number; beat: number; wobbleRate: number }) => (
-                              <button key={p.name} className="studio-preset-btn" onClick={() => { setCarrier(p.carrier); setBeat(p.beat); setWobbleRate(p.wobbleRate) }}>
-                                {p.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', alignItems: 'center' }}>
-                        <input
-                          className="text-input"
-                          type="text"
-                          placeholder="Preset name"
-                          id="tones-preset-name-input"
-                          style={{ flex: 1, fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
-                        />
-                        <button className="soft-button" style={{ fontSize: '0.83rem', whiteSpace: 'nowrap' }}
-                          onClick={() => {
-                            const inp = document.getElementById('tones-preset-name-input') as HTMLInputElement | null
-                            const name = inp?.value?.trim()
-                            if (!name) return
-                            const existing: Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> = (() => { try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] } })()
-                            const next = [...existing.filter(p => p.name !== name), { name, carrier, beat, wobbleRate }]
-                            localStorage.setItem('liminal-tones-presets', JSON.stringify(next))
-                            if (inp) inp.value = ''
-                          }}
-                        >Save Preset</button>
-                      </div>
-                    </>)
-                  })()}
+
                 </div>
+              </div>
+
+              {/* Mood EQ */}
+              <div className="section-block">
+                <div className="section-title">Mood EQ</div>
+                <MoodEQ
+                  mode={moodMode}
+                  moodSliders={moodSliders}
+                  antiSliders={antiSliders}
+                  onMode={setMoodMode}
+                  onMoodChange={setMoodSliders}
+                  onAntiChange={setAntiSliders}
+                  setCarrier={setCarrier}
+                  setBeat={setBeat}
+                  setWobbleRate={setWobbleRate}
+                />
               </div>
 
               {/* Filter */}
@@ -2115,6 +2198,92 @@ function AppInner() {
                   </label>
                 </div>
               </div>
+
+              {/* Tones Presets — full tab snapshot */}
+              {(() => {
+                void tonesPresetBump // re-render trigger
+                type TonesPreset = {
+                  name: string
+                  carrier: number; beat: number; wobbleRate: number; wobbleDepth: number
+                  wobbleWaveform: LfoWaveform; wobbleTarget: LfoTarget
+                  filterType: FilterType; filterFrequency: number; filterQ: number
+                  isoEnabled: boolean; isoVolume: number; isoWaveform: OscillatorType; isoDutyCycle: number
+                  useIndependentTuning: boolean; leftFrequency: number; rightFrequency: number; phaseOffset: number
+                  moodMode: 'mood' | 'anti'; moodSliders: MoodSliders; antiSliders: AntiMoodSliders
+                }
+                const loadPresets = (): TonesPreset[] => {
+                  try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] }
+                }
+                const applyPreset = (p: TonesPreset) => {
+                  setCarrier(p.carrier); setBeat(p.beat)
+                  setWobbleRate(p.wobbleRate); setWobbleDepth(p.wobbleDepth)
+                  setWobbleWaveform(p.wobbleWaveform); setWobbleTarget(p.wobbleTarget)
+                  setFilterType(p.filterType); setFilterFrequency(p.filterFrequency); setFilterQ(p.filterQ)
+                  setIsoEnabled(p.isoEnabled); setIsoVolume(p.isoVolume); setIsoWaveform(p.isoWaveform); setIsoDutyCycle(p.isoDutyCycle)
+                  setUseIndependentTuning(p.useIndependentTuning)
+                  setLeftFrequency(p.leftFrequency); setRightFrequency(p.rightFrequency); setPhaseOffset(p.phaseOffset)
+                  if (p.moodMode) setMoodMode(p.moodMode)
+                  if (p.moodSliders) setMoodSliders(p.moodSliders)
+                  if (p.antiSliders) setAntiSliders(p.antiSliders)
+                }
+                const savePreset = (name: string) => {
+                  const preset: TonesPreset = {
+                    name, carrier, beat, wobbleRate, wobbleDepth,
+                    wobbleWaveform, wobbleTarget,
+                    filterType, filterFrequency, filterQ,
+                    isoEnabled, isoVolume, isoWaveform, isoDutyCycle,
+                    useIndependentTuning, leftFrequency, rightFrequency, phaseOffset,
+                    moodMode, moodSliders, antiSliders,
+                  }
+                  const existing = loadPresets()
+                  localStorage.setItem('liminal-tones-presets', JSON.stringify([...existing.filter(p => p.name !== name), preset]))
+                }
+                const deletePreset = (name: string) => {
+                  localStorage.setItem('liminal-tones-presets', JSON.stringify(loadPresets().filter(p => p.name !== name)))
+                }
+                const presets = loadPresets()
+                return (
+                  <div className="section-block">
+                    <div className="section-title">Presets</div>
+                    <div className="section-card">
+                      {presets.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                          {presets.map(p => (
+                            <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <button className="studio-preset-btn" onClick={() => applyPreset(p)}>{p.name}</button>
+                              <button
+                                className="soft-button soft-button--danger"
+                                style={{ padding: '0.15rem 0.4rem', fontSize: '0.75rem', lineHeight: 1 }}
+                                onClick={() => { deletePreset(p.name); setTonesPresetBump(b => b + 1) }}
+                                title="Delete preset"
+                              >✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <input
+                          className="text-input"
+                          type="text"
+                          placeholder="Preset name"
+                          id="tones-preset-name-input"
+                          style={{ flex: 1, fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
+                        />
+                        <button className="soft-button" style={{ fontSize: '0.83rem', whiteSpace: 'nowrap' }}
+                          onClick={() => {
+                            const inp = document.getElementById('tones-preset-name-input') as HTMLInputElement | null
+                            const name = inp?.value?.trim()
+                            if (!name) return
+                            savePreset(name)
+                            if (inp) inp.value = ''
+                            setTonesPresetBump(b => b + 1)
+                          }}
+                        >Save Preset</button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
 
             </div>
           )}
@@ -2255,7 +2424,15 @@ function AppInner() {
           {/* ──────────────── PAD SYNTH TAB ──────────────── */}
           {activeTab === 'pad' && (
             <div className="tab-sections">
-              <PadSynth />
+              <PadSynth
+                onPlay={() => { /* pad manages its own AudioContext */ }}
+                onStop={() => { /* no-op: pad manages its own teardown */ }}
+                onStateChange={(playing, hz, chord) => {
+                  setPadStandaloneActive(playing)
+                  setPadStandaloneHz(hz)
+                  setPadStandaloneChord(chord)
+                }}
+              />
             </div>
           )}
 
@@ -2291,6 +2468,7 @@ function AppInner() {
               isRunning={isRunning}
               musicTracks={MUSIC_TRACKS}
               onExportWav={() => void exportWav()}
+              onExportScene={(scene) => void exportSceneWav(scene)}
               initialLayers={studioQuickStartLayers}
               fadeInSeconds={fadeInSeconds}
               fadeOutSeconds={fadeOutSeconds}
@@ -2407,6 +2585,12 @@ function AppInner() {
           {activeTab === 'education' && (
             <div className="tab-sections">
               <EducationTab />
+            </div>
+          )}
+
+          {activeTab === 'help' && (
+            <div className="tab-sections">
+              <HelpTab />
             </div>
           )}
 
@@ -2574,6 +2758,9 @@ function AppInner() {
         ambientRunning={ambientRunning}
         carrier={carrier}
         beat={beat}
+        padStandaloneActive={padStandaloneActive}
+        padStandaloneHz={padStandaloneHz}
+        padStandaloneChord={padStandaloneChord}
       remainingSeconds={remainingSeconds}
       sessionTotalSeconds={sessionTotalSeconds}
       soundsceneId={soundsceneId}
@@ -2596,6 +2783,7 @@ function AppInner() {
       isExpanded={playerExpanded}
       onToggleExpand={() => setPlayerExpanded(v => !v)}
       onOpenVisual={() => { setActiveTab('focus'); setPlayerExpanded(false) }}
+      darkMode={darkMode}
     />
     </main>
 
@@ -2644,10 +2832,46 @@ function App() {
   return (
     <AuthProvider>
       <SubscriptionProvider>
-        <AppInner />
+        <AppRouter />
       </SubscriptionProvider>
     </AuthProvider>
   )
+}
+
+function AppRouter() {
+  const { profile, loading, user } = useAuth()
+
+  if (window.location.pathname === '/admin') {
+    // Still waiting for auth to initialise
+    if (loading) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-app, #0d0d12)', color: 'var(--text-muted, #888)' }}>
+          Loading…
+        </div>
+      )
+    }
+    // Auth resolved but no user at all — redirect
+    if (!user) {
+      window.location.href = '/app'
+      return null
+    }
+    // User is logged in but profile hasn't loaded yet — keep waiting
+    if (!profile) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-app, #0d0d12)', color: 'var(--text-muted, #888)' }}>
+          Loading profile…
+        </div>
+      )
+    }
+    // Profile loaded — check admin flag
+    if (!profile.is_admin) {
+      window.location.href = '/app'
+      return null
+    }
+    return <AdminConsole />
+  }
+
+  return <AppInner />
 }
 
 export default App
