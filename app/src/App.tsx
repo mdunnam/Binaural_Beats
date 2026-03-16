@@ -2327,7 +2327,7 @@ function AppInner() {
           {/* ──────────────── PAD SYNTH TAB ──────────────── */}
           {activeTab === 'pad' && (
             <div className="tab-sections">
-              <PadSynth />
+              <PadSynth onPlay={() => { if (!isRunning && !graphRef.current) void toggleAudio() }} />
             </div>
           )}
 

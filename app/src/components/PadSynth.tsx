@@ -33,7 +33,7 @@ function makeReverbIR(ctx: AudioContext, duration = 3, decay = 2): AudioBuffer {
   return buf
 }
 
-export function PadSynth() {
+export function PadSynth({ onPlay }: { onPlay?: () => void }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [waveform, setWaveform] = useState<OscillatorType>('triangle')
   const [rootNote, setRootNote] = useState('A')
@@ -218,7 +218,8 @@ export function PadSynth() {
     voiceGainsRef.current = voiceGains
     isPlayingRef.current = true
     setIsPlaying(true)
-  }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume])
+    onPlay?.()
+  }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume, onPlay])
 
   // Always keep ref pointing at latest startPad
   startPadRef.current = startPad
