@@ -79,10 +79,9 @@ function createBreathSound(ctx: AudioContext, phase: 'inhale' | 'exhale', durati
 
 type Props = { isRunning: boolean }
 
-export function BreathGuide({ isRunning }: Props) {
+export function BreathGuide({ isRunning: _isRunning }: Props) {
   const [enabled, setEnabled] = useState(false)
-  const [isSolo, setIsSolo] = useState(false)
-  const [isSoloActive, setIsSoloActive] = useState(false)
+  const [isGuideActive, setIsGuideActive] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [patternName, setPatternName] = useState('box')
@@ -94,7 +93,7 @@ export function BreathGuide({ isRunning }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const prevPhaseRef = useRef<string>('')
 
-  const isActive = isRunning || isSoloActive
+  const isActive = isGuideActive
 
   // Run breathing cycle
   useEffect(() => {
@@ -186,23 +185,10 @@ export function BreathGuide({ isRunning }: Props) {
             style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
             onClick={() => {
               setEnabled(e => !e)
-              if (enabled) {
-                setIsSoloActive(false)
-              }
+              if (enabled) setIsGuideActive(false)
             }}
           >
             {enabled ? 'On' : 'Off'}
-          </button>
-          <button
-            className={`breath-solo-btn${isSolo ? ' breath-solo-btn--active' : ''}`}
-            onClick={() => {
-              setIsSolo(s => {
-                if (s) setIsSoloActive(false)
-                return !s
-              })
-            }}
-          >
-            Solo
           </button>
           <button
             className={`breath-sound-btn${soundEnabled ? ' breath-sound-btn--active' : ''}`}
@@ -260,20 +246,18 @@ export function BreathGuide({ isRunning }: Props) {
               style={{ minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <p className="control-hint" style={{ textAlign: 'center', margin: 0 }}>
-                {isSolo ? 'Press Start to begin breathing guide' : 'Start a session to begin breathing guide'}
+                Press Start to begin breathing guide
               </p>
             </div>
           )}
 
-          {/* Solo start/stop */}
-          {isSolo && (
-            <button
-              className={`breath-solo-start-btn${isSoloActive ? ' breath-solo-start-btn--stop' : ''}`}
-              onClick={() => setIsSoloActive(a => !a)}
-            >
-              {isSoloActive ? '■ Stop' : '▶ Start breathing session'}
-            </button>
-          )}
+          {/* Start/stop */}
+          <button
+            className={`breath-solo-start-btn${isGuideActive ? ' breath-solo-start-btn--stop' : ''}`}
+            onClick={() => setIsGuideActive(a => !a)}
+          >
+            {isGuideActive ? '■ Stop' : '▶ Start breathing guide'}
+          </button>
         </>
       )}
     </div>
