@@ -98,6 +98,7 @@ export function PadSynth() {
   const masterGainRef = useRef<GainNode | null>(null)
   const filterRef = useRef<BiquadFilterNode | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
+  const startPadRef = useRef<(() => void) | null>(null)
   const wetGainRef = useRef<GainNode | null>(null)
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -216,6 +217,9 @@ export function PadSynth() {
     setIsPlaying(true)
   }, [isPlaying, waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume])
 
+  // Always keep ref pointing at latest startPad
+  startPadRef.current = startPad
+
   const stopPad = useCallback(() => {
     if (!isPlaying || !ctxRef.current) return
     const ctx = ctxRef.current
@@ -247,11 +251,28 @@ export function PadSynth() {
 
   // Params that require restart — auto-restart if playing
   const restartIfPlaying = useCallback(() => {
-    if (!isPlaying) return
-    stopPad()
-    // Small delay to let release begin, then restart
-    setTimeout(() => { startPad() }, 100)
-  }, [isPlaying, stopPad, startPad])
+    if (!isPlaying || !ctxRef.current) return
+    const ctx = ctxRef.current
+    const now = ctx.currentTime
+
+    // Quick 50ms fade out, then kill context and restart
+    voiceGainsRef.current.forEach(g => {
+      g.gain.cancelScheduledValues(now)
+      g.gain.setValueAtTime(g.gain.value, now)
+      g.gain.linearRampToValueAtTime(0, now + 0.05)
+    })
+
+    if (releaseTimeoutRef.current) clearTimeout(releaseTimeoutRef.current)
+    ctxRef.current = null
+    voiceGainsRef.current = []
+
+    releaseTimeoutRef.current = setTimeout(() => {
+      if (ctx.state !== 'closed') ctx.close().catch(() => {})
+      setIsPlaying(false)
+      // Use a second timeout so setIsPlaying flushes before startPad runs
+      setTimeout(() => startPadRef.current?.(), 20)
+    }, 80)
+  }, [isPlaying])
 
   useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
