@@ -466,6 +466,7 @@ function AppInner() {
   const [isRunning, setIsRunning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [sessionTotalSeconds, setSessionTotalSeconds] = useState(0)
+  const [tonesPresetBump, setTonesPresetBump] = useState(0)
 
   // Journal
   const { entries: journalEntries, addEntry: journalAddEntry, updateEntry: journalUpdateEntry, deleteEntry: journalDeleteEntry } = useJournal()
@@ -1990,44 +1991,7 @@ function AppInner() {
                     <small className="control-hint">Applied at session start - restart to hear change</small>
                     <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
                   </label>
-                  {/* Tones Presets */}
-                  {(() => {
-                    const tPresets = (() => { try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') as Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> } catch { return [] } })()
-                    return (<>
-                      {tPresets.length > 0 && (
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <div className="section-label">Saved Presets</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.3rem' }}>
-                            {tPresets.map((p: { name: string; carrier: number; beat: number; wobbleRate: number }) => (
-                              <button key={p.name} className="studio-preset-btn" onClick={() => { setCarrier(p.carrier); setBeat(p.beat); setWobbleRate(p.wobbleRate) }}>
-                                {p.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', alignItems: 'center' }}>
-                        <input
-                          className="text-input"
-                          type="text"
-                          placeholder="Preset name"
-                          id="tones-preset-name-input"
-                          style={{ flex: 1, fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
-                        />
-                        <button className="soft-button" style={{ fontSize: '0.83rem', whiteSpace: 'nowrap' }}
-                          onClick={() => {
-                            const inp = document.getElementById('tones-preset-name-input') as HTMLInputElement | null
-                            const name = inp?.value?.trim()
-                            if (!name) return
-                            const existing: Array<{ name: string; carrier: number; beat: number; wobbleRate: number }> = (() => { try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] } })()
-                            const next = [...existing.filter(p => p.name !== name), { name, carrier, beat, wobbleRate }]
-                            localStorage.setItem('liminal-tones-presets', JSON.stringify(next))
-                            if (inp) inp.value = ''
-                          }}
-                        >Save Preset</button>
-                      </div>
-                    </>)
-                  })()}
+
                 </div>
               </div>
 
@@ -2127,6 +2091,87 @@ function AppInner() {
                   </label>
                 </div>
               </div>
+
+              {/* Tones Presets — full tab snapshot */}
+              {(() => {
+                void tonesPresetBump // re-render trigger
+                type TonesPreset = {
+                  name: string
+                  carrier: number; beat: number; wobbleRate: number; wobbleDepth: number
+                  wobbleWaveform: LfoWaveform; wobbleTarget: LfoTarget
+                  filterType: FilterType; filterFrequency: number; filterQ: number
+                  isoEnabled: boolean; isoVolume: number; isoWaveform: OscillatorType; isoDutyCycle: number
+                  useIndependentTuning: boolean; leftFrequency: number; rightFrequency: number; phaseOffset: number
+                }
+                const loadPresets = (): TonesPreset[] => {
+                  try { return JSON.parse(localStorage.getItem('liminal-tones-presets') ?? '[]') } catch { return [] }
+                }
+                const applyPreset = (p: TonesPreset) => {
+                  setCarrier(p.carrier); setBeat(p.beat)
+                  setWobbleRate(p.wobbleRate); setWobbleDepth(p.wobbleDepth)
+                  setWobbleWaveform(p.wobbleWaveform); setWobbleTarget(p.wobbleTarget)
+                  setFilterType(p.filterType); setFilterFrequency(p.filterFrequency); setFilterQ(p.filterQ)
+                  setIsoEnabled(p.isoEnabled); setIsoVolume(p.isoVolume); setIsoWaveform(p.isoWaveform); setIsoDutyCycle(p.isoDutyCycle)
+                  setUseIndependentTuning(p.useIndependentTuning)
+                  setLeftFrequency(p.leftFrequency); setRightFrequency(p.rightFrequency); setPhaseOffset(p.phaseOffset)
+                }
+                const savePreset = (name: string) => {
+                  const preset: TonesPreset = {
+                    name, carrier, beat, wobbleRate, wobbleDepth,
+                    wobbleWaveform, wobbleTarget,
+                    filterType, filterFrequency, filterQ,
+                    isoEnabled, isoVolume, isoWaveform, isoDutyCycle,
+                    useIndependentTuning, leftFrequency, rightFrequency, phaseOffset,
+                  }
+                  const existing = loadPresets()
+                  localStorage.setItem('liminal-tones-presets', JSON.stringify([...existing.filter(p => p.name !== name), preset]))
+                }
+                const deletePreset = (name: string) => {
+                  localStorage.setItem('liminal-tones-presets', JSON.stringify(loadPresets().filter(p => p.name !== name)))
+                }
+                const presets = loadPresets()
+                return (
+                  <div className="section-block">
+                    <div className="section-title">Presets</div>
+                    <div className="section-card">
+                      {presets.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                          {presets.map(p => (
+                            <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <button className="studio-preset-btn" onClick={() => applyPreset(p)}>{p.name}</button>
+                              <button
+                                className="soft-button soft-button--danger"
+                                style={{ padding: '0.15rem 0.4rem', fontSize: '0.75rem', lineHeight: 1 }}
+                                onClick={() => { deletePreset(p.name); setActiveTab(activeTab) }}
+                                title="Delete preset"
+                              >✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <input
+                          className="text-input"
+                          type="text"
+                          placeholder="Preset name"
+                          id="tones-preset-name-input"
+                          style={{ flex: 1, fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
+                        />
+                        <button className="soft-button" style={{ fontSize: '0.83rem', whiteSpace: 'nowrap' }}
+                          onClick={() => {
+                            const inp = document.getElementById('tones-preset-name-input') as HTMLInputElement | null
+                            const name = inp?.value?.trim()
+                            if (!name) return
+                            savePreset(name)
+                            if (inp) inp.value = ''
+                            setTonesPresetBump(b => b + 1)
+                          }}
+                        >Save Preset</button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
 
             </div>
           )}
