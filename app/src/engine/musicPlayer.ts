@@ -23,6 +23,12 @@ export const MUSIC_TRACKS: MusicTrack[] = [
   { id: '679187', title: 'Aesthetic Lofi',       artist: 'Seth_Makes_Sounds', file: 'music/aesthetic-lofi-loop.mp3',    duration: 160 },
   { id: '455855', title: 'Wandering',            artist: 'Andrewkn',          file: 'music/wandering-ambient.mp3',      duration: 290 },
   { id: '827922', title: 'Ambient Pad Piano',    artist: 'Andrewkn',          file: 'music/ambient-pad-piano.mp3',      duration: 96  },
+  { id: 'jp-something-going-on', title: 'Something Going On', artist: 'Joel Putman', file: 'music/something-going-on.mp3', duration: 164 },
+  { id: 'jp-pentode',            title: 'Pentode',             artist: 'Joel Putman', file: 'music/pentode-lofi.mp3',       duration: 146 },
+  { id: 'jp-traverse',           title: 'Traverse',            artist: 'Joel Putman', file: 'music/traverse-ambient.mp3',  duration: 152 },
+  { id: 'jp-sweet-dream',        title: 'Sweet Dream',         artist: 'Joel Putman', file: 'music/sweet-dream.mp3',       duration: 96  },
+  { id: 'jp-cycad',              title: 'Cycad',               artist: 'Joel Putman', file: 'music/cycad-chill.mp3',       duration: 157 },
+  { id: 'jp-not-once',           title: 'Not Once',            artist: 'Joel Putman', file: 'music/not-once.mp3',          duration: 140 },
 ]
 
 export type MusicEQBands = {
