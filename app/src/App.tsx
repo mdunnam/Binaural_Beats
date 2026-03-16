@@ -2157,7 +2157,7 @@ function AppInner() {
                               <button
                                 className="soft-button soft-button--danger"
                                 style={{ padding: '0.15rem 0.4rem', fontSize: '0.75rem', lineHeight: 1 }}
-                                onClick={() => { deletePreset(p.name); setActiveTab(activeTab) }}
+                                onClick={() => { deletePreset(p.name); setTonesPresetBump(b => b + 1) }}
                                 title="Delete preset"
                               >✕</button>
                             </div>
