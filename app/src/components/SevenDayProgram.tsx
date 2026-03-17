@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ProgramComplete } from './ProgramComplete'
 
 type DayEntry = {
   day: number
@@ -37,9 +38,12 @@ function saveProgress(p: Progress) {
 type Props = {
   onStartSession: (carrier: number, beat: number) => void
   sessionStartedAt: number | null  // timestamp when current session started, or null
+  isPro?: boolean
+  onContinue?: (tab: string) => void
+  onUpgrade?: () => void
 }
 
-export function SevenDayProgram({ onStartSession, sessionStartedAt }: Props) {
+export function SevenDayProgram({ onStartSession, sessionStartedAt, isPro = false, onContinue, onUpgrade }: Props) {
   const [progress, setProgress] = useState<Progress>(loadProgress)
   const [showCongrats, setShowCongrats] = useState(false)
   const [activeDayStarted, setActiveDayStarted] = useState<number | null>(null)
@@ -93,7 +97,13 @@ export function SevenDayProgram({ onStartSession, sessionStartedAt }: Props) {
         </div>
       </div>
 
-      {showCongrats && (
+      {showCongrats && onContinue ? (
+        <ProgramComplete
+          isPro={isPro}
+          onContinue={onContinue}
+          onUpgrade={onUpgrade ?? (() => {})}
+        />
+      ) : showCongrats && (
         <div className="seven-day-congrats">
           <div style={{ fontSize: '3rem' }}>🔮</div>
           <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>You've Completed the Program!</div>

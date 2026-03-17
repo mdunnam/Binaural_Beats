@@ -13,4 +13,6 @@ export type Profile = {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   created_at: string
+  streak_days?: number
+  streak_last_date?: string
 }

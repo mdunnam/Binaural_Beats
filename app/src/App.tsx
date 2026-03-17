@@ -65,6 +65,9 @@ import type { SessionCard } from './data/sessionLibrary'
 import { AdminConsole } from './components/AdminConsole'
 import { trackFeatureUsage } from './lib/trackFeatureUsage'
 import { SevenDayProgram, loadProgress as load7DayProgress } from './components/SevenDayProgram'
+import { ProgramComplete } from './components/ProgramComplete'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { recordSessionComplete } from './lib/streakSync'
 import { useSculptBridge } from './hooks/useSculptBridge'
 import { DEFAULT_MAPPING } from './lib/sculptBridge'
 import type { BridgeMapping } from './lib/sculptBridge'
@@ -928,6 +931,7 @@ function AppInner() {
         durationMinutes: mins,
       })
       setShowJournalModal(true)
+      void recordSessionComplete(user?.id ?? null)
     }
 
     // Fade pad out (session pad only - standalone pad keeps running)
@@ -1952,6 +1956,7 @@ function AppInner() {
           )
         })()}
 
+        <ErrorBoundary tabName="App">
         <div className="tab-content">
           {/* ──────────────── DASHBOARD TAB ──────────────── */}
           {activeTab === 'dashboard' && (
@@ -2953,6 +2958,9 @@ function AppInner() {
                   window.setTimeout(() => { if (!graphRef.current) void toggleAudio() }, 100)
                 }}
                 sessionStartedAt={isRunning ? (Date.now() - (sessionTotalSeconds - remainingSeconds) * 1000) : null}
+                isPro={isPro}
+                onContinue={(tab) => setActiveTab(tab as Parameters<typeof setActiveTab>[0])}
+                onUpgrade={() => openUpgradeModal('Liminal Pro')}
               />
             </div>
           )}
@@ -2979,6 +2987,7 @@ function AppInner() {
             />
           )}
         </div>
+        </ErrorBoundary>
       </section>
 
       {/* ── Panic Overlay ── */}
