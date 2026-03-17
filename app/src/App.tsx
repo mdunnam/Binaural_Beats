@@ -2830,12 +2830,31 @@ function AppInner() {
                 onStartSession={(carrier, beat, _soundscape, _label) => {
                   setCarrier(carrier)
                   setBeat(beat)
+                  carrierRef.current = carrier
+                  beatRef.current = beat
+                  const graph = graphRef.current
+                  if (graph) {
+                    const leftHz = carrier
+                    leftFrequencyRef.current = leftHz
+                    graph.leftOsc.frequency.setValueAtTime(leftHz, graph.context.currentTime)
+                    graph.rightOsc.frequency.setValueAtTime(leftHz + beat, graph.context.currentTime)
+                  }
                   setActiveTab('studio')
                 }}
                 onStartTuning={(steps) => {
                   if (steps.length > 0) {
-                    setCarrier(steps[0].carrier)
-                    setBeat(steps[0].beat)
+                    const c = steps[0].carrier
+                    const b = steps[0].beat
+                    setCarrier(c)
+                    setBeat(b)
+                    carrierRef.current = c
+                    beatRef.current = b
+                    const graph = graphRef.current
+                    if (graph) {
+                      leftFrequencyRef.current = c
+                      graph.leftOsc.frequency.setValueAtTime(c, graph.context.currentTime)
+                      graph.rightOsc.frequency.setValueAtTime(c + b, graph.context.currentTime)
+                    }
                   }
                   setActiveTab('studio')
                 }}
