@@ -5,6 +5,7 @@ import { LaneEditor } from './AutomationEditor'
 import { PREBUILT_JOURNEYS, JOURNEY_EMOJIS } from '../data/prebuiltJourneys'
 import type { StudioJourney } from '../types'
 import { loadPadPresets, loadCustomSoundscapes } from '../data/padPresets'
+import { ProGate } from './ProGate'
 
 const STUDIO_SCENES_KEY = 'liminal-studio-scenes'
 const STUDIO_JOURNEYS_KEY = 'liminal-studio-journeys'
@@ -821,6 +822,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
 
       <div className="section-block">
         <div className="section-title">Journey</div>
+        <ProGate feature="Studio Journeys">
         <div className="section-card">
       {journeyScenes.length > 0 && (
         <div className="studio-journey-list">
@@ -929,12 +931,14 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
         </button>
       </div>
         </div>
+        </ProGate>
       </div>
 
       </div>{/* tab-sections */}
       {onExportWav && (
         <div className="section-block" style={{ marginTop: '1rem' }}>
           <div className="section-title">Export</div>
+          <ProGate feature="WAV Export">
           <div className="section-card">
             <p className="control-hint" style={{ marginBottom: '0.6rem' }}>
               Exports a 60-second WAV of the current layer stack.
@@ -949,6 +953,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
               💾 Export WAV
             </button>
           </div>
+          </ProGate>
         </div>
       )}
     </div>

@@ -5843,3 +5843,67 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   line-height: 1.5;
 }
 .bridge-setup-hint p { margin: 0 0 0.25rem; }
+
+/* ── Pro Gate ── */
+.pro-gate {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.pro-gate-blur {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.5;
+}
+.pro-gate-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: rgba(13, 18, 17, 0.75);
+  backdrop-filter: blur(2px);
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  padding: 1.5rem;
+  text-align: center;
+}
+.pro-gate-badge {
+  background: var(--accent);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+.pro-gate-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.pro-gate-sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+.pro-gate-cta { text-decoration: none; }
+
+/* ── PWA Install Banner ── */
+.pwa-install-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-section);
+  border-bottom: 1px solid var(--border-section);
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.pwa-install-banner span { flex: 1; }
+.pwa-install-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.25rem;
+}

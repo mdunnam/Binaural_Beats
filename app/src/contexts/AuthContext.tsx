@@ -59,6 +59,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [fetchProfile])
 
+  // Realtime subscription: keep is_pro in sync if admin flips it in DB
+  useEffect(() => {
+    if (!user) return
+    const sub = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${user.id}`,
+      }, payload => {
+        setProfile(payload.new as Profile)
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(sub) }
+  }, [user])
+
   const refreshProfile = useCallback(async () => {
     if (!user) return
     const p = await fetchProfile(user)

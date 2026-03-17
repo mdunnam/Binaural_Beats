@@ -7,6 +7,7 @@ import { AuthModal } from './components/AuthModal'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Toast } from './components/Toast'
 import { InstallPrompt } from './components/InstallPrompt'
+import { ProGate } from './components/ProGate'
 import { useToast } from './hooks/useToast'
 import { useWakeLock } from './hooks/useWakeLock'
 import { useAudioVisibility } from './hooks/useAudioVisibility'
@@ -2827,6 +2828,7 @@ function AppInner() {
             <div className="tab-sections">
               <div className="section-block">
                 <div className="section-title">AI Meditation</div>
+                <ProGate feature="AI Meditation Composer">
                 <div className="section-card">
                   <AiMeditationPanel
                     onSessionReady={handleAiSessionReady}
@@ -2834,6 +2836,7 @@ function AppInner() {
                     onOpenSettings={() => setShowApiSettings(true)}
                   />
                 </div>
+                </ProGate>
               </div>
             </div>
           )}
