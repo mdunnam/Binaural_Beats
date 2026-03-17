@@ -825,6 +825,27 @@ function AppInner() {
     setShowOnboarding(false)
   }, [])
 
+  // Streak reminder check on app load
+  useEffect(() => {
+    const enabled = localStorage.getItem('liminal-reminder-enabled') === 'true'
+    if (!enabled || Notification.permission !== 'granted') return
+
+    const hour = Number(localStorage.getItem('liminal-reminder-hour') ?? 20)
+    const lastFired = localStorage.getItem('liminal-reminder-last-fired')
+    const today = new Date().toDateString()
+    const now = new Date()
+
+    // Fire if: right hour, and haven't fired today
+    if (now.getHours() === hour && lastFired !== today) {
+      localStorage.setItem('liminal-reminder-last-fired', today)
+      new Notification('🧘 Time for Liminal', {
+        body: 'Your daily session is waiting. Keep your streak alive.',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+      })
+    }
+  }, [])
+
   // ---------------------------------------------------------------------------
   // Timer helpers
   // ---------------------------------------------------------------------------
@@ -1814,7 +1835,10 @@ function AppInner() {
           onSkip={handleOnboardingSkip}
         />
       )}
-      {showWelcome && <OnboardingModal onDone={() => setShowWelcome(false)} />}
+      {showWelcome && <OnboardingModal onDone={() => setShowWelcome(false)} onStartProgram={() => {
+        localStorage.setItem('liminal-7day-progress', JSON.stringify({ completedDays: [], startedAt: new Date().toISOString() }))
+        setActiveTab('program')
+      }} />}
     <main className="app-shell">
       <section className="hero">
         <div className="hero-main">

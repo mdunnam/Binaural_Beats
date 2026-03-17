@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSubscription } from '../contexts/SubscriptionContext'
+import { NotificationSettings } from './NotificationSettings'
 
 type SettingsPanelProps = {
   onClose: () => void
@@ -119,6 +120,14 @@ export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
                 </button>
               </>
             )}
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="section-block">
+          <div className="section-title">Notifications</div>
+          <div className="section-card">
+            <NotificationSettings />
           </div>
         </div>
 

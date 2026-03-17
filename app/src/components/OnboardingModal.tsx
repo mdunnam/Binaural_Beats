@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSubscription } from '../contexts/SubscriptionContext'
 
-type Props = { onDone: () => void }
+type Props = { onDone: () => void; onStartProgram?: () => void }
 
 const STEPS = [
   {
@@ -24,7 +24,7 @@ const STEPS = [
   },
 ] as const
 
-export function OnboardingModal({ onDone }: Props) {
+export function OnboardingModal({ onDone, onStartProgram }: Props) {
   const [step, setStep] = useState(0)
   const { openUpgradeModal } = useSubscription()
 
@@ -71,6 +71,11 @@ export function OnboardingModal({ onDone }: Props) {
 
         {isLast ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.5rem' }}>
+            {onStartProgram && (
+              <button className="soft-button soft-button--accent" onClick={() => { dismiss(); onStartProgram() }}>
+                📅 Start the 7-Day Program
+              </button>
+            )}
             <button className="soft-button soft-button--accent" onClick={dismiss}>
               Start Free →
             </button>

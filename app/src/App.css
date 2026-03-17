@@ -5709,3 +5709,19 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   gap: 1rem;
 }
 
+
+/* ===== NOTIFICATION SETTINGS ===== */
+.notif-settings-card {
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.notif-settings-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.notif-settings-sub { font-size: 0.82rem; color: var(--text-muted); }
+.notif-settings-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.notif-label { font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
+.notif-select { background: var(--bg-section); border: 1px solid var(--border-section); border-radius: 0.4rem; color: var(--text-primary); padding: 0.25rem 0.5rem; font-size: 0.82rem; }
