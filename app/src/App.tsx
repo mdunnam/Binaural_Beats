@@ -2841,7 +2841,7 @@ function AppInner() {
                     { id: 'aura-n', type: 'noise' as const, enabled: true, volume: 0.15, label: 'Rain', settings: { type: 'brown' } },
                     { id: 'aura-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
                   ])
-                  setActiveTab('studio')
+                  setTimeout(() => setActiveTab('studio'), 0)
                 }}
                 onStartTuning={(steps) => {
                   if (steps.length > 0) {
@@ -2855,7 +2855,7 @@ function AppInner() {
                       { id: 'aura-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
                     ])
                   }
-                  setActiveTab('studio')
+                  setTimeout(() => setActiveTab('studio'), 0)
                 }}
               />
             </div>
