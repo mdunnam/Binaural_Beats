@@ -51,7 +51,13 @@ body {
   gap: 0.4rem;
 }
 
-.site-logo {
+.site-logo-banner {
+  height: 4.25rem;
+  width: auto;
+  display: block;
+}
+
+
   height: 1em;
   width: 1em;
   object-fit: contain;
@@ -750,11 +756,11 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   line-height: 1.5;
 }
 
-/* ── Mobile: bottom tab bar ── */
+/* ── Mobile: top tab bar ── */
 @media (max-width: 599px) {
   .app-shell {
     max-width: 100%;
-    margin: 0.75rem auto;
+    margin: 0;
 
   .session-quick-grid {
     grid-template-columns: 1fr;
@@ -763,7 +769,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   .session-plan-actions {
     flex-direction: column;
   }
-    padding: 80px 0.75rem 0.75rem;
+    padding: 80px 0.75rem calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
   .tab-nav {
@@ -2725,7 +2731,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 
 @media (max-width: 599px) {
   .app-shell {
-    padding-bottom: 120px;
+    padding-bottom: 80px;
   }
 }
 
@@ -2743,6 +2749,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   transition: max-height 0.35s ease;
   display: flex;
   flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .mini-player--expanded {
@@ -2956,9 +2963,9 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
     width: 60px;
   }
 
-  /* On mobile the tab-nav is also fixed at bottom — shift mini-player above it */
+  /* Tab nav is now at top on mobile — mini-player sits flush at bottom */
   .mini-player {
-    bottom: 56px;
+    bottom: 0;
   }
 }
 
