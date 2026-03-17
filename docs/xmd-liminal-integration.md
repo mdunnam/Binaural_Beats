@@ -230,3 +230,4 @@ Each stroke triggers a musical note. Brush position = pitch. Pressure = velocity
 - [ ] Map ZBrush brush names → `brushType` enum values
 - [ ] Test with Liminal bridge panel open in browser
 - [ ] Add "Open Liminal" button to XMD ToolBox UI (opens `https://www.theliminal.app/app`)
+
