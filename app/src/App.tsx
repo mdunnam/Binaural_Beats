@@ -70,6 +70,7 @@ import { DEFAULT_MAPPING } from './lib/sculptBridge'
 import type { BridgeMapping } from './lib/sculptBridge'
 import { SculptBridgePanel } from './components/SculptBridgePanel'
 import { AuraReader } from './components/AuraReader'
+import type { AuraProfile, AuraQualityResult } from './lib/auraAnalyzer'
 
 // ---------------------------------------------------------------------------
 // Daily Frequency helper
@@ -578,6 +579,8 @@ function AppInner() {
   // ZBrush sculpt bridge
   const [sculptBridgeEnabled, setSculptBridgeEnabled] = useState(false)
   const [sculptBridgeMode, setSculptBridgeMode] = useState<'flow' | 'instrument'>('flow')
+  const [auraProfile, setAuraProfile] = useState<AuraProfile | null>(null)
+  const [auraQuality, setAuraQuality] = useState<AuraQualityResult | null>(null)
   const [sculptMapping, setSculptMapping] = useState<BridgeMapping>(DEFAULT_MAPPING)
   const { connected: sculptConnected, lastState: sculptState } = useSculptBridge({
     enabled: sculptBridgeEnabled,
@@ -2827,6 +2830,9 @@ function AppInner() {
           {activeTab === 'aura' && (
             <div className="tab-content">
               <AuraReader
+                persistedProfile={auraProfile}
+                persistedQuality={auraQuality}
+                onProfileChange={(p, q) => { setAuraProfile(p); setAuraQuality(q) }}
                 onStartSession={(carrier, beat, _soundscape, label) => {
                   if (isRunning) stopSession(false)
                   setStudioQuickStartLayers([

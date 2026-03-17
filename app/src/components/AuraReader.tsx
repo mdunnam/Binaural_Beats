@@ -5,14 +5,17 @@ import { AuraTuning } from './AuraTuning'
 interface AuraReaderProps {
   onStartSession: (carrier: number, beat: number, soundscape: string, label: string) => void
   onStartTuning: (steps: TuningStep[]) => void
+  persistedProfile?: AuraProfile | null
+  persistedQuality?: AuraQualityResult | null
+  onProfileChange?: (profile: AuraProfile | null, quality: AuraQualityResult | null) => void
 }
 
 type Phase = 'idle' | 'loading' | 'result'
 
-export function AuraReader({ onStartSession, onStartTuning }: AuraReaderProps) {
-  const [phase, setPhase] = useState<Phase>('idle')
-  const [profile, setProfile] = useState<AuraProfile | null>(null)
-  const [quality, setQuality] = useState<AuraQualityResult | null>(null)
+export function AuraReader({ onStartSession, onStartTuning, persistedProfile, persistedQuality, onProfileChange }: AuraReaderProps) {
+  const [phase, setPhase] = useState<Phase>(persistedProfile ? 'result' : 'idle')
+  const [profile, setProfile] = useState<AuraProfile | null>(persistedProfile ?? null)
+  const [quality, setQuality] = useState<AuraQualityResult | null>(persistedQuality ?? null)
   const [dragOver, setDragOver] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -32,6 +35,7 @@ export function AuraReader({ onStartSession, onStartTuning }: AuraReaderProps) {
         setProfile(result)
         setQuality(qualityResult)
         setPhase('result')
+        onProfileChange?.(result, qualityResult)
         URL.revokeObjectURL(url)
       }, 1800)
     }
@@ -55,6 +59,7 @@ export function AuraReader({ onStartSession, onStartTuning }: AuraReaderProps) {
     setProfile(null)
     setQuality(null)
     setPreviewUrl(null)
+    onProfileChange?.(null, null)
     if (inputRef.current) inputRef.current.value = ''
   }
 
