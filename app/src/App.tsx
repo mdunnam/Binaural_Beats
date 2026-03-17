@@ -2827,34 +2827,27 @@ function AppInner() {
           {activeTab === 'aura' && (
             <div className="tab-content">
               <AuraReader
-                onStartSession={(carrier, beat, _soundscape, _label) => {
-                  setCarrier(carrier)
-                  setBeat(beat)
-                  carrierRef.current = carrier
-                  beatRef.current = beat
-                  const graph = graphRef.current
-                  if (graph) {
-                    const leftHz = carrier
-                    leftFrequencyRef.current = leftHz
-                    graph.leftOsc.frequency.setValueAtTime(leftHz, graph.context.currentTime)
-                    graph.rightOsc.frequency.setValueAtTime(leftHz + beat, graph.context.currentTime)
-                  }
+                onStartSession={(carrier, beat, _soundscape, label) => {
+                  if (isRunning) stopSession(false)
+                  setStudioQuickStartLayers([
+                    { id: 'aura-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: carrier } },
+                    { id: 'aura-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: beat } },
+                    { id: 'aura-n', type: 'noise' as const, enabled: true, volume: 0.15, label: 'Rain', settings: { type: 'brown' } },
+                    { id: 'aura-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
+                  ])
                   setActiveTab('studio')
                 }}
                 onStartTuning={(steps) => {
                   if (steps.length > 0) {
                     const c = steps[0].carrier
                     const b = steps[0].beat
-                    setCarrier(c)
-                    setBeat(b)
-                    carrierRef.current = c
-                    beatRef.current = b
-                    const graph = graphRef.current
-                    if (graph) {
-                      leftFrequencyRef.current = c
-                      graph.leftOsc.frequency.setValueAtTime(c, graph.context.currentTime)
-                      graph.rightOsc.frequency.setValueAtTime(c + b, graph.context.currentTime)
-                    }
+                    if (isRunning) stopSession(false)
+                    setStudioQuickStartLayers([
+                      { id: 'aura-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: c } },
+                      { id: 'aura-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: b } },
+                      { id: 'aura-n', type: 'noise' as const, enabled: true, volume: 0.15, label: 'Rain', settings: { type: 'brown' } },
+                      { id: 'aura-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
+                    ])
                   }
                   setActiveTab('studio')
                 }}
