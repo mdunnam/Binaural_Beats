@@ -65,10 +65,15 @@ import type { SessionCard } from './data/sessionLibrary'
 import { AdminConsole } from './components/AdminConsole'
 import { trackFeatureUsage } from './lib/trackFeatureUsage'
 import { SevenDayProgram, loadProgress as load7DayProgress } from './components/SevenDayProgram'
+import { ProgramComplete } from './components/ProgramComplete'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { recordSessionComplete } from './lib/streakSync'
 import { useSculptBridge } from './hooks/useSculptBridge'
 import { DEFAULT_MAPPING } from './lib/sculptBridge'
 import type { BridgeMapping } from './lib/sculptBridge'
 import { SculptBridgePanel } from './components/SculptBridgePanel'
+import { AuraReader } from './components/AuraReader'
+import type { AuraProfile, AuraQualityResult } from './lib/auraAnalyzer'
 
 // ---------------------------------------------------------------------------
 // Daily Frequency helper
@@ -121,7 +126,7 @@ const TABS = [
   { id: 'ai',        icon: '✨', label: 'AI Guide'  },
   { id: 'program',   icon: '📅', label: 'Program'   },
   { id: 'help',      icon: '❓', label: 'Help'      },
-
+  { id: 'aura',      icon: '✨', label: 'Aura'      },
 ]
 
 // ---------------------------------------------------------------------------
@@ -577,6 +582,8 @@ function AppInner() {
   // ZBrush sculpt bridge
   const [sculptBridgeEnabled, setSculptBridgeEnabled] = useState(false)
   const [sculptBridgeMode, setSculptBridgeMode] = useState<'flow' | 'instrument'>('flow')
+  const [auraProfile, setAuraProfile] = useState<AuraProfile | null>(null)
+  const [auraQuality, setAuraQuality] = useState<AuraQualityResult | null>(null)
   const [sculptMapping, setSculptMapping] = useState<BridgeMapping>(DEFAULT_MAPPING)
   const { connected: sculptConnected, lastState: sculptState } = useSculptBridge({
     enabled: sculptBridgeEnabled,
@@ -924,6 +931,7 @@ function AppInner() {
         durationMinutes: mins,
       })
       setShowJournalModal(true)
+      void recordSessionComplete(user?.id ?? null)
     }
 
     // Fade pad out (session pad only - standalone pad keeps running)
@@ -1948,6 +1956,7 @@ function AppInner() {
           )
         })()}
 
+        <ErrorBoundary tabName="App">
         <div className="tab-content">
           {/* ──────────────── DASHBOARD TAB ──────────────── */}
           {activeTab === 'dashboard' && (
@@ -2679,8 +2688,7 @@ function AppInner() {
           )}
 
           {/* ──────────────── STUDIO TAB ──────────────── */}
-          {activeTab === 'studio' && (
-            <div>
+          <div style={{ display: activeTab === 'studio' ? undefined : 'none' }}><div>
             <StudioTab
               isRunning={isRunning}
               musicTracks={MUSIC_TRACKS}
@@ -2808,7 +2816,7 @@ function AppInner() {
               />
             </div>
             </div>
-          )}
+          </div>
 
           {/* ──────────────── EDUCATION TAB ──────────────── */}
           {activeTab === 'education' && (
@@ -2820,6 +2828,40 @@ function AppInner() {
           {activeTab === 'help' && (
             <div className="tab-sections">
               <HelpTab />
+            </div>
+          )}
+
+          {activeTab === 'aura' && (
+            <div className="tab-content">
+              <AuraReader
+                persistedProfile={auraProfile}
+                persistedQuality={auraQuality}
+                onProfileChange={(p, q) => { setAuraProfile(p); setAuraQuality(q) }}
+                onStartSession={(carrier, beat, _soundscape, label) => {
+                  if (isRunning) stopSession(false)
+                  setStudioQuickStartLayers([
+                    { id: 'aura-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: carrier } },
+                    { id: 'aura-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: beat } },
+                    { id: 'aura-n', type: 'noise' as const, enabled: true, volume: 0.15, label: 'Rain', settings: { type: 'brown' } },
+                    { id: 'aura-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
+                  ])
+                  setActiveTab('studio')
+                }}
+                onStartTuning={(steps) => {
+                  if (steps.length > 0) {
+                    const c = steps[0].carrier
+                    const b = steps[0].beat
+                    if (isRunning) stopSession(false)
+                    setStudioQuickStartLayers([
+                      { id: 'aura-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: c } },
+                      { id: 'aura-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: b } },
+                      { id: 'aura-n', type: 'noise' as const, enabled: true, volume: 0.15, label: 'Rain', settings: { type: 'brown' } },
+                      { id: 'aura-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
+                    ])
+                  }
+                  setActiveTab('studio')
+                }}
+              />
             </div>
           )}
 
@@ -2916,6 +2958,9 @@ function AppInner() {
                   window.setTimeout(() => { if (!graphRef.current) void toggleAudio() }, 100)
                 }}
                 sessionStartedAt={isRunning ? (Date.now() - (sessionTotalSeconds - remainingSeconds) * 1000) : null}
+                isPro={isPro}
+                onContinue={(tab) => setActiveTab(tab as Parameters<typeof setActiveTab>[0])}
+                onUpgrade={() => openUpgradeModal('Liminal Pro')}
               />
             </div>
           )}
@@ -2942,6 +2987,7 @@ function AppInner() {
             />
           )}
         </div>
+        </ErrorBoundary>
       </section>
 
       {/* ── Panic Overlay ── */}
