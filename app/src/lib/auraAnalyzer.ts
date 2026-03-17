@@ -196,10 +196,10 @@ export interface AuraQualityResult {
 }
 
 export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
-  const { energy, warmth, saturation, brightness } = profile
+  const { warmth, saturation, brightness, brainwaveState } = profile
 
-  // Overloaded: high energy + high warmth + high saturation
-  if (energy > 0.75 && warmth > 0.65 && saturation > 0.5) {
+  // Overloaded: warm-toned + saturated (fire, red/orange, harsh light)
+  if (warmth > 0.62 && saturation > 0.35) {
     return {
       quality: 'overloaded',
       label: '🔥 Overloaded',
@@ -213,8 +213,8 @@ export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
     }
   }
 
-  // Dimmed: very dark + low saturation + low energy
-  if (brightness < 0.25 && saturation < 0.2 && energy < 0.25) {
+  // Dimmed: dark OR desaturated-dark (shadows, night shots, grey/black images)
+  if (brightness < 0.32 || (saturation < 0.12 && brightness < 0.5)) {
     return {
       quality: 'dimmed',
       label: '🌑 Dimmed',
@@ -228,8 +228,8 @@ export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
     }
   }
 
-  // Scattered: high hue variance indicator — low saturation but high energy (chaotic)
-  if (energy > 0.5 && saturation < 0.3) {
+  // Scattered: washed out / desaturated but not dark (overexposed, grey, muted)
+  if (saturation < 0.18 && brightness > 0.4) {
     return {
       quality: 'scattered',
       label: '🌀 Scattered',
@@ -243,8 +243,8 @@ export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
     }
   }
 
-  // Charged: high energy, focused (high saturation)
-  if (energy > 0.65 && saturation > 0.5) {
+  // Charged: vivid + saturated + bright (rich colourful photo)
+  if (saturation > 0.45 && brightness > 0.45) {
     return {
       quality: 'charged',
       label: '⚡ Charged',
@@ -252,14 +252,14 @@ export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
       needsTuning: false,
       message: "Your aura is vibrant and energized. You're running at high frequency.",
       tuningMessage: '',
-      targetBrainwaveState: profile.brainwaveState,
+      targetBrainwaveState: brainwaveState,
       targetBeat: profile.beat,
       targetCarrier: profile.carrier,
     }
   }
 
-  // Grounded: low energy but stable
-  if (energy < 0.35) {
+  // Grounded: cool-toned (blues, greens, calm naturescapes)
+  if (warmth < 0.42) {
     return {
       quality: 'grounded',
       label: '🌿 Grounded',
@@ -267,13 +267,13 @@ export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
       needsTuning: false,
       message: 'Your aura is calm and stable. A gentle, restorative frequency.',
       tuningMessage: '',
-      targetBrainwaveState: profile.brainwaveState,
+      targetBrainwaveState: brainwaveState,
       targetBeat: profile.beat,
       targetCarrier: profile.carrier,
     }
   }
 
-  // Radiant: balanced
+  // Radiant: balanced warm, moderate saturation
   return {
     quality: 'radiant',
     label: '✨ Radiant',
@@ -281,7 +281,7 @@ export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
     needsTuning: false,
     message: 'Your aura is balanced and clear. A harmonious frequency signature.',
     tuningMessage: '',
-    targetBrainwaveState: profile.brainwaveState,
+    targetBrainwaveState: brainwaveState,
     targetBeat: profile.beat,
     targetCarrier: profile.carrier,
   }
