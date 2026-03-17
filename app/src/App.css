@@ -1,5 +1,9 @@
 /* theme tokens -> theme.css */
-body {
+html {
+  background: #0d1211; /* dark bg fallback — prevents white flash before theme loads */
+}
+
+html, body {
   margin: 0;
   padding: 0;
   background: var(--bg-page);
