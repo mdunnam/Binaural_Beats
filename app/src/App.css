@@ -5907,3 +5907,142 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   font-size: 0.9rem;
   padding: 0.25rem;
 }
+
+/* ── Aura Reader ── */
+.aura-reader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.aura-reader-header { text-align: center; }
+.aura-reader-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+}
+.aura-reader-sub { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+
+.aura-drop-zone {
+  border: 2px dashed var(--border-section);
+  border-radius: 1.5rem;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-section);
+}
+.aura-drop-zone:hover, .aura-drop-zone--over {
+  border-color: var(--accent);
+  background: rgba(62, 143, 114, 0.08);
+}
+.aura-drop-icon { font-size: 2.5rem; }
+.aura-drop-text { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+.aura-drop-sub { font-size: 0.8rem; color: var(--text-muted); text-align: center; }
+
+.aura-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem;
+}
+.aura-preview-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  opacity: 0.6;
+  filter: blur(2px);
+}
+.aura-loading-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent), #7c3aed, #ec4899, var(--accent));
+  animation: aura-spin 1.5s linear infinite;
+  position: absolute;
+  margin-top: -100px;
+  opacity: 0.8;
+  filter: blur(8px);
+}
+@keyframes aura-spin { to { transform: rotate(360deg); } }
+.aura-loading-text { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 1rem; }
+.aura-loading-sub { font-size: 0.82rem; color: var(--text-muted); }
+
+.aura-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.aura-card {
+  border-radius: 1.5rem;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  justify-content: center;
+}
+.aura-card-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+.aura-card-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  letter-spacing: -0.01em;
+}
+.aura-card-hz { font-size: 0.88rem; color: rgba(255,255,255,0.75); }
+.aura-card-state {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+.aura-description {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  text-align: center;
+  margin: 0;
+  font-style: italic;
+}
+.aura-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+.aura-stat {
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.aura-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.aura-stat-value { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.aura-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+.aura-actions .soft-button { flex: 1; }

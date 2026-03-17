@@ -69,6 +69,7 @@ import { useSculptBridge } from './hooks/useSculptBridge'
 import { DEFAULT_MAPPING } from './lib/sculptBridge'
 import type { BridgeMapping } from './lib/sculptBridge'
 import { SculptBridgePanel } from './components/SculptBridgePanel'
+import { AuraReader } from './components/AuraReader'
 
 // ---------------------------------------------------------------------------
 // Daily Frequency helper
@@ -121,7 +122,7 @@ const TABS = [
   { id: 'ai',        icon: '✨', label: 'AI Guide'  },
   { id: 'program',   icon: '📅', label: 'Program'   },
   { id: 'help',      icon: '❓', label: 'Help'      },
-
+  { id: 'aura',      icon: '✨', label: 'Aura'      },
 ]
 
 // ---------------------------------------------------------------------------
@@ -2820,6 +2821,18 @@ function AppInner() {
           {activeTab === 'help' && (
             <div className="tab-sections">
               <HelpTab />
+            </div>
+          )}
+
+          {activeTab === 'aura' && (
+            <div className="tab-content">
+              <AuraReader
+                onStartSession={(carrier, beat, _soundscape, _label) => {
+                  setCarrier(carrier)
+                  setBeat(beat)
+                  setActiveTab('studio')
+                }}
+              />
             </div>
           )}
 
