@@ -1,5 +1,7 @@
 /* theme tokens -> theme.css */
 body {
+  margin: 0;
+  padding: 0;
   background: var(--bg-page);
   transition: background 0.3s, color 0.3s;
 }
