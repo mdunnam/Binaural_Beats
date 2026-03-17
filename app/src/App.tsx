@@ -64,6 +64,10 @@ import type { SessionCard } from './data/sessionLibrary'
 import { AdminConsole } from './components/AdminConsole'
 import { trackFeatureUsage } from './lib/trackFeatureUsage'
 import { SevenDayProgram, loadProgress as load7DayProgress } from './components/SevenDayProgram'
+import { useSculptBridge } from './hooks/useSculptBridge'
+import { DEFAULT_MAPPING } from './lib/sculptBridge'
+import type { BridgeMapping } from './lib/sculptBridge'
+import { SculptBridgePanel } from './components/SculptBridgePanel'
 
 // ---------------------------------------------------------------------------
 // Daily Frequency helper
@@ -568,6 +572,27 @@ function AppInner() {
 
   // Background playback: Wake Lock + Page Visibility for AudioContext
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
+
+  // ZBrush sculpt bridge
+  const [sculptBridgeEnabled, setSculptBridgeEnabled] = useState(false)
+  const [sculptBridgeMode, setSculptBridgeMode] = useState<'flow' | 'instrument'>('flow')
+  const [sculptMapping, setSculptMapping] = useState<BridgeMapping>(DEFAULT_MAPPING)
+  const { connected: sculptConnected, lastState: sculptState } = useSculptBridge({
+    enabled: sculptBridgeEnabled,
+    baseCarrier: carrier,
+    baseBeat: beat,
+    mapping: sculptMapping,
+    onAudioTargets: (targets) => {
+      if (!sculptBridgeEnabled) return
+      carrierRef.current = targets.carrier
+      beatRef.current = targets.beat
+      setCarrier(targets.carrier)
+      setBeat(targets.beat)
+      setVolume(targets.volume)
+      setBinauralVolume(targets.binauralVolume)
+      setSoundscapeVolume(targets.noiseVolume)
+    },
+  })
   // Note: AudioContext is created inside masterBusRef per-session, not exposed as a stable ref.
   // useAudioVisibility is wired to masterBusRef's context via a stable proxy ref below.
   const masterBusContextRef = useRef<AudioContext | null>(null)
@@ -2768,6 +2793,18 @@ function AppInner() {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="section-block" style={{ marginTop: '1.5rem' }}>
+              <SculptBridgePanel
+                enabled={sculptBridgeEnabled}
+                onToggle={setSculptBridgeEnabled}
+                connected={sculptConnected}
+                lastState={sculptState}
+                mapping={sculptMapping}
+                onMappingChange={setSculptMapping}
+                mode={sculptBridgeMode}
+                onModeChange={setSculptBridgeMode}
+              />
             </div>
             </div>
           )}

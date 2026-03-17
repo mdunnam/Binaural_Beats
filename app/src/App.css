@@ -5725,3 +5725,121 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .notif-settings-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .notif-label { font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
 .notif-select { background: var(--bg-section); border: 1px solid var(--border-section); border-radius: 0.4rem; color: var(--text-primary); padding: 0.25rem 0.5rem; font-size: 0.82rem; }
+
+/* ── ZBrush Sculpt Bridge ── */
+.sculpt-bridge-panel {
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.sculpt-bridge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.sculpt-bridge-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.bridge-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-section);
+  flex-shrink: 0;
+}
+.bridge-status-dot--on { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+.bridge-status-dot--waiting { background: #facc15; animation: bridge-blink 1s ease-in-out infinite; }
+@keyframes bridge-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.bridge-status-label { font-size: 0.78rem; font-weight: 400; color: var(--text-muted); }
+.bridge-mode-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.bridge-mode-btn {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-section);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bridge-mode-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.bridge-mode-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+.bridge-live-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--bg-panel);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+.bridge-live-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.bridge-live-row span:first-child { width: 60px; flex-shrink: 0; }
+.bridge-live-row strong { color: var(--text-primary); font-size: 0.8rem; }
+.bridge-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: var(--border-section);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bridge-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.2s;
+}
+.bridge-mapping-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+.bridge-mapping-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.bridge-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.bridge-setup-hint {
+  background: var(--bg-panel);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.bridge-setup-hint p { margin: 0 0 0.25rem; }
