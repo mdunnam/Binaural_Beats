@@ -5080,8 +5080,8 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--bg-3);
-  border: 1px solid var(--accent);
+  background: var(--bg-section);
+  border: 1px solid var(--border-section);
   border-radius: 12px;
   padding: 0.85rem 1rem;
   margin-top: 0.75rem;
@@ -5482,7 +5482,6 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .dash-daily-freq-card {
   background: var(--bg-section);
   border: 1px solid var(--border-section);
-  border-left: 3px solid var(--accent);
   border-radius: 14px;
   padding: 1rem 1.25rem;
   margin-bottom: 0.75rem;
@@ -5522,7 +5521,6 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .dash-ai-feature-card {
   background: var(--bg-section);
   border: 1px solid var(--border-section);
-  border-left: 3px solid var(--accent);
   border-radius: 14px;
   padding: 1rem 1.25rem;
   margin-bottom: 0.75rem;
