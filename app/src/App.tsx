@@ -2832,6 +2832,13 @@ function AppInner() {
                   setBeat(beat)
                   setActiveTab('studio')
                 }}
+                onStartTuning={(steps) => {
+                  if (steps.length > 0) {
+                    setCarrier(steps[0].carrier)
+                    setBeat(steps[0].beat)
+                  }
+                  setActiveTab('studio')
+                }}
               />
             </div>
           )}

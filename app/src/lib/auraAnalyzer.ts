@@ -178,3 +178,151 @@ function hueToColorWord(h: number, s: number, l: number): string {
   if (h < 315) return 'Amethyst'
   return 'Rose'
 }
+
+// ── Aura Quality Assessment ──
+
+export type AuraQuality = 'radiant' | 'grounded' | 'charged' | 'scattered' | 'overloaded' | 'dimmed'
+
+export interface AuraQualityResult {
+  quality: AuraQuality
+  label: string
+  emoji: string
+  needsTuning: boolean
+  message: string
+  tuningMessage: string
+  targetBrainwaveState: string
+  targetBeat: number
+  targetCarrier: number
+}
+
+export function assessAuraQuality(profile: AuraProfile): AuraQualityResult {
+  const { energy, warmth, saturation, brightness } = profile
+
+  // Overloaded: high energy + high warmth + high saturation
+  if (energy > 0.75 && warmth > 0.65 && saturation > 0.5) {
+    return {
+      quality: 'overloaded',
+      label: '🔥 Overloaded',
+      emoji: '🔥',
+      needsTuning: true,
+      message: 'Your aura is carrying intense, high-frequency stress energy.',
+      tuningMessage: 'A tuning session will guide you from Beta down to a calm Alpha state over 20 minutes.',
+      targetBrainwaveState: 'Alpha',
+      targetBeat: 10,
+      targetCarrier: 200,
+    }
+  }
+
+  // Dimmed: very dark + low saturation + low energy
+  if (brightness < 0.25 && saturation < 0.2 && energy < 0.25) {
+    return {
+      quality: 'dimmed',
+      label: '🌑 Dimmed',
+      emoji: '🌑',
+      needsTuning: true,
+      message: 'Your aura is low and depleted. Your energy needs lifting.',
+      tuningMessage: 'A tuning session will gently raise your frequency from Delta up to a grounded Alpha state.',
+      targetBrainwaveState: 'Alpha',
+      targetBeat: 10,
+      targetCarrier: 200,
+    }
+  }
+
+  // Scattered: high hue variance indicator — low saturation but high energy (chaotic)
+  if (energy > 0.5 && saturation < 0.3) {
+    return {
+      quality: 'scattered',
+      label: '🌀 Scattered',
+      emoji: '🌀',
+      needsTuning: true,
+      message: 'Your aura is fragmented and unfocused. Your frequency needs centering.',
+      tuningMessage: 'A tuning session will stabilize your energy into a clear Alpha focus state.',
+      targetBrainwaveState: 'Alpha',
+      targetBeat: 10,
+      targetCarrier: 200,
+    }
+  }
+
+  // Charged: high energy, focused (high saturation)
+  if (energy > 0.65 && saturation > 0.5) {
+    return {
+      quality: 'charged',
+      label: '⚡ Charged',
+      emoji: '⚡',
+      needsTuning: false,
+      message: "Your aura is vibrant and energized. You're running at high frequency.",
+      tuningMessage: '',
+      targetBrainwaveState: profile.brainwaveState,
+      targetBeat: profile.beat,
+      targetCarrier: profile.carrier,
+    }
+  }
+
+  // Grounded: low energy but stable
+  if (energy < 0.35) {
+    return {
+      quality: 'grounded',
+      label: '🌿 Grounded',
+      emoji: '🌿',
+      needsTuning: false,
+      message: 'Your aura is calm and stable. A gentle, restorative frequency.',
+      tuningMessage: '',
+      targetBrainwaveState: profile.brainwaveState,
+      targetBeat: profile.beat,
+      targetCarrier: profile.carrier,
+    }
+  }
+
+  // Radiant: balanced
+  return {
+    quality: 'radiant',
+    label: '✨ Radiant',
+    emoji: '✨',
+    needsTuning: false,
+    message: 'Your aura is balanced and clear. A harmonious frequency signature.',
+    tuningMessage: '',
+    targetBrainwaveState: profile.brainwaveState,
+    targetBeat: profile.beat,
+    targetCarrier: profile.carrier,
+  }
+}
+
+// Build a tuning journey: array of timed steps walking from current → target frequency
+export interface TuningStep {
+  label: string
+  beat: number
+  carrier: number
+  durationSeconds: number
+  description: string
+}
+
+export function buildTuningJourney(profile: AuraProfile, assessment: AuraQualityResult): TuningStep[] {
+  const steps: TuningStep[] = []
+  const startBeat = profile.beat
+  const endBeat = assessment.targetBeat
+  const startCarrier = profile.carrier
+  const endCarrier = assessment.targetCarrier
+  const totalSteps = 4
+
+  for (let i = 0; i < totalSteps; i++) {
+    const t = i / (totalSteps - 1)
+    const beat = Math.round((startBeat + (endBeat - startBeat) * t) * 10) / 10
+    const carrier = Math.round(startCarrier + (endCarrier - startCarrier) * t)
+    const durationSeconds = i === 0 ? 120 : i === totalSteps - 1 ? 180 : 300
+
+    const stateLabels: Record<number, string> = { 0: 'Grounding', 1: 'Settling', 2: 'Centering', 3: 'Balanced' }
+    steps.push({
+      label: stateLabels[i] ?? `Step ${i + 1}`,
+      beat,
+      carrier,
+      durationSeconds,
+      description: i === 0
+        ? `Beginning at ${beat} Hz — acknowledging where you are`
+        : i === totalSteps - 1
+        ? `Arriving at ${beat} Hz — ${assessment.targetBrainwaveState} state`
+        : `Transitioning through ${beat} Hz`,
+    })
+  }
+
+  return steps
+}

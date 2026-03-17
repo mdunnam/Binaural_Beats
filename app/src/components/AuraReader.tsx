@@ -1,15 +1,18 @@
 import { useState, useRef, useCallback } from 'react'
-import { analyzeImagePixels, buildAuraProfile, AuraProfile } from '../lib/auraAnalyzer'
+import { analyzeImagePixels, buildAuraProfile, assessAuraQuality, AuraProfile, AuraQualityResult, TuningStep } from '../lib/auraAnalyzer'
+import { AuraTuning } from './AuraTuning'
 
 interface AuraReaderProps {
   onStartSession: (carrier: number, beat: number, soundscape: string, label: string) => void
+  onStartTuning: (steps: TuningStep[]) => void
 }
 
 type Phase = 'idle' | 'loading' | 'result'
 
-export function AuraReader({ onStartSession }: AuraReaderProps) {
+export function AuraReader({ onStartSession, onStartTuning }: AuraReaderProps) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [profile, setProfile] = useState<AuraProfile | null>(null)
+  const [quality, setQuality] = useState<AuraQualityResult | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -25,7 +28,9 @@ export function AuraReader({ onStartSession }: AuraReaderProps) {
       setTimeout(() => {
         const analysis = analyzeImagePixels(img)
         const result = buildAuraProfile(analysis)
+        const qualityResult = assessAuraQuality(result)
         setProfile(result)
+        setQuality(qualityResult)
         setPhase('result')
         URL.revokeObjectURL(url)
       }, 1800)
@@ -48,6 +53,7 @@ export function AuraReader({ onStartSession }: AuraReaderProps) {
   function reset() {
     setPhase('idle')
     setProfile(null)
+    setQuality(null)
     setPreviewUrl(null)
     if (inputRef.current) inputRef.current.value = ''
   }
@@ -133,6 +139,14 @@ export function AuraReader({ onStartSession }: AuraReaderProps) {
               Try Another
             </button>
           </div>
+
+          {quality && (
+            <AuraTuning
+              profile={profile}
+              assessment={quality}
+              onStartTuning={onStartTuning}
+            />
+          )}
         </div>
       )}
     </div>
