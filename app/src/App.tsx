@@ -2591,6 +2591,12 @@ function AppInner() {
                     activeSceneId={soundsceneId}
                     onChange={(gains) => {
                       setLayerGains(gains)
+                      // Live-update ambient player if running
+                      if (ambientPlayerRef.current) {
+                        Object.entries(gains).forEach(([id, val]) =>
+                          setAmbientLayerGain(ambientPlayerRef.current!, id, val as number)
+                        )
+                      }
                       const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
                         scene.id !== 'custom' && scene.id !== 'off' &&
                         SOUND_LAYERS.every(l => Math.abs((scene.gains[l.id] ?? 0) - gains[l.id]) < 0.01)
