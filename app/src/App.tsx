@@ -1307,6 +1307,25 @@ function AppInner() {
     setAmbientRunning(true)
   }
 
+  // Start ambient with specific gains — bypasses stale closure issue when
+  // scene is selected and audio needs to start in the same interaction
+  const startAmbientWithGains = async (gains: LayerGains): Promise<void> => {
+    if (ambientRunning) {
+      if (ambientPlayerRef.current) {
+        stopAmbientPlayer(ambientPlayerRef.current)
+        ambientPlayerRef.current = null
+      }
+      setAmbientRunning(false)
+    }
+    if (graphRef.current) {
+      stopSession(true)
+    }
+    const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, gains)
+    if (player.context.state !== 'running') await player.context.resume()
+    ambientPlayerRef.current = player
+    setAmbientRunning(true)
+  }
+
   /**
    * Applies a named soundscape scene by copying its layer gain map.
    */
@@ -2581,20 +2600,25 @@ function AppInner() {
                     onSceneChange={(sceneId) => {
                       // Free users: only first 2 scenes allowed (off + first scene)
                       if (!isPro) {
-                        const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id) // off + 2 scenes
+                        const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id)
                         if (!freeScenes.includes(sceneId)) {
                           openUpgradeModal('All Soundscapes')
                           return
                         }
                       }
                       applySoundscapeScene(sceneId)
-                      // Auto-start ambient if nothing is playing and a scene was picked
-                      if (!isRunning && !ambientRunning && sceneId !== 'off') {
-                        void toggleAmbient()
-                      }
                       // Stop ambient if user picks Off
-                      if (ambientRunning && sceneId === 'off') {
-                        void toggleAmbient()
+                      if (sceneId === 'off') {
+                        if (ambientRunning) void toggleAmbient()
+                        return
+                      }
+                      // Start ambient immediately with the new scene's gains (bypasses stale closure)
+                      if (!isRunning) {
+                        const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
+                        if (scene) {
+                          const gains = { ...DEFAULT_GAINS, ...scene.gains } as LayerGains
+                          void startAmbientWithGains(gains)
+                        }
                       }
                     }}
                     disabled={false}
