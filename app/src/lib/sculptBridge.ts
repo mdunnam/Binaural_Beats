@@ -86,37 +86,35 @@ export function computeAudioTargets(
 ): AudioTargets {
   let carrier = baseCarrier
   let beat = baseBeat
-  let volume = 0.7
   let binauralVolume = 0.7
   let noiseVolume = 0.3
 
-  if (mapping.brushTypeToState) {
-    beat = brushTypeToBeat(state.brushType)
-  }
+  const isSculpting = !state.idle && state.speed > 0.05
 
-  if (mapping.speedToBeat && state.speed > 0) {
-    // Fast strokes push beat up slightly
-    beat = beat + (state.speed * 4)
-    beat = Math.min(Math.max(beat, 1), 40)
-  }
+  // Only change beat/carrier when actively sculpting — not at idle
+  if (isSculpting) {
+    if (mapping.brushTypeToState) {
+      beat = brushTypeToBeat(state.brushType)
+    }
 
-  if (mapping.brushSizeToCarrier) {
-    // Large brush = lower carrier, small brush = higher
-    carrier = baseCarrier + ((0.5 - state.brushSize) * 100)
-    carrier = Math.min(Math.max(carrier, 80), 500)
-  }
+    if (mapping.speedToBeat && state.speed > 0) {
+      // Fast strokes push beat up slightly
+      beat = beat + (state.speed * 4)
+      beat = Math.min(Math.max(beat, 1), 40)
+    }
 
-  if (mapping.pressureToVolume) {
-    // Light pressure = quieter, heavy = louder
-    volume = 0.3 + (state.pressure * 0.7)
-    binauralVolume = 0.4 + (state.pressure * 0.6)
+    if (mapping.brushSizeToCarrier) {
+      // Large brush = lower carrier, small brush = higher
+      carrier = baseCarrier + ((0.5 - state.brushSize) * 100)
+      carrier = Math.min(Math.max(carrier, 80), 500)
+    }
   }
 
   if (mapping.idleFadeToAmbient && state.idle) {
-    // Idle: fade binaural, keep soundscape
-    binauralVolume *= 0.2
+    // Idle: fade binaural slightly, keep soundscape
+    binauralVolume *= 0.5
     noiseVolume = Math.min(noiseVolume + 0.2, 0.8)
   }
 
-  return { carrier, beat, volume, binauralVolume, noiseVolume }
+  return { carrier, beat, volume: 0.7, binauralVolume, noiseVolume }
 }
