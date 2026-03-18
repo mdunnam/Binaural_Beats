@@ -2552,18 +2552,13 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-title">Ambient</div>
                 <div className="section-card">
-                  <p className="control-hint">
-                    {isRunning
-                      ? 'Session is active. Use the Soundscape mixer below to add or adjust rain/ocean/etc in-session.'
-                      : 'Play soundscapes and noise without starting a binaural session.'}
-                  </p>
+                  <p className="control-hint">Play soundscapes and noise without starting a binaural session.</p>
                   <button
                     className={`start-button${ambientButtonActive ? ' start-button--active' : ''}`}
                     onClick={() => void toggleAmbient()}
-                    disabled={ambientButtonDisabled}
-                    title={ambientButtonDisabled ? 'Disabled during session. Use the Soundscape mixer below.' : undefined}
+                    disabled={isRunning}
                   >
-                    {ambientButtonLabel}
+                    {ambientRunning ? 'Stop Ambient' : 'Play Ambient'}
                   </button>
                 </div>
               </div>
@@ -2592,7 +2587,15 @@ function AppInner() {
                           return
                         }
                       }
-                      setSoundsceneId(sceneId)
+                      applySoundscapeScene(sceneId)
+                      // Auto-start ambient if nothing is playing and a scene was picked
+                      if (!isRunning && !ambientRunning && sceneId !== 'off') {
+                        void toggleAmbient()
+                      }
+                      // Stop ambient if user picks Off
+                      if (ambientRunning && sceneId === 'off') {
+                        void toggleAmbient()
+                      }
                     }}
                     disabled={false}
                   />
