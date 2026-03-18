@@ -439,7 +439,7 @@ function AppInner() {
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [playerExpanded, setPlayerExpanded] = useState(false)
 
-  // Dark mode — default dark unless user has explicitly chosen light
+  // Dark mode - default dark unless user has explicitly chosen light
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('binaural-theme')
     return saved !== 'light'
@@ -952,7 +952,7 @@ function AppInner() {
       }
     }
 
-    // Soundscape keeps playing — do NOT stop mixerNodesRef here
+    // Soundscape keeps playing - do NOT stop mixerNodesRef here
 
     // Fade voice bus out
     if (voiceBusRef.current) {
@@ -973,7 +973,7 @@ function AppInner() {
       }
       stopAudioGraph(graph)
       graphRef.current = null
-      // Master bus remains open — shared by soundscape and other sources
+      // Master bus remains open - shared by soundscape and other sources
       // Stop music player
       if (musicPlayerRef.current) {
         stopMusicPlayer(musicPlayerRef.current)
@@ -987,7 +987,7 @@ function AppInner() {
       setMusicTrackId(null)
       setMusicPosition(0)
       setIsRunning(false)
-      // Release wake lock (masterBusContextRef stays valid — bus is persistent)
+      // Release wake lock (masterBusContextRef stays valid - bus is persistent)
       void releaseWakeLock()
       if (withChime) playEndChime()
     }
@@ -1316,7 +1316,7 @@ function AppInner() {
     await startSoundscape(layerGainsRef.current)
   }
 
-  // Start ambient with specific gains — bypasses stale closure issue when
+  // Start ambient with specific gains - bypasses stale closure issue when
   // scene is selected and audio needs to start in the same interaction
   const startAmbientWithGains = async (gains: LayerGains): Promise<void> => {
     await startSoundscape(gains)
@@ -1489,7 +1489,7 @@ function AppInner() {
           }
 
         } else if (layer.type === 'soundscape') {
-          // Soundscape layers are audio files — skip for offline render
+          // Soundscape layers are audio files - skip for offline render
           // (OfflineAudioContext can't fetch external URLs in this context)
 
         } else if (layer.type === 'pad') {
@@ -2434,7 +2434,7 @@ function AppInner() {
                 </div>
               </div>
 
-              {/* Tones Presets — full tab snapshot */}
+              {/* Tones Presets - full tab snapshot */}
               {(() => {
                 void tonesPresetBump // re-render trigger
                 type TonesPreset = {
@@ -2582,16 +2582,10 @@ function AppInner() {
                     onChange={(gains) => {
                       setLayerGains(gains)
                       layerGainsRef.current = gains
-                      // Live-update session mixer if running
+                      // Live-update soundscape mixer (works whether standalone or during session)
                       if (mixerNodesRef.current) {
                         Object.entries(gains).forEach(([id, val]) =>
                           updateLayerGain(mixerNodesRef.current!, id as SoundLayerId, val as number)
-                        )
-                      }
-                      // Live-update ambient player if running
-                      if (ambientPlayerRef.current) {
-                        Object.entries(gains).forEach(([id, val]) =>
-                          setAmbientLayerGain(ambientPlayerRef.current!, id, val as number)
                         )
                       }
                       const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
@@ -2614,18 +2608,18 @@ function AppInner() {
                         applySoundscapeScene(sceneId)
                         return
                       }
-                      // Named scene — start with scene's gains directly
+                      // Named scene - start with scene's gains directly
                       if (sceneId !== 'custom') {
                         const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
                         if (scene) {
                           const gains = { ...DEFAULT_GAINS, ...scene.gains } as LayerGains
                           applySoundscapeScene(sceneId)
-                          if (!isRunning) void startAmbientWithGains(gains)
+                          void startAmbientWithGains(gains)
                         }
                         return
                       }
-                      // 'custom' = slider was dragged — start ambient with latest ref gains
-                      if (!isRunning && !ambientPlayerRef.current) {
+                      // 'custom' = slider was dragged - start soundscape with latest ref gains
+                      if (!ambientRunning) {
                         const latest = layerGainsRef.current
                         const hasAudio = Object.values(latest).some(v => (v as number) > 0)
                         if (hasAudio) void startAmbientWithGains(latest)
@@ -3207,12 +3201,12 @@ function AppRouter() {
         </div>
       )
     }
-    // Auth resolved but no user at all — redirect
+    // Auth resolved but no user at all - redirect
     if (!user) {
       window.location.href = '/app'
       return null
     }
-    // User is logged in but profile hasn't loaded yet — keep waiting
+    // User is logged in but profile hasn't loaded yet - keep waiting
     if (!profile) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-app, #0d0d12)', color: 'var(--text-muted, #888)' }}>
@@ -3220,7 +3214,7 @@ function AppRouter() {
         </div>
       )
     }
-    // Profile loaded — check admin flag
+    // Profile loaded - check admin flag
     if (!profile.is_admin) {
       window.location.href = '/app'
       return null
