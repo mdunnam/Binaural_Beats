@@ -1297,20 +1297,15 @@ function AppInner() {
   const startSoundscape = async (gains: LayerGains): Promise<void> => {
     if (ambientStartingRef.current) return
     ambientStartingRef.current = true
-    console.log('[startSoundscape] called with gains:', gains)
     try {
       if (mixerNodesRef.current) {
-        console.log('[startSoundscape] stopping existing mixer')
         stopSoundscapeMixer(mixerNodesRef.current)
         mixerNodesRef.current = null
       }
-      console.log('[startSoundscape] getting bus...')
       const bus = await getOrCreateMasterBus()
-      console.log('[startSoundscape] bus context state:', bus.context.state)
       const mixer = createSoundscapeMixer(bus.context, bus.soundscapeBus, gains)
       mixerNodesRef.current = mixer
       setAmbientRunning(true)
-      console.log('[startSoundscape] done — ambientRunning set to true')
     } catch (err) {
       console.error('[startSoundscape] failed:', err)
     } finally {
@@ -2588,20 +2583,29 @@ function AppInner() {
                     onChange={(gains) => {
                       setLayerGains(gains)
                       layerGainsRef.current = gains
-                      // Live-update soundscape mixer (works whether standalone or during session)
-                      if (mixerNodesRef.current) {
-                        Object.entries(gains).forEach(([id, val]) =>
-                          updateLayerGain(mixerNodesRef.current!, id as SoundLayerId, val as number)
-                        )
-                      }
                       const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
                         scene.id !== 'custom' && scene.id !== 'off' &&
                         SOUND_LAYERS.every(l => Math.abs((scene.gains[l.id] ?? 0) - gains[l.id]) < 0.01)
                       )
                       setSoundsceneId(matchedScene?.id ?? 'custom')
+                      const hasAudio = Object.values(gains).some(v => (v as number) > 0)
+                      if (!hasAudio) {
+                        // All layers silent — stop soundscape
+                        if (ambientRunning) stopSoundscape()
+                        return
+                      }
+                      if (mixerNodesRef.current) {
+                        // Mixer exists — live update all layers
+                        Object.entries(gains).forEach(([id, val]) =>
+                          updateLayerGain(mixerNodesRef.current!, id as SoundLayerId, val as number)
+                        )
+                      } else {
+                        // No mixer yet — start one with current gains
+                        void startAmbientWithGains(gains)
+                      }
                     }}
                     onSceneChange={(sceneId) => {
-                      console.log('[onSceneChange] sceneId:', sceneId, 'ambientRunning:', ambientRunning)
+                      // Only handle Off/pro-gate here; audio start is driven by onChange
                       if (!isPro && sceneId !== 'custom' && sceneId !== 'off') {
                         const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id)
                         if (!freeScenes.includes(sceneId)) {
@@ -2609,27 +2613,9 @@ function AppInner() {
                           return
                         }
                       }
-                      // Stop ambient if Off selected
                       if (sceneId === 'off') {
-                        if (ambientRunning) void toggleAmbient()
+                        stopSoundscape()
                         applySoundscapeScene(sceneId)
-                        return
-                      }
-                      // Named scene - start with scene's gains directly
-                      if (sceneId !== 'custom') {
-                        const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
-                        if (scene) {
-                          const gains = { ...DEFAULT_GAINS, ...scene.gains } as LayerGains
-                          applySoundscapeScene(sceneId)
-                          void startAmbientWithGains(gains)
-                        }
-                        return
-                      }
-                      // 'custom' = slider was dragged - start soundscape with latest ref gains
-                      if (!ambientRunning) {
-                        const latest = layerGainsRef.current
-                        const hasAudio = Object.values(latest).some(v => (v as number) > 0)
-                        if (hasAudio) void startAmbientWithGains(latest)
                       }
                     }}
                     disabled={false}
