@@ -478,7 +478,8 @@ function AppInner() {
   const [noiseVolume, setNoiseVolume] = useState(0.15)
 
   // Soundscape volume (controls soundscapeBus master gain)
-  const [soundscapeVolume, setSoundscapeVolume] = useState(0.15)
+  const [soundscapeVolume, _setSoundscapeVolume] = useState(0.15)
+  const setSoundscapeVolume = (v: number) => { console.log('[setSoundscapeVolume]', v, new Error().stack?.split('\n').slice(1,4).join(' | ')); _setSoundscapeVolume(v) }
 
   // Soundscape mixer
   const [layerGains, setLayerGains] = useState<LayerGains>({ ...DEFAULT_GAINS })
@@ -598,7 +599,7 @@ function AppInner() {
       setBeat(targets.beat)
       setVolume(targets.volume)
       setBinauralVolume(targets.binauralVolume)
-      setSoundscapeVolume(targets.noiseVolume)
+      if (targets.noiseVolume > 0) setSoundscapeVolume(targets.noiseVolume)
     },
   })
   // Note: AudioContext is created inside masterBusRef per-session, not exposed as a stable ref.
@@ -1644,7 +1645,7 @@ function AppInner() {
   useEffect(() => {
     const bus = masterBusRef.current
     if (!bus) return
-    console.log('[soundscapeVolume effect] setting bus gain to', soundscapeVolume)
+    console.log('[soundscapeVolume effect] setting bus gain to', soundscapeVolume, new Error().stack?.split('\n')[2])
     bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, soundscapeVolume), bus.context.currentTime, 0.05)
   }, [soundscapeVolume])
 
