@@ -2596,11 +2596,13 @@ function AppInner() {
                       }
                       if (mixerNodesRef.current) {
                         // Mixer exists — live update all layers
+                        console.log('[onChange] updating live mixer, gains:', gains)
                         Object.entries(gains).forEach(([id, val]) =>
                           updateLayerGain(mixerNodesRef.current!, id as SoundLayerId, val as number)
                         )
                       } else {
                         // No mixer yet — start one with current gains
+                        console.log('[onChange] no mixer, starting new with gains:', gains)
                         void startAmbientWithGains(gains)
                       }
                     }}
