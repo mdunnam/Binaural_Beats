@@ -1306,6 +1306,8 @@ function AppInner() {
       const mixer = createSoundscapeMixer(bus.context, bus.soundscapeBus, gains)
       mixerNodesRef.current = mixer
       setAmbientRunning(true)
+    } catch (err) {
+      console.error('[startSoundscape] failed:', err)
     } finally {
       ambientStartingRef.current = false
     }
@@ -2565,7 +2567,6 @@ function AppInner() {
                   <button
                     className={`start-button${ambientButtonActive ? ' start-button--active' : ''}`}
                     onClick={() => void toggleAmbient()}
-                    disabled={isRunning}
                   >
                     {ambientRunning ? 'Stop Ambient' : 'Play Ambient'}
                   </button>
