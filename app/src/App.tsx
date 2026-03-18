@@ -335,8 +335,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
 
       callbacks.setLayerGains(gains)
       callbacks.layerGainsRef.current = gains
-      callbacks.setSoundsceneId(sceneId)
-      callbacks.setSoundscapeVolume(layer.volume)
+      if (layer.volume > 0) callbacks.setSoundscapeVolume(layer.volume)
       callbacks.soundscapeVolumeRef.current = layer.volume
 
       // Direct mixer update - update each layer gain immediately
@@ -391,11 +390,9 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       }
     }
   }
-  // No soundscape layer - only silence if a session is actively running
+  // No soundscape layer in Studio - silence bus if session is running (don't touch React soundscapeVolume state)
   if (!hasSoundscape && callbacks.graphRef?.current) {
     callbacks.setSoundsceneId('off')
-    callbacks.setSoundscapeVolume(0)
-    callbacks.soundscapeVolumeRef.current = 0
     const bus = callbacks.masterBusRef.current
     if (bus) {
       bus.soundscapeBus.gain.setTargetAtTime(0, bus.context.currentTime, 0.05)
