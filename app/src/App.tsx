@@ -258,7 +258,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
   SOUNDSCAPE_SCENES: typeof SOUNDSCAPE_SCENES
   DEFAULT_GAINS: typeof DEFAULT_GAINS
   setAutomationLanes: React.Dispatch<React.SetStateAction<AutomationLanes>>
-}) {
+}, silenceSoundscapeIfMissing = true) {
   let padPresent = false
   let hasSoundscape = false
 
@@ -391,7 +391,7 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
     }
   }
   // No soundscape layer in Studio - silence bus if session is running (don't touch React soundscapeVolume state)
-  if (!hasSoundscape && callbacks.graphRef?.current) {
+  if (!hasSoundscape && silenceSoundscapeIfMissing && callbacks.graphRef?.current) {
     callbacks.setSoundsceneId('off')
     const bus = callbacks.masterBusRef.current
     if (bus) {
@@ -1130,6 +1130,7 @@ function AppInner() {
     // 1. Get or create persistent master bus
     const bus = await getOrCreateMasterBus()
     bus.soundscapeBus.gain.value = Math.max(0.0001, curSoundscapeVolume)
+    console.log('[toggleAudio] soundscapeBus gain set to', Math.max(0.0001, curSoundscapeVolume), 'curSoundscapeVolume:', curSoundscapeVolume)
 
     // 2. Create audio graph (binaural), share context, connect to binauralBus
     const graph = createAudioGraph({
@@ -2784,7 +2785,7 @@ function AppInner() {
                   graphRef, masterBusRef, mixerNodesRef,
                   SOUNDSCAPE_SCENES, DEFAULT_GAINS,
                   setAutomationLanes,
-                })
+}, false)
               }}
             />
             <div className="tab-sections">
