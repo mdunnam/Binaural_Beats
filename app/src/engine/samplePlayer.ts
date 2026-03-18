@@ -176,6 +176,7 @@ export async function setLayerGain(
   }
 
   // Load for the first time
+  console.log('[samplePlayer] loading', id, 'ctx state:', player.context.state, 'targetGain:', targetGain)
   layerData.loading = true
   layerData.pendingGain = null
   const result = await loadLayerBuffer(ctx, layer)
