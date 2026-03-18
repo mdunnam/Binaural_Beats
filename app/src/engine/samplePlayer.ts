@@ -176,7 +176,6 @@ export async function setLayerGain(
   }
 
   // Load for the first time
-  console.log('[samplePlayer] loading', id, 'ctx state:', player.context.state, 'targetGain:', targetGain)
   layerData.loading = true
   layerData.pendingGain = null
   const result = await loadLayerBuffer(ctx, layer)
@@ -194,20 +193,15 @@ export async function setLayerGain(
   }
 
   const finalTarget = toEffectiveLayerGain(id, finalGain)
-  console.log('[samplePlayer] loaded', id, 'result:', result === 'noise' ? 'noise' : 'buffer', 'finalTarget:', finalTarget, 'ctx:', player.context.state)
-  if (finalTarget <= 0) { console.log('[samplePlayer] skipping', id); return }
+  if (finalTarget <= 0) return
 
   startSource(player, layerData, layer)
-  console.log('[samplePlayer] source started for', id)
 
   // Fade in
   const n = ctx.currentTime
   layerData.gainNode.gain.cancelScheduledValues(n)
   layerData.gainNode.gain.setValueAtTime(0, n)
   layerData.gainNode.gain.linearRampToValueAtTime(finalTarget, n + 1.5)
-  setTimeout(() => {
-    console.log('[samplePlayer]', id, 'gainNode:', layerData.gainNode.gain.value, 'source:', layerData.source ? 'alive' : 'null', 'destination gain:', (player.destination as GainNode).gain?.value)
-  }, 2000)
 }
 
 export function stopSamplePlayer(player: SamplePlayer): void {

@@ -478,8 +478,7 @@ function AppInner() {
   const [noiseVolume, setNoiseVolume] = useState(0.15)
 
   // Soundscape volume (controls soundscapeBus master gain)
-  const [soundscapeVolume, _setSoundscapeVolume] = useState(0.15)
-  const setSoundscapeVolume = (v: number) => { console.log('[setSoundscapeVolume]', v, new Error().stack?.split('\n').slice(1,4).join(' | ')); _setSoundscapeVolume(v) }
+  const [soundscapeVolume, setSoundscapeVolume] = useState(0.15)
 
   // Soundscape mixer
   const [layerGains, setLayerGains] = useState<LayerGains>({ ...DEFAULT_GAINS })
