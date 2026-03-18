@@ -194,9 +194,11 @@ export async function setLayerGain(
   }
 
   const finalTarget = toEffectiveLayerGain(id, finalGain)
-  if (finalTarget <= 0) return  // user muted before load finished
+  console.log('[samplePlayer] loaded', id, 'result:', result === 'noise' ? 'noise' : 'buffer', 'finalTarget:', finalTarget, 'ctx:', player.context.state)
+  if (finalTarget <= 0) { console.log('[samplePlayer] skipping', id); return }
 
   startSource(player, layerData, layer)
+  console.log('[samplePlayer] source started for', id)
 
   // Fade in
   const n = ctx.currentTime
