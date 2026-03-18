@@ -2586,6 +2586,12 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-title">Soundscape</div>
                 <div className="section-card">
+                  <div onPointerUp={() => {
+                    if (!isRunning && !ambientPlayerRef.current) {
+                      const hasAudio = Object.values(layerGains).some(v => (v as number) > 0)
+                      if (hasAudio) void startAmbientWithGains(layerGains)
+                    }
+                  }}>
                   <SoundscapeMixer
                     gains={layerGains}
                     activeSceneId={soundsceneId}
@@ -2596,10 +2602,6 @@ function AppInner() {
                         Object.entries(gains).forEach(([id, val]) =>
                           setAmbientLayerGain(ambientPlayerRef.current!, id, val as number)
                         )
-                      } else if (!isRunning) {
-                        // Nothing playing — auto-start ambient with current gains
-                        const hasAudio = Object.values(gains).some(v => (v as number) > 0)
-                        if (hasAudio) void startAmbientWithGains(gains)
                       }
                       const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
                         scene.id !== 'custom' && scene.id !== 'off' &&
@@ -2633,6 +2635,7 @@ function AppInner() {
                     }}
                     disabled={false}
                   />
+                  </div>
                   {/* Custom soundscape save/load */}
                   <hr className="section-divider" />
                   <div className="soundscape-preset-row">

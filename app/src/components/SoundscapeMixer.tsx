@@ -21,10 +21,21 @@ export function SoundscapeMixer({
   crossfadeDuration = 3000,
 }: SoundscapeMixerProps) {
   const [isAnimating, setIsAnimating] = useState(false)
+  // Local gains state for instant slider response — synced from parent on scene changes
+  const [localGains, setLocalGains] = useState<LayerGains>(gains)
+  const lastSceneRef = useRef<string | undefined>(activeSceneId)
+
+  // Sync local gains when parent changes due to scene selection (not slider drag)
+  useEffect(() => {
+    if (activeSceneId !== lastSceneRef.current) {
+      lastSceneRef.current = activeSceneId
+      setLocalGains(gains)
+    }
+  }, [gains, activeSceneId])
 
   // Keep a ref to current gains so interval closures have fresh data
-  const gainsRef = useRef<LayerGains>(gains)
-  useEffect(() => { gainsRef.current = gains }, [gains])
+  const gainsRef = useRef<LayerGains>(localGains)
+  useEffect(() => { gainsRef.current = localGains }, [localGains])
 
   const animateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const morphIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -32,11 +43,10 @@ export function SoundscapeMixer({
   // --- Animate drift ---
   const scheduleNextDrift = (active: boolean) => {
     if (!active) return
-    const delay = 4000 + Math.random() * 4000 // 4–8s
+    const delay = 4000 + Math.random() * 4000 // 4-8s
     animateTimerRef.current = setTimeout(() => {
       const current = gainsRef.current
       const layerIds = SOUND_LAYERS.map(l => l.id)
-      // Pick 1–2 random layers
       const shuffled = [...layerIds].sort(() => Math.random() - 0.5)
       const count = Math.random() < 0.5 ? 1 : 2
       const picked = shuffled.slice(0, count)
@@ -45,6 +55,7 @@ export function SoundscapeMixer({
         const delta = (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1)
         updated[id] = Math.min(1, Math.max(0, current[id] + delta))
       }
+      setLocalGains(updated)
       onChange(updated)
       scheduleNextDrift(true)
     }, delay)
@@ -93,18 +104,17 @@ export function SoundscapeMixer({
       targetGains[id as SoundLayerId] = val as number
     }
 
-    // Check if anything is playing
     const currentGains = gainsRef.current
     const isPlaying = Object.values(currentGains).some(v => v > 0)
 
-    // Clear any in-progress morph
     if (morphIntervalRef.current !== null) {
       clearInterval(morphIntervalRef.current)
       morphIntervalRef.current = null
     }
 
     if (!isPlaying) {
-      // Silent — hard cut
+      setLocalGains(targetGains)
+      lastSceneRef.current = sceneId
       onChange(targetGains)
       onSceneChange?.(sceneId)
       return
@@ -123,17 +133,20 @@ export function SoundscapeMixer({
       for (const id of SOUND_LAYERS.map(l => l.id)) {
         intermediate[id] = startGains[id] + (targetGains[id] - startGains[id]) * t
       }
+      setLocalGains(intermediate)
       onChange(intermediate)
       if (t >= 1) {
         clearInterval(morphIntervalRef.current!)
         morphIntervalRef.current = null
+        lastSceneRef.current = sceneId
         onSceneChange?.(sceneId)
       }
     }, intervalMs)
   }
 
   const handleSlider = (id: SoundLayerId, value: number) => {
-    const newGains = { ...gains, [id]: value }
+    const newGains = { ...localGains, [id]: value }
+    setLocalGains(newGains)
     onChange(newGains)
     onSceneChange?.('custom')
   }
@@ -173,11 +186,11 @@ export function SoundscapeMixer({
             min={0}
             max={1}
             step={0.01}
-            value={gains[layer.id]}
+            value={localGains[layer.id]}
             disabled={disabled}
             onChange={e => handleSlider(layer.id, Number(e.target.value))}
           />
-          <span className="soundscape-layer-pct">{Math.round(gains[layer.id] * 100)}%</span>
+          <span className="soundscape-layer-pct">{Math.round(localGains[layer.id] * 100)}%</span>
         </div>
       ))}
     </div>
