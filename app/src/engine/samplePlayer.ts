@@ -11,6 +11,7 @@ export type SamplePlayerLayer = {
   loading: boolean
   useNoise: boolean
   stopTimeoutId: ReturnType<typeof setTimeout> | undefined
+  pendingGain: number | null  // latest gain requested while loading
 }
 
 export type SamplePlayer = {
@@ -66,7 +67,7 @@ function startSource(
   let alreadyStarted = false
 
   if (layerData.useNoise || !layerData.buffer) {
-    // createNoiseBuffer already calls source.start() internally — do not start again
+    // createNoiseBuffer already calls source.start() internally - do not start again
     src = createNoiseSourceForLayer(player.context, layer)
     alreadyStarted = true
   } else {
@@ -104,6 +105,7 @@ export function createSamplePlayer(
       loading: false,
       useNoise: false,
       stopTimeoutId: undefined,
+      pendingGain: null,
     }
     layers.set(layer.id, layerData)
 
@@ -168,14 +170,20 @@ export async function setLayerGain(
   }
 
   if (layerData.loading) {
-    // Still loading — just update gain target; source start will handle it on load
+    // Still loading — track latest requested gain so fade-in uses the right value
+    layerData.pendingGain = gain
     return
   }
 
   // Load for the first time
   layerData.loading = true
+  layerData.pendingGain = null
   const result = await loadLayerBuffer(ctx, layer)
   layerData.loading = false
+
+  // Use the latest gain requested while loading, if any
+  const finalGain = layerData.pendingGain !== null ? layerData.pendingGain : gain
+  layerData.pendingGain = null
 
   if (result === 'noise') {
     layerData.useNoise = true
@@ -184,13 +192,16 @@ export async function setLayerGain(
     layerData.useNoise = false
   }
 
+  const finalTarget = toEffectiveLayerGain(id, finalGain)
+  if (finalTarget <= 0) return  // user muted before load finished
+
   startSource(player, layerData, layer)
 
   // Fade in
   const n = ctx.currentTime
   layerData.gainNode.gain.cancelScheduledValues(n)
   layerData.gainNode.gain.setValueAtTime(0, n)
-  layerData.gainNode.gain.linearRampToValueAtTime(targetGain, n + 1.5)  // gentle fade-in on first load
+  layerData.gainNode.gain.linearRampToValueAtTime(finalTarget, n + 1.5)  // gentle fade-in on first load
 }
 
 export function stopSamplePlayer(player: SamplePlayer): void {
