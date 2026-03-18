@@ -2588,8 +2588,9 @@ function AppInner() {
                 <div className="section-card">
                   <div onPointerUp={() => {
                     if (!isRunning && !ambientPlayerRef.current) {
-                      const hasAudio = Object.values(layerGains).some(v => (v as number) > 0)
-                      if (hasAudio) void startAmbientWithGains(layerGains)
+                      const latest = layerGainsRef.current
+                      const hasAudio = Object.values(latest).some(v => (v as number) > 0)
+                      if (hasAudio) void startAmbientWithGains(latest)
                     }
                   }}>
                   <SoundscapeMixer
@@ -2597,6 +2598,7 @@ function AppInner() {
                     activeSceneId={soundsceneId}
                     onChange={(gains) => {
                       setLayerGains(gains)
+                      layerGainsRef.current = gains
                       // Live-update ambient player if running
                       if (ambientPlayerRef.current) {
                         Object.entries(gains).forEach(([id, val]) =>
