@@ -592,6 +592,8 @@ function AppInner() {
       beatRef.current = targets.beat
       setCarrier(targets.carrier)
       setBeat(targets.beat)
+      setLeftFrequency(targets.carrier)
+      setRightFrequency(targets.carrier + targets.beat)
       setVolume(targets.volume)
       setBinauralVolume(targets.binauralVolume)
       if (targets.noiseVolume > 0) setSoundscapeVolume(targets.noiseVolume)
