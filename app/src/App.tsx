@@ -639,6 +639,7 @@ function AppInner() {
   // Ambient mode
   const [ambientRunning, setAmbientRunning] = useState(false)
   const ambientPlayerRef = useRef<AmbientPlayer | null>(null)
+  const ambientStartingRef = useRef(false) // lock to prevent double-start on rapid slider events
 
   // Music player
   const [musicTrackId, setMusicTrackId] = useState<string | null>(null)
@@ -1305,6 +1306,31 @@ function AppInner() {
     if (player.context.state !== 'running') await player.context.resume()
     ambientPlayerRef.current = player
     setAmbientRunning(true)
+  }
+
+  // Start ambient with specific gains — bypasses stale closure issue when
+  // scene is selected and audio needs to start in the same interaction
+  const startAmbientWithGains = async (gains: LayerGains): Promise<void> => {
+    if (ambientStartingRef.current) return
+    ambientStartingRef.current = true
+    try {
+      if (ambientRunning) {
+        if (ambientPlayerRef.current) {
+          stopAmbientPlayer(ambientPlayerRef.current)
+          ambientPlayerRef.current = null
+        }
+        setAmbientRunning(false)
+      }
+      if (graphRef.current) {
+        stopSession(true)
+      }
+      const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, gains)
+      if (player.context.state !== 'running') await player.context.resume()
+      ambientPlayerRef.current = player
+      setAmbientRunning(true)
+    } finally {
+      ambientStartingRef.current = false
+    }
   }
 
   /**
@@ -2552,18 +2578,13 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-title">Ambient</div>
                 <div className="section-card">
-                  <p className="control-hint">
-                    {isRunning
-                      ? 'Session is active. Use the Soundscape mixer below to add or adjust rain/ocean/etc in-session.'
-                      : 'Play soundscapes and noise without starting a binaural session.'}
-                  </p>
+                  <p className="control-hint">Play soundscapes and noise without starting a binaural session.</p>
                   <button
                     className={`start-button${ambientButtonActive ? ' start-button--active' : ''}`}
                     onClick={() => void toggleAmbient()}
-                    disabled={ambientButtonDisabled}
-                    title={ambientButtonDisabled ? 'Disabled during session. Use the Soundscape mixer below.' : undefined}
+                    disabled={isRunning}
                   >
-                    {ambientButtonLabel}
+                    {ambientRunning ? 'Stop Ambient' : 'Play Ambient'}
                   </button>
                 </div>
               </div>
@@ -2577,6 +2598,19 @@ function AppInner() {
                     activeSceneId={soundsceneId}
                     onChange={(gains) => {
                       setLayerGains(gains)
+                      layerGainsRef.current = gains
+                      // Live-update session mixer if running
+                      if (mixerNodesRef.current) {
+                        Object.entries(gains).forEach(([id, val]) =>
+                          updateLayerGain(mixerNodesRef.current!, id as SoundLayerId, val as number)
+                        )
+                      }
+                      // Live-update ambient player if running
+                      if (ambientPlayerRef.current) {
+                        Object.entries(gains).forEach(([id, val]) =>
+                          setAmbientLayerGain(ambientPlayerRef.current!, id, val as number)
+                        )
+                      }
                       const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
                         scene.id !== 'custom' && scene.id !== 'off' &&
                         SOUND_LAYERS.every(l => Math.abs((scene.gains[l.id] ?? 0) - gains[l.id]) < 0.01)
@@ -2584,15 +2618,35 @@ function AppInner() {
                       setSoundsceneId(matchedScene?.id ?? 'custom')
                     }}
                     onSceneChange={(sceneId) => {
-                      // Free users: only first 2 scenes allowed (off + first scene)
-                      if (!isPro) {
-                        const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id) // off + 2 scenes
+                      if (!isPro && sceneId !== 'custom' && sceneId !== 'off') {
+                        const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id)
                         if (!freeScenes.includes(sceneId)) {
                           openUpgradeModal('All Soundscapes')
                           return
                         }
                       }
-                      setSoundsceneId(sceneId)
+                      // Stop ambient if Off selected
+                      if (sceneId === 'off') {
+                        if (ambientRunning) void toggleAmbient()
+                        applySoundscapeScene(sceneId)
+                        return
+                      }
+                      // Named scene — start with scene's gains directly
+                      if (sceneId !== 'custom') {
+                        const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
+                        if (scene) {
+                          const gains = { ...DEFAULT_GAINS, ...scene.gains } as LayerGains
+                          applySoundscapeScene(sceneId)
+                          if (!isRunning) void startAmbientWithGains(gains)
+                        }
+                        return
+                      }
+                      // 'custom' = slider was dragged — start ambient with latest ref gains
+                      if (!isRunning && !ambientPlayerRef.current) {
+                        const latest = layerGainsRef.current
+                        const hasAudio = Object.values(latest).some(v => (v as number) > 0)
+                        if (hasAudio) void startAmbientWithGains(latest)
+                      }
                     }}
                     disabled={false}
                   />
