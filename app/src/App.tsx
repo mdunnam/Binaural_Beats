@@ -1612,11 +1612,13 @@ function AppInner() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
-    graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
-    graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
-    graph.leftOsc.frequency.setValueAtTime(leftFrequency, graph.context.currentTime)
-    graph.rightOsc.frequency.setValueAtTime(rightFrequency, graph.context.currentTime)
-  }, [leftFrequency, rightFrequency])
+    if (useIndependentTuning) return  // independent tuning handled by leftFrequency/rightFrequency effect
+    const now = graph.context.currentTime
+    graph.leftOsc.frequency.cancelScheduledValues(now)
+    graph.rightOsc.frequency.cancelScheduledValues(now)
+    graph.leftOsc.frequency.setValueAtTime(carrier, now)
+    graph.rightOsc.frequency.setValueAtTime(carrier + beat, now)
+  }, [carrier, beat, useIndependentTuning])
 
   useEffect(() => {
     const graph = graphRef.current
