@@ -588,13 +588,23 @@ function AppInner() {
     mapping: sculptMapping,
     onAudioTargets: (targets) => {
       if (!sculptBridgeEnabled) return
-      console.log('[sculpt] onAudioTargets fired', targets, 'graphRef:', !!graphRef.current, 'isRunning:', isRunning)
+      // Direct audio node update — bypasses React state/effect chain so it
+      // fires every poll even when computed values haven't changed.
+      const graph = graphRef.current
+      if (graph) {
+        const now = graph.context.currentTime
+        graph.leftOsc.frequency.setValueAtTime(targets.carrier, now)
+        graph.rightOsc.frequency.setValueAtTime(targets.carrier + targets.beat, now)
+        graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, targets.binauralVolume), now, 0.05)
+        graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, targets.binauralVolume), now, 0.05)
+      }
+      const bus = masterBusRef.current
+      if (bus) setMasterVolume(bus, targets.volume)
+      // Update React state for UI sliders display
       carrierRef.current = targets.carrier
       beatRef.current = targets.beat
       setCarrier(targets.carrier)
       setBeat(targets.beat)
-      setLeftFrequency(targets.carrier)
-      setRightFrequency(targets.carrier + targets.beat)
       setVolume(targets.volume)
       setBinauralVolume(targets.binauralVolume)
       if (targets.noiseVolume > 0) setSoundscapeVolume(targets.noiseVolume)
@@ -1601,7 +1611,6 @@ function AppInner() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
-    console.log('[sculpt] osc freq update', leftFrequency, rightFrequency)
     graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.leftOsc.frequency.setValueAtTime(leftFrequency, graph.context.currentTime)
