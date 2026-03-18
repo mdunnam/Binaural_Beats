@@ -391,9 +391,8 @@ function applyStudioLayers(layers: StudioLayer[], callbacks: {
       }
     }
   }
-
-  // No soundscape layer → silence it
-  if (!hasSoundscape) {
+  // No soundscape layer - only silence if a session is actively running
+  if (!hasSoundscape && callbacks.graphRef?.current) {
     callbacks.setSoundsceneId('off')
     callbacks.setSoundscapeVolume(0)
     callbacks.soundscapeVolumeRef.current = 0
