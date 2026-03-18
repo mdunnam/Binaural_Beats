@@ -639,6 +639,7 @@ function AppInner() {
   // Ambient mode
   const [ambientRunning, setAmbientRunning] = useState(false)
   const ambientPlayerRef = useRef<AmbientPlayer | null>(null)
+  const ambientStartingRef = useRef(false) // lock to prevent double-start on rapid slider events
 
   // Music player
   const [musicTrackId, setMusicTrackId] = useState<string | null>(null)
@@ -1310,20 +1311,26 @@ function AppInner() {
   // Start ambient with specific gains — bypasses stale closure issue when
   // scene is selected and audio needs to start in the same interaction
   const startAmbientWithGains = async (gains: LayerGains): Promise<void> => {
-    if (ambientRunning) {
-      if (ambientPlayerRef.current) {
-        stopAmbientPlayer(ambientPlayerRef.current)
-        ambientPlayerRef.current = null
+    if (ambientStartingRef.current) return
+    ambientStartingRef.current = true
+    try {
+      if (ambientRunning) {
+        if (ambientPlayerRef.current) {
+          stopAmbientPlayer(ambientPlayerRef.current)
+          ambientPlayerRef.current = null
+        }
+        setAmbientRunning(false)
       }
-      setAmbientRunning(false)
+      if (graphRef.current) {
+        stopSession(true)
+      }
+      const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, gains)
+      if (player.context.state !== 'running') await player.context.resume()
+      ambientPlayerRef.current = player
+      setAmbientRunning(true)
+    } finally {
+      ambientStartingRef.current = false
     }
-    if (graphRef.current) {
-      stopSession(true)
-    }
-    const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, gains)
-    if (player.context.state !== 'running') await player.context.resume()
-    ambientPlayerRef.current = player
-    setAmbientRunning(true)
   }
 
   /**
@@ -2586,13 +2593,6 @@ function AppInner() {
               <div className="section-block">
                 <div className="section-title">Soundscape</div>
                 <div className="section-card">
-                  <div onPointerUp={() => {
-                    if (!isRunning && !ambientPlayerRef.current) {
-                      const latest = layerGainsRef.current
-                      const hasAudio = Object.values(latest).some(v => (v as number) > 0)
-                      if (hasAudio) void startAmbientWithGains(latest)
-                    }
-                  }}>
                   <SoundscapeMixer
                     gains={layerGains}
                     activeSceneId={soundsceneId}
@@ -2612,32 +2612,38 @@ function AppInner() {
                       setSoundsceneId(matchedScene?.id ?? 'custom')
                     }}
                     onSceneChange={(sceneId) => {
-                      // Free users: only first 2 scenes allowed (off + first scene)
-                      if (!isPro) {
+                      if (!isPro && sceneId !== 'custom' && sceneId !== 'off') {
                         const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id)
                         if (!freeScenes.includes(sceneId)) {
                           openUpgradeModal('All Soundscapes')
                           return
                         }
                       }
-                      applySoundscapeScene(sceneId)
-                      // Stop ambient if user picks Off
+                      // Stop ambient if Off selected
                       if (sceneId === 'off') {
                         if (ambientRunning) void toggleAmbient()
+                        applySoundscapeScene(sceneId)
                         return
                       }
-                      // Start ambient immediately with the new scene's gains (bypasses stale closure)
-                      if (!isRunning) {
+                      // Named scene — start with scene's gains directly
+                      if (sceneId !== 'custom') {
                         const scene = SOUNDSCAPE_SCENES.find(s => s.id === sceneId)
                         if (scene) {
                           const gains = { ...DEFAULT_GAINS, ...scene.gains } as LayerGains
-                          void startAmbientWithGains(gains)
+                          applySoundscapeScene(sceneId)
+                          if (!isRunning) void startAmbientWithGains(gains)
                         }
+                        return
+                      }
+                      // 'custom' = slider was dragged — start ambient with latest ref gains
+                      if (!isRunning && !ambientPlayerRef.current) {
+                        const latest = layerGainsRef.current
+                        const hasAudio = Object.values(latest).some(v => (v as number) > 0)
+                        if (hasAudio) void startAmbientWithGains(latest)
                       }
                     }}
                     disabled={false}
                   />
-                  </div>
                   {/* Custom soundscape save/load */}
                   <hr className="section-divider" />
                   <div className="soundscape-preset-row">
