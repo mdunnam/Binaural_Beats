@@ -588,6 +588,7 @@ function AppInner() {
     mapping: sculptMapping,
     onAudioTargets: (targets) => {
       if (!sculptBridgeEnabled) return
+      console.log('[sculpt] onAudioTargets fired', targets, 'graphRef:', !!graphRef.current, 'isRunning:', isRunning)
       carrierRef.current = targets.carrier
       beatRef.current = targets.beat
       setCarrier(targets.carrier)
@@ -1600,6 +1601,7 @@ function AppInner() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
+    console.log('[sculpt] osc freq update', leftFrequency, rightFrequency)
     graph.leftOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.rightOsc.frequency.cancelScheduledValues(graph.context.currentTime)
     graph.leftOsc.frequency.setValueAtTime(leftFrequency, graph.context.currentTime)
