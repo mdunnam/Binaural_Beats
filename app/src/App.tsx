@@ -474,7 +474,7 @@ function AppInner() {
   const [noiseVolume, setNoiseVolume] = useState(0.15)
 
   // Soundscape volume (controls soundscapeBus master gain)
-  const [soundscapeVolume, setSoundscapeVolume] = useState(0.15)
+  const [soundscapeVolume, setSoundscapeVolume] = useState(0.7)
 
   // Soundscape mixer
   const [layerGains, setLayerGains] = useState<LayerGains>({ ...DEFAULT_GAINS })
@@ -2328,6 +2328,20 @@ function AppInner() {
                     <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
                   </label>
 
+                  <label>Tones Volume ({Math.round(binauralVolume * 100)}%)
+                    <input type="range" min={0} max={1} step={0.01} value={binauralVolume}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        setBinauralVolume(v)
+                        binauralVolumeRef.current = v
+                        const g = graphRef.current
+                        if (g) {
+                          g.leftGain.gain.setTargetAtTime(Math.max(0.0001, v), g.context.currentTime, 0.05)
+                          g.rightGain.gain.setTargetAtTime(Math.max(0.0001, v), g.context.currentTime, 0.05)
+                        }
+                      }} />
+                  </label>
+
                 </div>
               </div>
 
@@ -2568,6 +2582,17 @@ function AppInner() {
                   >
                     {ambientRunning ? 'Stop Ambient' : 'Play Ambient'}
                   </button>
+                  <label style={{display:'flex',flexDirection:'column',gap:'0.25rem',marginTop:'0.75rem'}}>
+                    Soundscape Volume ({Math.round(soundscapeVolume * 100)}%)
+                    <input type="range" min={0} max={1} step={0.01} value={soundscapeVolume}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        setSoundscapeVolume(v)
+                        soundscapeVolumeRef.current = v
+                        const bus = masterBusRef.current
+                        if (bus) bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, v), bus.context.currentTime, 0.05)
+                      }} />
+                  </label>
                 </div>
               </div>
 
