@@ -595,19 +595,20 @@ function AppInner() {
         const now = graph.context.currentTime
         graph.leftOsc.frequency.setValueAtTime(targets.carrier, now)
         graph.rightOsc.frequency.setValueAtTime(targets.carrier + targets.beat, now)
+        // Cancel pending automations before ramping to avoid click artifacts
+        graph.leftGain.gain.cancelScheduledValues(now)
+        graph.leftGain.gain.setValueAtTime(graph.leftGain.gain.value, now)
         graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, targets.binauralVolume), now, 0.05)
+        graph.rightGain.gain.cancelScheduledValues(now)
+        graph.rightGain.gain.setValueAtTime(graph.rightGain.gain.value, now)
         graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, targets.binauralVolume), now, 0.05)
       }
-      const bus = masterBusRef.current
-      if (bus) setMasterVolume(bus, targets.volume)
-      // Update React state for UI sliders display
+      // NOTE: bridge does NOT control master volume — that stays under user control.
+      // Update React state for UI sliders display (carrier/beat only)
       carrierRef.current = targets.carrier
       beatRef.current = targets.beat
       setCarrier(targets.carrier)
       setBeat(targets.beat)
-      setVolume(targets.volume)
-      setBinauralVolume(targets.binauralVolume)
-      if (targets.noiseVolume > 0) setSoundscapeVolume(targets.noiseVolume)
     },
   })
   // Note: AudioContext is created inside masterBusRef per-session, not exposed as a stable ref.
@@ -1647,15 +1648,23 @@ function AppInner() {
   useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
-    graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), graph.context.currentTime, 0.05)
-    graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), graph.context.currentTime, 0.05)
+    const now = graph.context.currentTime
+    graph.leftGain.gain.cancelScheduledValues(now)
+    graph.leftGain.gain.setValueAtTime(graph.leftGain.gain.value, now)
+    graph.leftGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), now, 0.05)
+    graph.rightGain.gain.cancelScheduledValues(now)
+    graph.rightGain.gain.setValueAtTime(graph.rightGain.gain.value, now)
+    graph.rightGain.gain.setTargetAtTime(Math.max(0.0001, binauralVolume), now, 0.05)
   }, [binauralVolume])
 
   useEffect(() => {
     const bus = masterBusRef.current
     if (!bus) return
     console.log('[soundscapeVolume effect] setting bus gain to', soundscapeVolume, new Error().stack?.split('\n')[2])
-    bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, soundscapeVolume), bus.context.currentTime, 0.05)
+    const now = bus.context.currentTime
+    bus.soundscapeBus.gain.cancelScheduledValues(now)
+    bus.soundscapeBus.gain.setValueAtTime(bus.soundscapeBus.gain.value, now)
+    bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, soundscapeVolume), now, 0.05)
   }, [soundscapeVolume])
 
   useEffect(() => {
@@ -2349,8 +2358,13 @@ function AppInner() {
                         binauralVolumeRef.current = v
                         const g = graphRef.current
                         if (g) {
-                          g.leftGain.gain.setTargetAtTime(Math.max(0.0001, v), g.context.currentTime, 0.05)
-                          g.rightGain.gain.setTargetAtTime(Math.max(0.0001, v), g.context.currentTime, 0.05)
+                          const now = g.context.currentTime
+                          g.leftGain.gain.cancelScheduledValues(now)
+                          g.leftGain.gain.setValueAtTime(g.leftGain.gain.value, now)
+                          g.leftGain.gain.setTargetAtTime(Math.max(0.0001, v), now, 0.05)
+                          g.rightGain.gain.cancelScheduledValues(now)
+                          g.rightGain.gain.setValueAtTime(g.rightGain.gain.value, now)
+                          g.rightGain.gain.setTargetAtTime(Math.max(0.0001, v), now, 0.05)
                         }
                       }} />
                   </label>
@@ -2603,7 +2617,12 @@ function AppInner() {
                         setSoundscapeVolume(v)
                         soundscapeVolumeRef.current = v
                         const bus = masterBusRef.current
-                        if (bus) bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, v), bus.context.currentTime, 0.05)
+                        if (bus) {
+                          const now = bus.context.currentTime
+                          bus.soundscapeBus.gain.cancelScheduledValues(now)
+                          bus.soundscapeBus.gain.setValueAtTime(bus.soundscapeBus.gain.value, now)
+                          bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, v), now, 0.05)
+                        }
                       }} />
                   </label>
                 </div>

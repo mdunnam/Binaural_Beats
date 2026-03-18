@@ -53,5 +53,9 @@ export function createMasterBus(initialVolume: number, existingContext?: AudioCo
 }
 
 export function setMasterVolume(bus: MasterBus, volume: number): void {
-  bus.masterGain.gain.setTargetAtTime(Math.max(0.0001, volume), bus.context.currentTime, 0.05)
+  const now = bus.context.currentTime
+  const gain = bus.masterGain.gain
+  gain.cancelScheduledValues(now)
+  gain.setValueAtTime(gain.value, now)
+  gain.setTargetAtTime(Math.max(0.0001, volume), now, 0.05)
 }
