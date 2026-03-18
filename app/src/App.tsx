@@ -1644,6 +1644,7 @@ function AppInner() {
   useEffect(() => {
     const bus = masterBusRef.current
     if (!bus) return
+    console.log('[soundscapeVolume effect] setting bus gain to', soundscapeVolume)
     bus.soundscapeBus.gain.setTargetAtTime(Math.max(0.0001, soundscapeVolume), bus.context.currentTime, 0.05)
   }, [soundscapeVolume])
 
