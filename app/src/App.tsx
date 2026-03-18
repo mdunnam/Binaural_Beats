@@ -2596,6 +2596,10 @@ function AppInner() {
                         Object.entries(gains).forEach(([id, val]) =>
                           setAmbientLayerGain(ambientPlayerRef.current!, id, val as number)
                         )
+                      } else if (!isRunning) {
+                        // Nothing playing — auto-start ambient with current gains
+                        const hasAudio = Object.values(gains).some(v => (v as number) > 0)
+                        if (hasAudio) void startAmbientWithGains(gains)
                       }
                       const matchedScene = SOUNDSCAPE_SCENES.find(scene =>
                         scene.id !== 'custom' && scene.id !== 'off' &&
