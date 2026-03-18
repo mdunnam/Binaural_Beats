@@ -48,7 +48,7 @@ import { OnboardingModal } from './components/OnboardingModal'
 import type { Journey, ActiveJourney } from './engine/journeyEngine'
 import { startJourney, stopJourney } from './engine/journeyEngine'
 import type { AmbientPlayer } from './engine/ambientPlayer'
-import { createAmbientPlayer, setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
+import { setAmbientNoiseType, setAmbientNoiseVolume, setAmbientMasterVolume, setAmbientLayerGain, stopAmbientPlayer } from './engine/ambientPlayer'
 import { MusicTab } from './components/MusicTab'
 import { EducationTab } from './components/EducationTab'
 import { HelpTab } from './components/HelpTab'
@@ -942,7 +942,7 @@ function AppInner() {
       // If pad is enabled, restart it in standalone mode after session ends
       if (padEnabled) {
         setTimeout(() => {
-          if (!padRef.current && !masterBusRef.current) {
+          if (!padRef.current && !graphRef.current) {
             const standalone = new AudioContext()
             padStandaloneCtxRef.current = standalone
             const pad = createPadSynth(standalone, carrier, padVolume, padReverbMix, padWaveform, padBreatheRate, standalone.destination)
@@ -952,11 +952,7 @@ function AppInner() {
       }
     }
 
-    // Stop soundscape mixer
-    if (mixerNodesRef.current) {
-      stopSoundscapeMixer(mixerNodesRef.current)
-      mixerNodesRef.current = null
-    }
+    // Soundscape keeps playing — do NOT stop mixerNodesRef here
 
     // Fade voice bus out
     if (voiceBusRef.current) {
@@ -977,9 +973,7 @@ function AppInner() {
       }
       stopAudioGraph(graph)
       graphRef.current = null
-      // Close the shared AudioContext owned by masterBus
-      void masterBusRef.current?.context.close()
-      masterBusRef.current = null
+      // Master bus remains open — shared by soundscape and other sources
       // Stop music player
       if (musicPlayerRef.current) {
         stopMusicPlayer(musicPlayerRef.current)
@@ -993,8 +987,7 @@ function AppInner() {
       setMusicTrackId(null)
       setMusicPosition(0)
       setIsRunning(false)
-      // Release wake lock and clear AudioContext proxy ref
-      masterBusContextRef.current = null
+      // Release wake lock (masterBusContextRef stays valid — bus is persistent)
       void releaseWakeLock()
       if (withChime) playEndChime()
     }
@@ -1127,13 +1120,6 @@ function AppInner() {
     audioStartingRef.current = true
     clearSessionTimers()
 
-    // Stop ambient if running
-    if (ambientPlayerRef.current) {
-      stopAmbientPlayer(ambientPlayerRef.current)
-      ambientPlayerRef.current = null
-      setAmbientRunning(false)
-    }
-
     try {
 
     // Read all audio params from refs so we always get the latest state,
@@ -1145,15 +1131,9 @@ function AppInner() {
     const curSoundscapeVolume = soundscapeVolumeRef.current
     const curFadeInSeconds = fadeInSecondsRef.current
 
-    // 1. Create master bus - reuse pre-warmed context if available (created
-    //    synchronously inside the user gesture to satisfy browser autoplay policy)
-    const prewarmed = prewarmedContextRef.current
-    prewarmedContextRef.current = null
-    const bus = createMasterBus(curVolume, prewarmed ?? undefined)
+    // 1. Get or create persistent master bus
+    const bus = await getOrCreateMasterBus()
     bus.soundscapeBus.gain.value = Math.max(0.0001, curSoundscapeVolume)
-    masterBusRef.current = bus
-
-    if (bus.context.state !== 'running') await bus.context.resume()
 
     // 2. Create audio graph (binaural), share context, connect to binauralBus
     const graph = createAudioGraph({
@@ -1194,9 +1174,11 @@ function AppInner() {
       activeJourneyRef.current = activeJourney
     }
 
-    // 3. Create soundscape player, connect to soundscapeBus
-    const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGainsRef.current)
-    mixerNodesRef.current = mixerNodes
+    // 3. Create soundscape player if not already running (shares persistent bus)
+    if (!mixerNodesRef.current) {
+      const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGainsRef.current)
+      mixerNodesRef.current = mixerNodes
+    }
 
     if (padEnabledRef.current) {
       // Stop standalone pad if running - session takes over
@@ -1287,50 +1269,57 @@ function AppInner() {
   }
 
   // ---------------------------------------------------------------------------
+  // Shared persistent MasterBus helpers
+  // ---------------------------------------------------------------------------
+  const getOrCreateMasterBus = async (): Promise<MasterBus> => {
+    if (masterBusRef.current) return masterBusRef.current
+    const prewarmed = prewarmedContextRef.current
+    prewarmedContextRef.current = null
+    const bus = createMasterBus(volumeRef.current, prewarmed ?? undefined)
+    if (bus.context.state !== 'running') await bus.context.resume()
+    bus.soundscapeBus.gain.value = Math.max(0.0001, soundscapeVolumeRef.current)
+    masterBusRef.current = bus
+    masterBusContextRef.current = bus.context
+    return bus
+  }
+
+  // ---------------------------------------------------------------------------
   // Toggle ambient playback
   // ---------------------------------------------------------------------------
-  const toggleAmbient = async (): Promise<void> => {
-    if (ambientRunning) {
-      if (ambientPlayerRef.current) {
-        stopAmbientPlayer(ambientPlayerRef.current)
-        ambientPlayerRef.current = null
+  const stopSoundscape = (): void => {
+    if (mixerNodesRef.current) {
+      stopSoundscapeMixer(mixerNodesRef.current)
+      mixerNodesRef.current = null
+    }
+    setAmbientRunning(false)
+  }
+
+  const startSoundscape = async (gains: LayerGains): Promise<void> => {
+    if (ambientStartingRef.current) return
+    ambientStartingRef.current = true
+    try {
+      if (mixerNodesRef.current) {
+        stopSoundscapeMixer(mixerNodesRef.current)
+        mixerNodesRef.current = null
       }
-      setAmbientRunning(false)
-      return
+      const bus = await getOrCreateMasterBus()
+      const mixer = createSoundscapeMixer(bus.context, bus.soundscapeBus, gains)
+      mixerNodesRef.current = mixer
+      setAmbientRunning(true)
+    } finally {
+      ambientStartingRef.current = false
     }
-    // Stop session if running
-    if (graphRef.current) {
-      stopSession(true)
-    }
-    const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, layerGains)
-    if (player.context.state !== 'running') await player.context.resume()
-    ambientPlayerRef.current = player
-    setAmbientRunning(true)
+  }
+
+  const toggleAmbient = async (): Promise<void> => {
+    if (ambientRunning) { stopSoundscape(); return }
+    await startSoundscape(layerGainsRef.current)
   }
 
   // Start ambient with specific gains — bypasses stale closure issue when
   // scene is selected and audio needs to start in the same interaction
   const startAmbientWithGains = async (gains: LayerGains): Promise<void> => {
-    if (ambientStartingRef.current) return
-    ambientStartingRef.current = true
-    try {
-      if (ambientRunning) {
-        if (ambientPlayerRef.current) {
-          stopAmbientPlayer(ambientPlayerRef.current)
-          ambientPlayerRef.current = null
-        }
-        setAmbientRunning(false)
-      }
-      if (graphRef.current) {
-        stopSession(true)
-      }
-      const player = createAmbientPlayer(soundscapeVolume, noiseType, noiseVolume, gains)
-      if (player.context.state !== 'running') await player.context.resume()
-      ambientPlayerRef.current = player
-      setAmbientRunning(true)
-    } finally {
-      ambientStartingRef.current = false
-    }
+    await startSoundscape(gains)
   }
 
   /**
@@ -1877,12 +1866,6 @@ function AppInner() {
     : `${wobbleDepth.toFixed(1)} cents`
   const sessionSoundscapeActive = isSessionSoundscapeActive(isRunning, soundsceneId)
   const ambientButtonActive = ambientRunning || sessionSoundscapeActive
-  const ambientButtonDisabled = isRunning && !ambientRunning
-  const ambientButtonLabel = ambientRunning
-    ? 'Stop Ambient'
-    : sessionSoundscapeActive
-      ? 'Use Soundscape Mixer Below'
-      : 'Play Ambient'
 
   // ---------------------------------------------------------------------------
   // Render
