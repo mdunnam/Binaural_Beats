@@ -1297,15 +1297,20 @@ function AppInner() {
   const startSoundscape = async (gains: LayerGains): Promise<void> => {
     if (ambientStartingRef.current) return
     ambientStartingRef.current = true
+    console.log('[startSoundscape] called with gains:', gains)
     try {
       if (mixerNodesRef.current) {
+        console.log('[startSoundscape] stopping existing mixer')
         stopSoundscapeMixer(mixerNodesRef.current)
         mixerNodesRef.current = null
       }
+      console.log('[startSoundscape] getting bus...')
       const bus = await getOrCreateMasterBus()
+      console.log('[startSoundscape] bus context state:', bus.context.state)
       const mixer = createSoundscapeMixer(bus.context, bus.soundscapeBus, gains)
       mixerNodesRef.current = mixer
       setAmbientRunning(true)
+      console.log('[startSoundscape] done — ambientRunning set to true')
     } catch (err) {
       console.error('[startSoundscape] failed:', err)
     } finally {
