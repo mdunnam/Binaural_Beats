@@ -25,7 +25,7 @@ export const DEFAULT_SCULPT_STATE: SculptState = {
   idle: true,
 }
 
-const BRIDGE_URL = 'http://localhost:7842/sculpt-state'
+const BRIDGE_URL = 'http://127.0.0.1:7842/sculpt-state'
 
 export async function fetchSculptState(): Promise<SculptState | null> {
   try {
