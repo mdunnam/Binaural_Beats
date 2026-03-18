@@ -2599,6 +2599,12 @@ function AppInner() {
                     onChange={(gains) => {
                       setLayerGains(gains)
                       layerGainsRef.current = gains
+                      // Live-update session mixer if running
+                      if (mixerNodesRef.current) {
+                        Object.entries(gains).forEach(([id, val]) =>
+                          updateLayerGain(mixerNodesRef.current!, id as SoundLayerId, val as number)
+                        )
+                      }
                       // Live-update ambient player if running
                       if (ambientPlayerRef.current) {
                         Object.entries(gains).forEach(([id, val]) =>
