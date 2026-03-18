@@ -1443,7 +1443,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 
 /* ── Dashboard ── */
-.dashboard { display: flex; flex-direction: column; gap: 0.25rem; }
+.dashboard { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .dash-state-card { text-align: center; padding: 1.5rem 1rem; border-radius: 16px; background: var(--bg-section); border: 1px solid var(--border-section); margin-bottom: 0.5rem; }
 .dash-state-card--active { background: var(--accent-light); border-color: var(--accent); box-shadow: 0 0 20px rgba(62,143,114,0.12); }
@@ -5051,7 +5051,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--accent);
   border-radius: 12px;
   padding: 0.85rem 1rem;
-  margin-top: 0.75rem;
+  
 }
 .dash-now-row {
   display: flex;
@@ -5084,7 +5084,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 12px;
   padding: 0.85rem 1rem;
-  margin-top: 0.75rem;
+  
 }
 .dash-continue-info {
   display: flex;
@@ -5414,7 +5414,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
+  
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -5484,7 +5484,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
+  
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -5523,7 +5523,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
+  
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -5560,7 +5560,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 0.9rem 1.25rem;
-  margin-bottom: 0.75rem;
+  
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5600,7 +5600,7 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   border: 1px solid var(--border-section);
   border-radius: 14px;
   padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
+  
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -6123,3 +6123,4 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .aura-tuning-step-info span { color: var(--text-muted); }
 .aura-tuning-step-info em { color: var(--text-muted); font-style: italic; font-size: 0.75rem; }
 .aura-tuning-clear { font-size: 0.82rem; color: var(--text-muted); margin: 0; font-style: italic; }
+
