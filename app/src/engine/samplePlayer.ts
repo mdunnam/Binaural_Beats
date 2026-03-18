@@ -205,9 +205,8 @@ export async function setLayerGain(
   layerData.gainNode.gain.cancelScheduledValues(n)
   layerData.gainNode.gain.setValueAtTime(0, n)
   layerData.gainNode.gain.linearRampToValueAtTime(finalTarget, n + 1.5)
-  // Check: is gainNode connected?
   setTimeout(() => {
-    console.log('[samplePlayer] gainNode value check for', id, ':', layerData.gainNode.gain.value, 'source:', layerData.source ? 'alive' : 'null')
+    console.log('[samplePlayer]', id, 'gainNode:', layerData.gainNode.gain.value, 'source:', layerData.source ? 'alive' : 'null', 'destination gain:', (player.destination as GainNode).gain?.value)
   }, 2000)
 }
 
