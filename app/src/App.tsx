@@ -2601,6 +2601,7 @@ function AppInner() {
                       setSoundsceneId(matchedScene?.id ?? 'custom')
                     }}
                     onSceneChange={(sceneId) => {
+                      console.log('[onSceneChange] sceneId:', sceneId, 'ambientRunning:', ambientRunning)
                       if (!isPro && sceneId !== 'custom' && sceneId !== 'off') {
                         const freeScenes = SOUNDSCAPE_SCENES.slice(0, 3).map(s => s.id)
                         if (!freeScenes.includes(sceneId)) {
