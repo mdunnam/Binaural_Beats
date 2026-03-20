@@ -1023,6 +1023,14 @@ function AppInner() {
           stopSoundscapeMixer(mixerNodesRef.current)
           mixerNodesRef.current = null
         }
+        // Mute the soundscape bus immediately so no bleed even if any node is still in flight
+        if (masterBusRef.current) {
+          const now = masterBusRef.current.context.currentTime
+          masterBusRef.current.soundscapeBus.gain.cancelScheduledValues(now)
+          masterBusRef.current.soundscapeBus.gain.setValueAtTime(0, now)
+        }
+        setLayerGains({ ...DEFAULT_GAINS })
+        layerGainsRef.current = { ...DEFAULT_GAINS }
         setAmbientRunning(false)
         setSoundsceneId('off')
         sessionOwnedSoundscapeRef.current = false

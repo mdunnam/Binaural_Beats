@@ -262,7 +262,8 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
       if (liveAnalyser) {
         const data = new Uint8Array(liveAnalyser.fftSize)
         liveAnalyser.getByteTimeDomainData(data)
-        amplitude = data.reduce((sum, v) => sum + Math.abs(v - 128), 0) / data.length / 128
+        // Boost 4× so quiet binaural sine waves produce visible effects
+        amplitude = Math.min(1, (data.reduce((sum, v) => sum + Math.abs(v - 128), 0) / data.length / 128) * 4)
       }
 
       if (mode === 'lissajous') drawLissajous(ctx, w, h, carrier, beat, frame, amplitude, colorTheme)

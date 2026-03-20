@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type React from 'react'
 import { FocusMode } from './FocusMode'
 import { SleepMode } from './SleepMode'
@@ -40,6 +40,7 @@ export function ModesTab({
 }: Props) {
   const [activeMode, setActiveMode] = useState<ModeId>('focus')
   const [vizOpen, setVizOpen] = useState(false)
+  const vizRef = useRef<HTMLDivElement>(null)
 
   return (
     <div className="modes-tab">
@@ -98,8 +99,13 @@ export function ModesTab({
       )}
 
       {/* ── Collapsible visualization ──────────────────────────────────────── */}
-      <div className="modes-viz-section">
-        <button className="modes-viz-toggle" onClick={() => setVizOpen(v => !v)}>
+      <div className="modes-viz-section" ref={vizRef}>
+        <button className="modes-viz-toggle" onClick={() => {
+          setVizOpen(v => {
+            if (!v) setTimeout(() => vizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
+            return !v
+          })
+        }}>
           <span>Visualization</span>
           <span className={`modes-viz-chevron${vizOpen ? ' modes-viz-chevron--open' : ''}`}>▾</span>
         </button>
