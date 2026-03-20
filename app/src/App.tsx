@@ -133,6 +133,7 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   music:     <IconMusic size={16} />,
   studio:    <IconStudio size={16} />,
   sequencer: <IconSequencer size={16} />,
+  modes:     <IconLightning size={16} />,
   focus:     <IconFocus size={16} />,
   ai:        <IconSparkle size={16} />,
   program:   <IconCalendar size={16} />,
@@ -1312,7 +1313,7 @@ function AppInner() {
   const prewarmedContextRef = useRef<AudioContext | null>(null)
 
   const toggleAudio = async (): Promise<void> => {
-    if (graphRef.current) { stopSession(true); return }
+    if (graphRef.current) { stopSession(false); return }
     if (audioStartingRef.current) return
     audioStartingRef.current = true
     clearSessionTimers()

@@ -53,7 +53,7 @@ export function ModesTab({
             style={{ '--mode-color': m.color } as React.CSSProperties}
             onClick={() => setActiveMode(m.id)}
           >
-            <m.Icon size={18} style={{ color: m.color }} />
+            <span className="modes-card-icon"><m.Icon size={28} style={{ color: m.color }} /></span>
             <span className="modes-card-label">{m.label}</span>
             <span className="modes-card-desc">{m.desc}</span>
           </button>
