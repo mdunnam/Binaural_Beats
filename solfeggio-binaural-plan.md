@@ -168,40 +168,108 @@ Treat this as an audio engine project. The UI is a control surface for the engin
 
 ---
 
-## Module Architecture (Current + Target)
+## Module Architecture (Current)
 
 ```
 src/
   types.ts                        ← all shared types
-  App.tsx                         ← root component
+  App.tsx                         ← root component, master state + audio wiring
 
   engine/
-    audioGraph.ts                 ← binaural graph (oscs, LFO, filter, AM)
-    padSynth.ts                   ← generative pad synth (4-osc, convolver reverb)
+    audioGraph.ts                 ← binaural graph (oscs, LFO, filter, AM, noise)
+    masterBus.ts                  ← persistent AudioContext bus (binaural + soundscape + voice + music → limiter → output)
+    padSynth.ts                   ← generative pad synth (4-osc, convolver reverb, breathing LFO)
     noiseGen.ts                   ← white/pink/brown noise buffers
-    wavExport.ts                  ← OfflineAudioContext render + WAV encoder
-    isochronic.ts                 ← isochronic pulse engine (TODO)
-    transitionEngine.ts           ← brainwave state transition scheduler (TODO)
-    limiter.ts                    ← DynamicsCompressorNode master limiter (TODO)
-    meter.ts                      ← AnalyserNode RMS metering (TODO)
-    songBus.ts                    ← imported audio file bus (Phase 3)
-    beatDetector.ts               ← Meyda-based BPM / onset detector (Phase 4)
+    isochronic.ts                 ← isochronic pulse engine (amplitude-modulated tone, duty cycle, ramp)
+    journeyEngine.ts              ← brainwave state transition scheduler (stage sequencer, cross-stage ramps)
+    soundscapeMixer.ts            ← 22-layer ambient sound system (noise-gen + sample buffers, per-layer gain)
+    samplePlayer.ts               ← sample buffer loader with OGG/MP3 fallback to generated noise
+    ambientPlayer.ts              ← standalone ambient-only playback (no binaural session required)
+    musicPlayer.ts                ← lofi/ambient music player with 5-band EQ
+    voiceBus.ts                   ← TTS / narration bus with convolver reverb
+    wavExport.ts                  ← OfflineAudioContext render + 16-bit PCM WAV encoder
 
   components/
-    AutomationEditor.tsx          ← SVG multi-lane automation editor
-    SessionJournal.tsx            ← session log + post-session modal
-    FrequencyPresets.tsx          ← solfeggio + brainwave quick-select (TODO extract)
-    StageSequencer.tsx            ← brainwave journey builder (TODO)
-    VisualResonance.tsx           ← canvas Lissajous / sacred geometry (TODO)
-    BreathGuide.tsx               ← breathing pulse overlay (TODO)
-    SoundscapeLayer.tsx           ← per-layer ambient sound controls (TODO)
-    SongOverlay.tsx               ← song import + BPM sync (Phase 3)
+    — Tab shells —
+    PlayerTab.tsx                 ← main player: freq controls, presets, noise, pad, automation
+    StudioTab.tsx                 ← advanced multi-layer scene editor with per-layer automation
+    ModesTab.tsx                  ← Focus / Sleep / Lucid Dream / Ritual mode picker
+    MusicTab.tsx                  ← music library + EQ
+    SequencerTab.tsx              ← journey sequencer / stage builder
+    VisualTab.tsx                 ← Canvas visualizer (Lissajous, Mandala, Pulse, Spectrum)
+    EducationTab.tsx              ← learn mode: brainwave bands, solfeggio, usage guide
+    HelpTab.tsx                   ← FAQ and support
+    SettingsPanel.tsx             ← app settings (theme, notifications, account)
+
+    — Mode panels —
+    FocusMode.tsx                 ← Beta-arc focus sessions (25–90 min)
+    SleepMode.tsx                 ← 2–8 hour Delta descent journey
+    LucidDreamMode.tsx            ← REM-cycle theta journey (4–8 hours)
+    RitualMode.tsx                ← Immersive intentional space (4 intention presets)
+
+    — Player sub-components —
+    AutomationEditor.tsx          ← SVG multi-lane automation lane editor
+    BreathGuide.tsx               ← breathing pulse overlay (ring animation)
+    SoundscapeMixer.tsx           ← per-layer soundscape gain controls + scene picker
+    PadSynth.tsx                  ← pad synth controls (waveform, reverb, breathe rate)
+    MoodEQ.tsx                    ← mood-based frequency recommendations
+    SessionPlanner.tsx            ← quick-start presets + planning templates
+    JourneyBuilder.tsx            ← journey stage editor
+    WaveformPlayer.tsx            ← audio file playback for voice/narration
+    VuMeter.tsx                   ← RMS level meter
+    AudioVisualizer.tsx           ← waveform visualizer component
+    MiniPlayer.tsx                ← persistent now-playing strip at bottom
+
+    — AI —
+    AiMeditationPanel.tsx         ← AI meditation prompt input, generation, session launch
+
+    — Auth / monetisation —
+    AuthModal.tsx                 ← sign-in / sign-up modal
+    ProGate.tsx                   ← paywall wrapper for Pro-only features
+    UpgradeModal.tsx              ← plans + pricing overlay
+    ApiKeySettings.tsx            ← user-supplied API key management
+
+    — Session history —
+    SessionJournal.tsx            ← post-session journal modal
+    SessionLibrary.tsx            ← session history list, filter, export, delete
+    SevenDayProgram.tsx           ← 7-day guided program with streak tracking
+    ProgramComplete.tsx           ← completion screen
+
+    — Onboarding —
+    OnboardingFlow.tsx            ← goal-based first-run carousel
+    OnboardingModal.tsx           ← onboarding modal shell
+    InstallPrompt.tsx             ← PWA install banner
+
+    — Utility —
+    TabNav.tsx                    ← bottom navigation bar
+    Icons.tsx                     ← custom SVG icon library (hand-coded, no external lib)
+    Toast.tsx                     ← transient notification toasts
+    ErrorBoundary.tsx             ← React error boundary
+    NotificationSettings.tsx      ← push notification opt-in
+    AdminConsole.tsx              ← internal admin dashboard (Stripe + Vercel status)
+    FrequencyVerifier.tsx         ← audio accuracy debug tool
+    AuraReader.tsx                ← aura / chakra frequency helper
+    AuraTuning.tsx                ← aura tuning UI
+    SculptBridgePanel.tsx         ← ZBrush / Sculpt bridge panel (experimental)
+
+  ai/
+    journeyComposer.ts            ← LLM-structured journey config parser + validator
+    meditationComposer.ts         ← AI meditation session builder
+    meditationThemes.ts           ← pre-mapped theme → carrier/beat/soundscape/tone
+    savedSessions.ts              ← AI session persistence helpers
 
   data/
-    solfeggioFrequencies.ts       ← frequency library with descriptions
-    brainwavePresets.ts           ← brainwave band definitions
-    guidedJourneys.ts             ← pre-built session journeys
-    breathPatterns.ts             ← breathing rhythm definitions
+    (inline in engine modules and App.tsx — solfeggio frequencies, brainwave presets,
+     journey templates, breath patterns, soundscape scenes, music tracks)
+
+  contexts/
+    (auth context, subscription context)
+
+  hooks/
+    (custom React hooks)
+
+  lib/
+    (utility helpers)
 ```
 
 ---
@@ -321,78 +389,70 @@ These features were built during Phase 3 but were not originally planned for thi
 
 ---
 
-### 🔲 Phase 4 — The Experience (partially started)
+### ✅ Phase 4 — The Experience (DONE)
 
-#### 4a — Visual Resonance Interface
-A real-time visual representation of the audio state. Not decorative — driven by actual oscillator values.
+#### 4a — Visual Resonance Interface ✅
+- [x] Lissajous figure — L/R plots driven by carrier + beat values, animated via RAF
+- [x] Oscillating mandala — petal geometry that rotates at carrier rate, pulses at beat
+- [x] Pulse / ring mode — concentric rings spawned at beat frequency
+- [x] Spectrum / circular bars — AnalyserNode frequency bars in radial layout
+- [x] 4 colour themes: Emerald, Violet, Gold, Void
+- [x] Fullscreen mode
+- [x] ResizeObserver so canvas resizes correctly inside collapsed containers
+- Implementation: `src/components/VisualTab.tsx`
 
-Options (offer multiple visual modes):
-- **Lissajous figure** — L/R oscillator plotted X vs Y on a Canvas. Creates beautiful patterns that change with frequency ratio and phase offset
-- **Oscillating mandala** — radial geometry that pulses at the beat frequency, rotates at the carrier
-- **Waveform rings** — concentric rings that ripple at LFO rate
-- **Sacred geometry** — Flower of Life, Metatron's Cube, slowly rotating, pulsing at beat frequency
+#### 4b — Ritual Mode ✅
+- [x] 4 intentions: Stillness / Ceremony / Release / Creation — each with tuned carrier, beat, noise, soundscape
+- [x] Fullscreen immersive overlay with pulsing ambient orb
+- [x] Controls hidden until mouse movement, fade out after 2.5s
+- [x] Start/Stop toggle stays on screen; session-owned soundscape cleans up on stop
+- Implementation: `src/components/RitualMode.tsx`
 
-Implementation:
-- `requestAnimationFrame` loop reading AnalyserNode data
-- Canvas 2D or WebGL (WebGL for mandala/sacred geometry)
-- User can select visual mode
-- Fullscreen mode with minimal UI
+#### 4c — Daily State Tracking ✅
+- [x] Post-session journal modal (mood, energy, sleep quality, free notes)
+- [x] localStorage session history
+- [x] Session Library view with filtering, export, delete
+- Note: trend charts / heatmap not yet built (Phase 5 candidate)
+- Implementation: `src/components/SessionJournal.tsx`, `src/components/SessionLibrary.tsx`
 
-This is shareable. People will screenshot it. It's a marketing asset as much as a feature.
+#### 4d — Sleep Mode ✅
+- [x] 2–8 hour programs
+- [x] 5-stage Beta → Alpha → Theta → Deep Theta → Delta journey
+- [x] Ultra-gentle 90s fade-in, rain soundscape
+- [x] Stage arc display with current stage highlighted
+- [x] Status strip showing stage name, brainwave band, time remaining
+- Implementation: `src/components/SleepMode.tsx`
 
-#### 4b — Ritual / Dark Mode
-A fully immersive experience mode:
-- Black UI, minimal controls visible
-- Large visual resonance display
-- Slow fade-in of UI elements only on hover
-- Optional: guided voice overlay (AI TTS, Phase 5)
-- Designed for intentional, ceremonial use sessions
+#### 4e — Focus Mode ✅
+- [x] 4-stage Beta arc: Warm-up (18 Hz) → Flow State (14 Hz) → Deep Focus (12 Hz) → Wind-Down (9 Hz)
+- [x] 25 / 45 / 60 / 90 min duration picker
+- [x] 200 Hz carrier, pink noise, 30s fade-in
+- [x] Optional gamma burst toggle (40 Hz)
+- [x] Start/Stop toggle with compact status strip when running
+- Implementation: `src/components/FocusMode.tsx`
 
-#### 4c — Daily State Tracking
-After each session, log:
-- Mood before / after (1–5 scale or emoji)
-- Energy level before / after
-- Sleep quality (for sleep sessions)
-- Free notes (already built in journal)
+#### 4f — Lucid Dream Mode ✅
+- [x] 5-stage theta journey with 3 REM zones aligned to 90-min sleep cycles
+- [x] 4 / 6 / 8 hour sessions
+- [x] 432 Hz carrier, brown noise, ocean soundscape, 90s fade-in
+- [x] Stage arc display and status strip
+- Implementation: `src/components/LucidDreamMode.tsx`
 
-Over time, display:
-- Which presets / journeys produce best mood outcomes for this user
-- Weekly consistency heatmap (like GitHub contribution graph)
-- Trend charts: mood over time, session frequency
-
-Storage: localStorage for now, optional cloud sync later.
-
-#### 4d — Sleep Mode
-Specialized long-session design:
-- 2–8 hour programs
-- Slow frequency descent: Beta → Alpha → Theta → Delta over the full duration
-- Optional sleep timer (auto-stop after N hours)
-- Ultra-gentle fade-in to avoid startle
-- Morning alarm option: slow ascent back to Alpha/Beta
-- Screen-off friendly (audio context keeps running with screen off on most browsers; iOS has quirks)
-
-#### 4e — Focus Mode
-Minimal distraction design for work sessions:
-- Stable alpha/low-beta range (8–18 Hz)
-- Light, non-distracting visuals (or no visuals)
-- Pomodoro-compatible: work blocks + short break transitions
-- Optional gamma burst injection (brief 40 Hz pulse) for attention spikes
-- Notification-style end-of-session alert
-
-#### 4f — Lucid Dream Mode
-Specialized design for REM-cycle timing:
-- Session designed around 90-minute sleep cycles
-- Theta patterns during initial descent
-- MILD-compatible timing cues at estimated REM entry
-- Dream cue audio (subtle tone pattern to trigger lucidity)
-- Optional reality check reminder audio
-- Long sessions (4–8 hours) with cycle-aware frequency shifts
+#### Modes Tab ✅ (consolidation UX built during Phase 4)
+- [x] Single "Modes" tab replaces 4 separate tabs
+- [x] 2×2 mode picker cards at top (Focus / Sleep / Lucid Dream / Ritual)
+- [x] Active mode content shown below picker
+- [x] Collapsible visualization section at bottom — shared across all modes
+- [x] Session-owned soundscape stops correctly on any stop path (MiniPlayer, mode button, media session API)
+- Implementation: `src/components/ModesTab.tsx`
 
 ---
 
-### 🔲 Phase 5 — Intelligence Layer
+### 🔲 Phase 5 — Intelligence Layer (in progress)
 
-#### 5a — AI Frequency Composer
+#### 5a — AI Frequency Composer ✅ (partial)
+Architecture and parsing logic built early. `journeyComposer.ts` validates and maps LLM-structured JSON to journey configs. Template-based generation works without a live LLM call. Full LLM wiring (user text prompt → GPT/Claude → structured JSON → session launch) is not yet wired end-to-end in the UI.
+
 User describes intent in plain text:
 > "Create a 30-minute creativity meditation with a slow descent"
 
@@ -409,7 +469,13 @@ Implementation path:
 
 ---
 
-#### 5f — AI Guided Meditation (Flagship AI Feature)
+#### 5f — AI Guided Meditation (Flagship AI Feature) ✅ (partial)
+
+**What's built:** `AiMeditationPanel.tsx` scaffolded with prompt input UI, API key management (`ApiKeySettings.tsx`), session launch plumbing, and `meditationComposer.ts` / `meditationThemes.ts` for theme-to-config mapping. Voice bus architecture is production-ready (`voiceBus.ts`). `savedSessions.ts` handles AI session persistence.
+
+**Remaining:** live LLM call (GPT/Claude) for script generation, TTS rendering via OpenAI TTS / ElevenLabs, audio chunk assembly + streaming, loading UX, and post-session journal prompt.
+
+---
 
 **One prompt. Full experience.**
 
