@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { brushTypeToBeat } from '../lib/sculptBridge'
 import type { BridgeMapping, SculptState } from '../lib/sculptBridge'
+import { IconOrb, IconWave, IconPad, IconMoon, IconPalette } from './Icons'
 
 interface SculptBridgePanelProps {
   enabled: boolean
@@ -21,7 +22,7 @@ export function SculptBridgePanel({ enabled, onToggle, connected, lastState, map
       {/* Header */}
       <div className="sculpt-bridge-header">
         <div className="sculpt-bridge-title">
-          <span>🗿 ZBrush Bridge</span>
+          <span><IconOrb size={16} /> ZBrush Bridge</span>
           <span className={`bridge-status-dot ${connected ? 'bridge-status-dot--on' : enabled ? 'bridge-status-dot--waiting' : ''}`} />
           <span className="bridge-status-label">
             {!enabled ? 'Off' : connected ? 'Connected' : 'Waiting for ZBrush…'}
@@ -40,10 +41,10 @@ export function SculptBridgePanel({ enabled, onToggle, connected, lastState, map
           {/* Mode selector */}
           <div className="bridge-mode-row">
             <button className={`bridge-mode-btn ${mode === 'flow' ? 'active' : ''}`} onClick={() => onModeChange('flow')}>
-              🌊 Flow State
+              <IconWave size={14} /> Flow State
             </button>
             <button className={`bridge-mode-btn ${mode === 'instrument' ? 'active' : ''}`} onClick={() => onModeChange('instrument')}>
-              🎹 Instrument
+              <IconPad size={14} /> Instrument
             </button>
           </div>
           <div className="bridge-mode-desc">
@@ -69,7 +70,7 @@ export function SculptBridgePanel({ enabled, onToggle, connected, lastState, map
               </div>
               <div className="bridge-live-row">
                 <span>State</span>
-                <strong>{lastState.idle ? '😴 Idle' : `🎨 Sculpting (${lastState.strokesPerSecond}/s)`}</strong>
+                <strong>{lastState.idle ? <><IconMoon size={14} /> Idle</> : <><IconPalette size={14} /> Sculpting ({lastState.strokesPerSecond}/s)</>}</strong>
               </div>
             </div>
           )}

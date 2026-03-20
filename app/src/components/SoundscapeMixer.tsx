@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { SOUND_LAYERS, SOUNDSCAPE_SCENES } from '../engine/soundscapeMixer'
 import type { LayerGains, SoundLayerId } from '../engine/soundscapeMixer'
 import { DEFAULT_GAINS } from '../engine/soundscapeMixer'
+import { IconSparkle } from './Icons'
 
 interface SoundscapeMixerProps {
   gains: LayerGains
@@ -162,7 +163,7 @@ export function SoundscapeMixer({
             onClick={() => handleSceneClick(scene.id)}
             disabled={disabled}
           >
-            {scene.emoji} {scene.label}
+            {scene.label}
           </button>
         ))}
         <button
@@ -172,13 +173,13 @@ export function SoundscapeMixer({
           disabled={disabled}
           title={isAnimating ? 'Stop drift animation' : 'Animate sound layers with organic drift'}
         >
-          {isAnimating ? '⏹ Stop' : '✨ Animate'}
+          {isAnimating ? '■ Stop' : <><IconSparkle size={13} /> Animate</>}
         </button>
       </div>
 
       {SOUND_LAYERS.map(layer => (
         <div key={layer.id} className="soundscape-layer-row">
-          <span className="soundscape-layer-icon">{layer.emoji}</span>
+          <span className="soundscape-layer-icon"></span>
           <span className="soundscape-layer-label">{layer.label}</span>
           <input
             type="range"

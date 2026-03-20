@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { IconBreathe, IconSettings, IconVolumeOff } from './Icons'
 
 interface RefFrequency {
   hz: number
@@ -201,7 +202,7 @@ export function FrequencyVerifier() {
       {!listening ? (
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <button className="soft-button" onClick={startMic}>
-            🎤 Microphone
+            <IconBreathe size={15} /> Microphone
           </button>
           <button
             className="soft-button"
@@ -210,7 +211,7 @@ export function FrequencyVerifier() {
             title={hasDisplayMedia ? undefined : 'Not available on this device'}
             style={!hasDisplayMedia ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
           >
-            🖥 Device Audio
+            <IconSettings size={15} /> Device Audio
           </button>
           {!hasDisplayMedia && (
             <span style={{ fontSize: '0.75rem', opacity: 0.55, alignSelf: 'center' }}>
@@ -221,7 +222,7 @@ export function FrequencyVerifier() {
       ) : (
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="soft-button" onClick={stopListening}>
-            ⏹ Stop Listening
+            <IconVolumeOff size={15} /> Stop Listening
           </button>
           <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>
             Listening via: {inputMode === 'mic' ? 'Microphone' : 'Device Audio'}

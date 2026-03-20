@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import type { IconProps } from './Icons'
+import { IconBrain, IconMoon, IconMeditate, IconLightning, IconTones, IconCycle, IconLeaf, IconNoise, IconPad, IconMusic } from './Icons'
 import type { StudioLayer, StudioLayerType, StudioScene } from '../types'
 import { SOUNDSCAPE_SCENES, SOUND_LAYERS } from '../engine/soundscapeMixer'
 import { LaneEditor } from './AutomationEditor'
-import { PREBUILT_JOURNEYS, JOURNEY_EMOJIS } from '../data/prebuiltJourneys'
+import { PREBUILT_JOURNEYS } from '../data/prebuiltJourneys'
 import type { StudioJourney } from '../types'
 import { loadPadPresets, loadCustomSoundscapes } from '../data/padPresets'
 import { ProGate } from './ProGate'
@@ -17,13 +19,13 @@ type SavedJourney = {
   savedAt: number
 }
 
-const LAYER_ICONS: Record<StudioLayerType, string> = {
-  carrier: '〜',
-  beat: '🔁',
-  soundscape: '🌿',
-  noise: '🌫',
-  pad: '🎹',
-  music: '🎵',
+const LAYER_ICONS: Record<StudioLayerType, React.FC<IconProps>> = {
+  carrier:    IconTones,
+  beat:       IconCycle,
+  soundscape: IconLeaf,
+  noise:      IconNoise,
+  pad:        IconPad,
+  music:      IconMusic,
 }
 
 const SOLFEGGIO_HZ = [174, 285, 396, 417, 432, 528, 639, 741, 852, 963]
@@ -85,11 +87,11 @@ function layerSubLabel(layer: StudioLayer, musicTracks: MusicTrack[]): string {
 }
 
 // ── Quick-start presets ──
-type Preset = { emoji: string; label: string; layers: Omit<StudioLayer, 'id'>[] }
+type Preset = { Icon: React.FC<IconProps>; label: string; layers: Omit<StudioLayer, 'id'>[] }
 
 const QUICK_PRESETS: Preset[] = [
   {
-    emoji: '🧠', label: 'Focus',
+    Icon: IconBrain, label: 'Focus',
     layers: [
       { type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 432 } },
       { type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 14, wobbleRate: 0.4 } },
@@ -97,7 +99,7 @@ const QUICK_PRESETS: Preset[] = [
     ],
   },
   {
-    emoji: '😴', label: 'Sleep',
+    Icon: IconMoon, label: 'Sleep',
     layers: [
       { type: 'carrier',    enabled: true, volume: 0.15, label: 'Carrier',    settings: { hz: 174 } },
       { type: 'beat',       enabled: true, volume: 0.15, label: 'Beat',       settings: { hz: 2, wobbleRate: 0.2 } },
@@ -105,7 +107,7 @@ const QUICK_PRESETS: Preset[] = [
     ],
   },
   {
-    emoji: '🧘', label: 'Relax',
+    Icon: IconMeditate, label: 'Relax',
     layers: [
       { type: 'carrier',    enabled: true, volume: 0.15, label: 'Carrier',    settings: { hz: 528 } },
       { type: 'beat',       enabled: true, volume: 0.15, label: 'Beat',       settings: { hz: 6, wobbleRate: 0.3 } },
@@ -114,7 +116,7 @@ const QUICK_PRESETS: Preset[] = [
     ],
   },
   {
-    emoji: '⚡', label: 'Energy',
+    Icon: IconLightning, label: 'Energy',
     layers: [
       { type: 'carrier', enabled: true, volume: 0.15, label: 'Carrier', settings: { hz: 528 } },
       { type: 'beat',    enabled: true, volume: 0.15, label: 'Beat',    settings: { hz: 40, wobbleRate: 0.5 } },
@@ -451,7 +453,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           <div className="studio-presets-row">
             {QUICK_PRESETS.map(preset => (
               <button key={preset.label} className="studio-preset-btn" onClick={() => applyPreset(preset)}>
-                {preset.emoji} {preset.label}
+                <preset.Icon size={13} />{' '}{preset.label}
               </button>
             ))}
           </div>
@@ -466,7 +468,7 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           <div key={layer.id} className={`studio-layer-card${!layer.enabled ? ' studio-layer-card--disabled' : ''}`}>
             <div className="studio-layer-header" onClick={() => setExpandedLayerId(id => id === layer.id ? null : layer.id)}>
               <span className="studio-layer-drag">⠿</span>
-              <span className="studio-layer-icon">{LAYER_ICONS[layer.type]}</span>
+              <span className="studio-layer-icon">{(() => { const LI = LAYER_ICONS[layer.type]; return <LI size={13} /> })()}</span>
               <span className="studio-layer-label">
                 {layer.label}
                 <span className="studio-layer-sublabel"> · {layerSubLabel(layer, musicTracks)}</span>
@@ -869,16 +871,15 @@ export function StudioTab({ isRunning, onPreview, onStop, onLiveUpdate, musicTra
           style={{ width: '100%', textAlign: 'left' }}
           onClick={() => setShowJourneyLibrary(v => !v)}
         >
-          📚 Journey Library {showJourneyLibrary ? '▾' : '▸'}
+          Journey Library {showJourneyLibrary ? '▾' : '▸'}
         </button>
         {showJourneyLibrary && (
           <div className="journey-library-grid">
             {PREBUILT_JOURNEYS.map(journey => {
               const totalMin = journey.scenes.reduce((s, sc) => s + sc.durationMinutes, 0)
-              const emoji = JOURNEY_EMOJIS[journey.id] ?? '🎵'
               return (
                 <div key={journey.id} className="journey-library-card">
-                  <div className="journey-library-card-emoji">{emoji}</div>
+                  <div className="journey-library-card-emoji" />
                   <div className="journey-library-card-name">{journey.name}</div>
                   <div className="journey-library-card-meta">{totalMin} min · {journey.scenes.length} scenes</div>
                   <button className="soft-button" onClick={() => loadPrebuiltJourney(journey)}>

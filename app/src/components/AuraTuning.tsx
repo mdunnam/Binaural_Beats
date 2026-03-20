@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AuraProfile, AuraQualityResult, TuningStep, buildTuningJourney } from '../lib/auraAnalyzer'
 import { ProGate } from './ProGate'
 import { useProGate } from '../hooks/useProGate'
+import { IconAura } from './Icons'
 
 interface AuraTuningProps {
   profile: AuraProfile
@@ -55,7 +56,7 @@ export function AuraTuning({ profile, assessment, onStartTuning }: AuraTuningPro
               style={{ width: '100%', marginTop: '0.5rem' }}
               onClick={() => onStartTuning(journey)}
             >
-              🔮 Begin Aura Tuning — {totalMinutes} min
+              <IconAura size={16} /> Begin Aura Tuning — {totalMinutes} min
             </button>
           </ProGate>
         </div>

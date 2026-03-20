@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { IconProps } from './Icons'
+import { IconMoon, IconTarget, IconMeditate, IconWave, IconLightning, IconTones, IconSoundscape, IconClock, IconMap } from './Icons'
 
 export type OnboardingConfig = {
   goal: string
@@ -15,10 +17,21 @@ type OnboardingProps = {
   onSkip: () => void
 }
 
-const GOALS = [
+type Goal = {
+  id: string
+  Icon: React.FC<IconProps>
+  title: string
+  subtitle: string
+  config: {
+    carrier: number; beat: number; wobbleRate: number
+    soundsceneId: string; sessionMinutes: number; journeyId: string | null
+  }
+}
+
+const GOALS: Goal[] = [
   {
     id: 'sleep',
-    emoji: '😴',
+    Icon: IconMoon,
     title: 'Fall Asleep',
     subtitle: 'Drift into deep, restful sleep',
     config: {
@@ -29,7 +42,7 @@ const GOALS = [
   },
   {
     id: 'focus',
-    emoji: '🎯',
+    Icon: IconTarget,
     title: 'Deep Focus',
     subtitle: 'Lock in for work or study',
     config: {
@@ -40,7 +53,7 @@ const GOALS = [
   },
   {
     id: 'meditate',
-    emoji: '🧘',
+    Icon: IconMeditate,
     title: 'Meditate',
     subtitle: 'Find stillness and inner quiet',
     config: {
@@ -51,7 +64,7 @@ const GOALS = [
   },
   {
     id: 'relax',
-    emoji: '🌊',
+    Icon: IconWave,
     title: 'Relax & Unwind',
     subtitle: 'Let go of stress and tension',
     config: {
@@ -62,7 +75,7 @@ const GOALS = [
   },
   {
     id: 'lucid',
-    emoji: '🌙',
+    Icon: IconMoon,
     title: 'Lucid Dreaming',
     subtitle: 'Enter the theta gateway',
     config: {
@@ -73,7 +86,7 @@ const GOALS = [
   },
   {
     id: 'energy',
-    emoji: '⚡',
+    Icon: IconLightning,
     title: 'Boost Energy',
     subtitle: 'Rise, focus, and feel alive',
     config: {
@@ -82,7 +95,7 @@ const GOALS = [
       journeyId: 'morning-rise',
     },
   },
-] as const
+]
 
 const SOUNDSCAPE_LABELS: Record<string, string> = {
   off: 'No soundscape',
@@ -97,10 +110,10 @@ const SOUNDSCAPE_LABELS: Record<string, string> = {
 }
 
 const JOURNEY_NAMES: Record<string, string> = {
-  'sleep-descent': '😴 Sleep Descent',
-  'focus-ramp': '🎯 Focus Ramp',
-  'deep-meditate': '🧘 Deep Meditate',
-  'morning-rise': '🌅 Morning Rise',
+  'sleep-descent': 'Sleep Descent',
+  'focus-ramp': 'Focus Ramp',
+  'deep-meditate': 'Deep Meditate',
+  'morning-rise': 'Morning Rise',
 }
 
 export function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
@@ -137,7 +150,7 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleCardClick(goal)}
               >
-                <span className="onboarding-goal-emoji">{goal.emoji}</span>
+                <span className="onboarding-goal-emoji"><goal.Icon size={32} /></span>
                 <span className="onboarding-goal-title">{goal.title}</span>
                 <span className="onboarding-goal-subtitle">{goal.subtitle}</span>
               </div>
@@ -151,26 +164,26 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingProps) {
 
       {step === 'confirm' && selected && (
         <div className="onboarding-confirm">
-          <span className="onboarding-confirm-emoji">{selected.emoji}</span>
+          <span className="onboarding-confirm-emoji"><selected.Icon size={48} /></span>
           <h2 className="onboarding-title">{selected.title}</h2>
           <p className="onboarding-subtitle">{selected.subtitle}</p>
 
           <div className="onboarding-confirm-details">
             <div className="onboarding-confirm-detail-row">
-              <span>🎵</span>
+              <span><IconTones size={16} /></span>
               <span>{selected.config.carrier} Hz carrier · {selected.config.beat} Hz beat</span>
             </div>
             <div className="onboarding-confirm-detail-row">
-              <span>🌊</span>
+              <span><IconSoundscape size={16} /></span>
               <span>{SOUNDSCAPE_LABELS[selected.config.soundsceneId] ?? selected.config.soundsceneId}</span>
             </div>
             <div className="onboarding-confirm-detail-row">
-              <span>⏱</span>
+              <span><IconClock size={16} /></span>
               <span>{selected.config.sessionMinutes} min session</span>
             </div>
             {selected.config.journeyId && (
               <div className="onboarding-confirm-detail-row">
-                <span>🗺</span>
+                <span><IconMap size={16} /></span>
                 <span>Journey: {JOURNEY_NAMES[selected.config.journeyId] ?? selected.config.journeyId}</span>
               </div>
             )}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { IconMail } from './Icons'
 
 type Props = {
   onClose: () => void
@@ -44,7 +45,7 @@ export function AuthModal({ onClose }: Props) {
 
         {success ? (
           <div style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📧</div>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}><IconMail size={40} /></div>
             <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Check your email!</p>
             <p style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
               We sent a confirmation link to <strong>{email}</strong>. Click it to verify your account, then come back and sign in.

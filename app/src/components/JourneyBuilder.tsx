@@ -8,7 +8,7 @@ import type { JourneyIntent as _JourneyIntent } from '../ai/journeyComposer'
 export const BUILT_IN_JOURNEYS: Journey[] = [
   {
     id: 'sleep-descent',
-    name: '😴 Sleep Descent',
+    name: 'Sleep Descent',
     stages: [
       { id: 'sd-1', label: 'Wind Down',   carrier: 396, beat: 14, wobbleRate: 0.4, durationMinutes: 5,  soundsceneId: 'rain',   color: '#e8b84b' },
       { id: 'sd-2', label: 'Alpha Gate',  carrier: 432, beat: 9,  wobbleRate: 0.3, durationMinutes: 10, soundsceneId: 'rain',   color: '#3e8f72' },
@@ -18,7 +18,7 @@ export const BUILT_IN_JOURNEYS: Journey[] = [
   },
   {
     id: 'focus-ramp',
-    name: '🎯 Focus Ramp',
+    name: 'Focus Ramp',
     stages: [
       { id: 'fr-1', label: 'Clear',   carrier: 396, beat: 10, wobbleRate: 0.4, durationMinutes: 5,  soundsceneId: 'forest', color: '#3e8f72' },
       { id: 'fr-2', label: 'Sharp',   carrier: 396, beat: 14, wobbleRate: 0.6, durationMinutes: 10, soundsceneId: 'forest', color: '#e8b84b' },
@@ -28,7 +28,7 @@ export const BUILT_IN_JOURNEYS: Journey[] = [
   },
   {
     id: 'deep-meditate',
-    name: '🧘 Deep Meditate',
+    name: 'Deep Meditate',
     stages: [
       { id: 'dm-1', label: 'Arrive',  carrier: 528, beat: 10, wobbleRate: 0.3,  durationMinutes: 5,  soundsceneId: 'cave', color: '#3e8f72' },
       { id: 'dm-2', label: 'Settle',  carrier: 528, beat: 7,  wobbleRate: 0.2,  durationMinutes: 10, soundsceneId: 'cave', color: '#5b9bd5' },
@@ -38,7 +38,7 @@ export const BUILT_IN_JOURNEYS: Journey[] = [
   },
   {
     id: 'morning-rise',
-    name: '🌅 Morning Rise',
+    name: 'Morning Rise',
     stages: [
       { id: 'mr-1', label: 'Wake',     carrier: 396, beat: 6,  wobbleRate: 0.2, durationMinutes: 5, soundsceneId: 'forest', color: '#5b9bd5' },
       { id: 'mr-2', label: 'Emerge',   carrier: 528, beat: 10, wobbleRate: 0.4, durationMinutes: 5, soundsceneId: 'forest', color: '#3e8f72' },

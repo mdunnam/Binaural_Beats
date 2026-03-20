@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { analyzeImagePixels, buildAuraProfile, assessAuraQuality, AuraProfile, AuraQualityResult, TuningStep } from '../lib/auraAnalyzer'
 import { AuraTuning } from './AuraTuning'
+import { IconSparkle, IconAura, IconHeadphones } from './Icons'
 
 interface AuraReaderProps {
   onStartSession: (carrier: number, beat: number, soundscape: string, label: string) => void
@@ -66,7 +67,7 @@ export function AuraReader({ onStartSession, onStartTuning, persistedProfile, pe
   return (
     <div className="aura-reader">
       <div className="aura-reader-header">
-        <h2 className="aura-reader-title">✨ Aura Reading</h2>
+        <h2 className="aura-reader-title"><IconSparkle size={22} /> Aura Reading</h2>
         <p className="aura-reader-sub">Drop a photo and discover your frequency</p>
       </div>
 
@@ -78,7 +79,7 @@ export function AuraReader({ onStartSession, onStartTuning, persistedProfile, pe
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
         >
-          <div className="aura-drop-icon">🔮</div>
+          <div className="aura-drop-icon"><IconAura size={48} /></div>
           <div className="aura-drop-text">Drop a photo here</div>
           <div className="aura-drop-sub">or tap to browse — selfie, artwork, anything</div>
           <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
@@ -138,7 +139,7 @@ export function AuraReader({ onStartSession, onStartTuning, persistedProfile, pe
                 profile.sessionPreset.label
               )}
             >
-              🎧 Start Aura Session
+              <IconHeadphones size={16} /> Start Aura Session
             </button>
             <button className="soft-button" onClick={reset}>
               Try Another

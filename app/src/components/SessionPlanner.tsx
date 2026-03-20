@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { SessionPlan } from '../types'
+import { IconMusic, IconSoundscape, IconBrain, IconNoise, IconPad, IconSettings, IconCheck } from './Icons'
 
 const SESSION_PLAN_STORAGE_KEY = 'liminal-session-plans'
 
@@ -81,13 +82,13 @@ function savePlansToStorage(plans: SessionPlan[]): void {
 }
 
 function layerIcons(plan: SessionPlan): string {
-  const icons: string[] = []
-  if (plan.music.enabled) icons.push('🎵')
-  if (plan.soundscape.enabled) icons.push('🌊')
-  if (plan.binaural.enabled) icons.push('🧠')
-  if (plan.noise.enabled) icons.push('📢')
-  if (plan.pad.enabled) icons.push('🎹')
-  return icons.join(' ')
+  const labels: string[] = []
+  if (plan.music.enabled) labels.push('Music')
+  if (plan.soundscape.enabled) labels.push('Scene')
+  if (plan.binaural.enabled) labels.push('Binaural')
+  if (plan.noise.enabled) labels.push('Noise')
+  if (plan.pad.enabled) labels.push('Pad')
+  return labels.join(' · ')
 }
 
 export function SessionPlanner({
@@ -245,7 +246,7 @@ export function SessionPlanner({
       )}
       {/* Section 1: Session Info */}
       <div className="sp-section">
-        <div className="sp-section-title">📋 Session Info</div>
+        <div className="sp-section-title"><IconSettings size={15} /> Session Info</div>
         <div className="sp-row">
           <label>Session Name</label>
           <input
@@ -282,14 +283,14 @@ export function SessionPlanner({
 
       {/* Section 2: Layers */}
       <div className="sp-section">
-        <div className="sp-section-title">🎚 Layers</div>
+        <div className="sp-section-title">Layers</div>
 
         {/* Music Layer */}
         <div className="sp-layer">
           <div className="sp-layer-header">
             <label className="sp-toggle-label">
               <input type="checkbox" checked={musicEnabled} onChange={e => setMusicEnabled(e.target.checked)} />
-              🎵 Music
+              <IconMusic size={14} /> Music
             </label>
           </div>
           {musicEnabled && (
@@ -319,7 +320,7 @@ export function SessionPlanner({
           <div className="sp-layer-header">
             <label className="sp-toggle-label">
               <input type="checkbox" checked={soundscapeEnabled} onChange={e => setSoundscapeEnabled(e.target.checked)} />
-              🌊 Soundscape
+              <IconSoundscape size={14} /> Soundscape
             </label>
           </div>
           {soundscapeEnabled && (
@@ -346,7 +347,7 @@ export function SessionPlanner({
           <div className="sp-layer-header">
             <label className="sp-toggle-label">
               <input type="checkbox" checked={binauralEnabled} onChange={e => setBinauralEnabled(e.target.checked)} />
-              🧠 Binaural
+              <IconBrain size={14} /> Binaural
             </label>
           </div>
           {binauralEnabled && (
@@ -391,7 +392,7 @@ export function SessionPlanner({
           <div className="sp-layer-header">
             <label className="sp-toggle-label">
               <input type="checkbox" checked={noiseEnabled} onChange={e => setNoiseEnabled(e.target.checked)} />
-              📢 Noise
+              <IconNoise size={14} /> Noise
             </label>
           </div>
           {noiseEnabled && (
@@ -422,7 +423,7 @@ export function SessionPlanner({
           <div className="sp-layer-header">
             <label className="sp-toggle-label">
               <input type="checkbox" checked={padEnabledLocal} onChange={e => setPadEnabledLocal(e.target.checked)} />
-              🎹 Pad Synth
+              <IconPad size={14} /> Pad Synth
             </label>
           </div>
           {padEnabledLocal && (
@@ -440,7 +441,7 @@ export function SessionPlanner({
       {/* Section 3: Action Buttons */}
       <div className="sp-actions">
         <button className="soft-button" onClick={handleSave}>
-          {saved ? '✓ Saved!' : '💾 Create Preset'}
+          {saved ? <><IconCheck size={14} /> Saved!</> : 'Create Preset'}
         </button>
         {isRunning ? (
           <>
@@ -454,7 +455,7 @@ export function SessionPlanner({
 
       {/* Section 4: Saved Presets */}
       <div className="sp-section">
-        <div className="sp-section-title">📦 Session Presets</div>
+        <div className="sp-section-title">Session Presets</div>
 
         {/* Built-in Templates */}
         <div className="sp-preset-group-label">Built-in Templates</div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IconDownload } from './Icons'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -37,7 +38,7 @@ export function InstallPrompt() {
   return (
     <div className="install-prompt">
       <div className="install-prompt-content">
-        <span>📲 Add Liminal to your home screen for the best experience.</span>
+        <span><IconDownload size={16} /> Add Liminal to your home screen for the best experience.</span>
         <div className="install-prompt-actions">
           <button className="soft-button soft-button--accent" onClick={install}>Install</button>
           <button className="soft-button" onClick={dismiss}>Not now</button>

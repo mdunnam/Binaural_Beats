@@ -1,4 +1,5 @@
 import { Component, ReactNode, ErrorInfo } from 'react'
+import { IconRelief } from './Icons'
 
 interface Props {
   children: ReactNode
@@ -37,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
           alignItems: 'center',
           gap: '1rem',
         }}>
-          <div style={{ fontSize: '2.5rem' }}>⚠️</div>
+          <div style={{ fontSize: '2.5rem' }}><IconRelief size={40} /></div>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
             {this.props.tabName ? `${this.props.tabName} ran into a problem` : 'Something went wrong'}
           </div>

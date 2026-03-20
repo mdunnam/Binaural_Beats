@@ -231,17 +231,17 @@ src/
 - [x] WAV export (OfflineAudioContext + 16-bit PCM)
 - [x] Session journal (post-session modal, localStorage history)
 
-### 🔲 Phase 3 — Dynamic Journeys (NEXT)
+### ✅ Phase 3 — Dynamic Journeys (DONE)
 
-#### 3a — Isochronic Tone Generator
-- Amplitude-modulated sine carrier at target beat frequency
-- Adjustable pulse width (duty cycle 10–90%)
-- Adjustable modulation depth (0–100%)
-- Can run alongside binaural or standalone (no-headphone mode)
-- Tone shape: sine, triangle, or noise burst
-- Independent gain on isochronic bus
+#### 3a — Isochronic Tone Generator ✅
+- [x] Amplitude-modulated tone at beat frequency
+- [x] Configurable waveform (sine, square, sawtooth, triangle)
+- [x] Duty cycle and ramp control
+- [x] Can run alongside binaural or standalone
+- [x] Independent gain on isochronic bus
+- Implementation: `src/engine/isochronic.ts`
 
-#### 3b — Brainwave State Transition Engine
+#### 3b — Brainwave State Transition Engine ✅
 The core differentiator. A stage sequencer that builds a journey:
 
 ```
@@ -251,58 +251,77 @@ Stage 3: Theta → 6 Hz beat, 10 min
 Stage 4: Deep Theta → 3 Hz beat, 10 min
 ```
 
-Implementation:
-- Each stage has: beat frequency target, carrier target, duration, optional LFO changes
-- Transitions between stages are smoothly ramped (linear or sigmoid)
-- Stage transitions trigger Web Audio `linearRampToValueAtTime` calls
-- Stage sequencer is independent of the manual automation lanes (both can coexist)
-- Stage editor UI: drag-to-reorder, add/remove stages, per-stage parameter controls
+- [x] Multi-scene sessions with crossfading between stages
+- [x] Per-scene parameter scheduling
+- [x] Journey creation and saving
+- Implementation: `src/engine/journeyEngine.ts`, `src/components/JourneyBuilder.tsx`, `src/components/StudioTab.tsx`
 
-#### 3c — Pre-built Guided Journeys
-Ship with at least 8 built-in journeys:
+#### 3c — Pre-built Guided Journeys ✅
+- [x] Pre-built journey templates included
+- [x] Journey builder UI with add/remove/reorder
+- Implementation: `src/data/prebuiltJourneys.ts`, `src/components/JourneyBuilder.tsx`
 
-| Journey | Stages | Duration |
-|---------|--------|----------|
-| Deep Sleep | Beta → Alpha → Theta → Delta | 60 min |
-| Creative Flow State | Alpha → Theta → Alpha | 30 min |
-| Lucid Dream Induction | Theta → Theta/Delta boundary | 45 min |
-| Morning Activation | Delta → Theta → Alpha → Beta | 20 min |
-| Stress Reset | Beta → Alpha | 15 min |
-| Deep Meditation | Alpha → Theta → Deep Theta | 40 min |
-| Astral Exploration | Theta sustained with slow descent | 60 min |
-| Focus Sprint | Beta sustained with light Alpha dip | 25 min |
+#### 3d — Soundscape Layers ✅
+22-layer environmental sound system with 17 pre-built scenes:
+- [x] rain, thunder, wind, waves, fire, forest, space, cave, stream, birds, cafe, night, fan, bowl, beach, city, underwater, monastery, train, library, storm-heavy, meadow
+- [x] Per-layer gain control with smooth fading
+- [x] Noise-based procedural generation with filter shaping
+- [x] Sample loading with OGG/MP3 fallback to generated noise
+- [x] 17 pre-built scenes: off, storm, ocean, forest, fire, space, cave, custom, stream, cafe, night, bowl, beach, underwater, monastery, focus-train, meadow
+- [x] Pending gain tracking while loading (latest slider value used on fade-in)
+- Implementation: `src/engine/soundscapeMixer.ts`, `src/engine/samplePlayer.ts`, `src/components/SoundscapeMixer.tsx`
 
-Each journey also defines: carrier frequency, noise type/volume, pad synth on/off, LFO settings.
+Note: stereo width, spatial pan, and randomness/variation controls are not yet implemented per-layer.
 
-#### 3d — Soundscape Layers
-Multi-layer environmental sound design:
-- Rain (light / heavy / storm)
-- Ocean (waves / deep / shore)
-- Wind (forest / mountain / cave)
-- Fire (crackling / distant)
-- Cave / cavern ambience
-- Forest (day / night)
-- Tibetan bowls (slow random strikes)
-- Drone (adjustable pitch, slow filter sweep)
-
-Per-layer controls:
-- Volume
-- Stereo width (mono → wide)
-- Spatial pan position
-- Randomness/variation intensity
-
-All layers are audio buffer sources loaded from bundled files. No network dependency.
-
-#### 3e — Breath Synchronization
-Optional breathing guide that pulses with the audio:
-- Patterns: 4-7-8, box breathing (4-4-4-4), slow meditation (5-5), coherent breathing (5.5-5.5)
-- Visual pulse overlay (subtle expanding ring or fill animation)
-- Audio breath cue option (soft tone pulse at inhale/exhale)
-- Sync to session timer or run independently
+#### 3e — Breath Synchronization ✅
+- [x] Visual breathing pulse guide
+- [x] Multiple breathing patterns
+- [x] Synchronized with session
+- Implementation: `src/components/BreathGuide.tsx`
 
 ---
 
-### 🔲 Phase 4 — The Experience
+### ✅ Phase 3 Bonus — Built Beyond Plan
+
+These features were built during Phase 3 but were not originally planned for this phase:
+
+#### Music Player with 5-Band EQ ✅
+- 20 curated lofi/ambient tracks
+- EQ bands: Sub (60Hz), Bass (200Hz), Mid (1kHz), Presence (4kHz), Air (12kHz) ±12dB
+- Full playback controls
+- Implementation: `src/engine/musicPlayer.ts`, `src/components/MusicTab.tsx`
+
+#### Voice Bus / Narration Support ✅
+- Convolver-based reverb for voice recordings
+- Separate gain and reverb control
+- Architecture ready for AI TTS integration
+- Implementation: `src/engine/voiceBus.ts`
+
+#### Studio Tab (Advanced Scene Editor) ✅
+- Full multi-layer scene composition
+- Per-layer automation support
+- Quick presets and solfeggio preset system
+- Journey creation and saving
+- Implementation: `src/components/StudioTab.tsx`
+
+#### 7-Day Program ✅
+- Progressive daily meditation program
+- Progress and streak tracking
+- Implementation: `src/components/SevenDayProgram.tsx`
+
+#### MoodEQ ✅
+- Mood-based frequency recommendations
+- Anti-mood slider controls
+- Implementation: `src/components/MoodEQ.tsx`
+
+#### AI Meditation Panel ✅ (partial — 5f started early)
+- API-integrated meditation guidance generation
+- Prompt-based session content
+- Implementation: `src/components/AiMeditationPanel.tsx`
+
+---
+
+### 🔲 Phase 4 — The Experience (partially started)
 
 #### 4a — Visual Resonance Interface
 A real-time visual representation of the audio state. Not decorative — driven by actual oscillator values.

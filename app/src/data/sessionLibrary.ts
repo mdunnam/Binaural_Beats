@@ -1,6 +1,10 @@
+import type React from 'react'
+import type { IconProps } from '../components/Icons'
+import { IconMoon, IconLightning, IconWave, IconMeditate, IconPalette, IconSparkle, IconSunrise, IconBreathe } from '../components/Icons'
+
 export type SessionCard = {
   id: string
-  emoji: string
+  Icon: React.FC<IconProps>
   goal: string
   label: string
   description: string
@@ -16,7 +20,7 @@ export type SessionCard = {
 export const SESSION_LIBRARY: SessionCard[] = [
   {
     id: 'deep-sleep',
-    emoji: '🌙',
+    Icon: IconMoon,
     goal: 'Sleep',
     label: 'Deep Sleep',
     description: 'Delta waves for deep, restorative sleep',
@@ -30,7 +34,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'focus-flow',
-    emoji: '⚡',
+    Icon: IconLightning,
     goal: 'Focus',
     label: 'Focus Flow',
     description: 'Beta waves for sharp concentration',
@@ -44,7 +48,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'deep-relax',
-    emoji: '🌊',
+    Icon: IconWave,
     goal: 'Relax',
     label: 'Deep Relax',
     description: 'Alpha waves to melt away tension',
@@ -58,7 +62,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'meditation',
-    emoji: '🧘',
+    Icon: IconMeditate,
     goal: 'Meditate',
     label: 'Deep Meditation',
     description: 'Theta waves for inner stillness',
@@ -72,7 +76,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'creative-flow',
-    emoji: '🎨',
+    Icon: IconPalette,
     goal: 'Create',
     label: 'Creative Flow',
     description: 'Alpha-theta for open, generative thinking',
@@ -86,7 +90,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'lucid-dream',
-    emoji: '✨',
+    Icon: IconSparkle,
     goal: 'Dream',
     label: 'Lucid Dream',
     description: 'Theta-delta for hypnagogic states',
@@ -100,7 +104,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'morning-energy',
-    emoji: '☀️',
+    Icon: IconSunrise,
     goal: 'Energy',
     label: 'Morning Energy',
     description: 'Beta activation to start the day sharp',
@@ -114,7 +118,7 @@ export const SESSION_LIBRARY: SessionCard[] = [
   },
   {
     id: 'stress-reset',
-    emoji: '💆',
+    Icon: IconBreathe,
     goal: 'Reset',
     label: 'Stress Reset',
     description: 'Alpha waves to clear mental clutter',

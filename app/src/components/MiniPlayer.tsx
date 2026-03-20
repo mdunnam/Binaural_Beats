@@ -1,5 +1,6 @@
 import { PlayerTab } from './PlayerTab'
 import { AudioVisualizer } from './AudioVisualizer'
+import { IconWave, IconEye } from './Icons'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -96,7 +97,7 @@ export function MiniPlayer(props: MiniPlayerProps) {
               className="mini-player-visualize-btn"
               onClick={onOpenVisual}
             >
-              Visualize 👁
+              Visualize <IconEye size={14} />
             </button>
           </div>
           <PlayerTab {...playerTabProps} />
@@ -117,7 +118,7 @@ export function MiniPlayer(props: MiniPlayerProps) {
       <div className="mini-player-bar">
         <div className="mini-player-info">
           {ambientRunning && !isRunning && !padStandaloneActive ? (
-            <span className="mini-player-hz">🌊 Ambient</span>
+            <span className="mini-player-hz"><IconWave size={14} /> Ambient</span>
           ) : padStandaloneActive && !isRunning ? (
             <>
               <span className="mini-player-hz">{padStandaloneHz} Hz</span>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSubscription } from '../contexts/SubscriptionContext'
+import { IconSparkle, IconLock, IconCheck, IconStar } from './Icons'
 
 export function UpgradeModal() {
   const { user, isPro } = useAuth()
@@ -44,10 +45,10 @@ export function UpgradeModal() {
         <button className="modal-close-btn" onClick={closeUpgradeModal} aria-label="Close">✕</button>
 
         <div className="upgrade-header">
-          <div className="upgrade-icon">✨</div>
+          <div className="upgrade-icon"><IconSparkle size={32} /></div>
           <h2 className="modal-title">Unlock Liminal Pro</h2>
           {upgradeFeatureName && upgradeFeatureName !== 'Pro' && (
-            <p className="upgrade-feature-hint">🔒 {upgradeFeatureName} is a Pro feature</p>
+            <p className="upgrade-feature-hint"><IconLock size={14} /> {upgradeFeatureName} is a Pro feature</p>
           )}
         </div>
 
@@ -55,31 +56,31 @@ export function UpgradeModal() {
           <div className="upgrade-col upgrade-col--free">
             <div className="upgrade-col-header">Free</div>
             <ul className="upgrade-feature-list">
-              <li>✅ Binaural tones</li>
-              <li>✅ 2 soundscapes</li>
-              <li>✅ Sessions up to 15 min</li>
-              <li>✅ Home dashboard</li>
-              <li className="upgrade-locked">🔒 Journey builder</li>
-              <li className="upgrade-locked">🔒 Studio mixer</li>
-              <li className="upgrade-locked">🔒 AI meditation</li>
-              <li className="upgrade-locked">🔒 Music player</li>
-              <li className="upgrade-locked">🔒 Session journal</li>
-              <li className="upgrade-locked">🔒 Unlimited soundscapes</li>
-              <li className="upgrade-locked">🔒 Sessions up to 3 hours</li>
+              <li><IconCheck size={13} /> Binaural tones</li>
+              <li><IconCheck size={13} /> 2 soundscapes</li>
+              <li><IconCheck size={13} /> Sessions up to 15 min</li>
+              <li><IconCheck size={13} /> Home dashboard</li>
+              <li className="upgrade-locked"><IconLock size={13} /> Journey builder</li>
+              <li className="upgrade-locked"><IconLock size={13} /> Studio mixer</li>
+              <li className="upgrade-locked"><IconLock size={13} /> AI meditation</li>
+              <li className="upgrade-locked"><IconLock size={13} /> Music player</li>
+              <li className="upgrade-locked"><IconLock size={13} /> Session journal</li>
+              <li className="upgrade-locked"><IconLock size={13} /> Unlimited soundscapes</li>
+              <li className="upgrade-locked"><IconLock size={13} /> Sessions up to 3 hours</li>
             </ul>
           </div>
           <div className="upgrade-col upgrade-col--pro">
-            <div className="upgrade-col-header upgrade-col-header--pro">Pro ✨</div>
+            <div className="upgrade-col-header upgrade-col-header--pro">Pro <IconSparkle size={14} /></div>
             <ul className="upgrade-feature-list">
-              <li>✅ Everything in Free</li>
-              <li>✅ All soundscapes</li>
-              <li>✅ Sessions up to 3 hours</li>
-              <li>✅ Journey builder</li>
-              <li>✅ Studio mixer</li>
-              <li>✅ AI meditation guide</li>
-              <li>✅ Music player</li>
-              <li>✅ Session journal</li>
-              <li>✅ Future features</li>
+              <li><IconCheck size={13} /> Everything in Free</li>
+              <li><IconCheck size={13} /> All soundscapes</li>
+              <li><IconCheck size={13} /> Sessions up to 3 hours</li>
+              <li><IconCheck size={13} /> Journey builder</li>
+              <li><IconCheck size={13} /> Studio mixer</li>
+              <li><IconCheck size={13} /> AI meditation guide</li>
+              <li><IconCheck size={13} /> Music player</li>
+              <li><IconCheck size={13} /> Session journal</li>
+              <li><IconCheck size={13} /> Future features</li>
             </ul>
           </div>
         </div>
@@ -91,7 +92,7 @@ export function UpgradeModal() {
               onClick={() => void handleUpgrade(import.meta.env.VITE_STRIPE_PRICE_ANNUAL as string)}
               disabled={!!loading}
             >
-              {loading === import.meta.env.VITE_STRIPE_PRICE_ANNUAL ? '⏳ Redirecting…' : '🌟 Pro Annual — $39.99/yr (best value)'}
+              {loading === import.meta.env.VITE_STRIPE_PRICE_ANNUAL ? 'Redirecting…' : <><IconStar size={14} /> Pro Annual — $39.99/yr (best value)</>}
             </button>
             <button
               className="upgrade-btn upgrade-btn--monthly"
@@ -115,7 +116,7 @@ export function UpgradeModal() {
 
         {isPro && (
           <p style={{ textAlign: 'center', color: '#a78bfa', fontWeight: 600 }}>
-            ✨ You're already on Pro!
+            <IconSparkle size={14} /> You're already on Pro!
           </p>
         )}
       </div>

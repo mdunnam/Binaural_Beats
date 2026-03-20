@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { IconVolumeOn, IconVolumeOff } from './Icons'
 
 type Pattern = {
   name: string
@@ -258,7 +259,7 @@ export function BreathGuide({ isRunning: _isRunning, compact = false }: Props) {
             onClick={() => setSoundEnabled(s => !s)}
             title={soundEnabled ? 'Mute breath sounds' : 'Enable breath sounds'}
           >
-            {soundEnabled ? '🔊' : '🔇'}
+            {soundEnabled ? <IconVolumeOn size={16} /> : <IconVolumeOff size={16} />}
           </button>
           <button
             className="breath-fullscreen-btn"

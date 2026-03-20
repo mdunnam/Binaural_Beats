@@ -1,28 +1,30 @@
 import { useState } from 'react'
 import { useSubscription } from '../contexts/SubscriptionContext'
+import type { IconProps } from './Icons'
+import { IconHeadphones, IconBrain, IconSparkle, IconCalendar } from './Icons'
 
 type Props = { onDone: () => void; onStartProgram?: () => void }
 
-const STEPS = [
+const STEPS: { Icon: React.FC<IconProps>; title: string; body: string; note: string | null }[] = [
   {
-    emoji: '🎧',
+    Icon: IconHeadphones,
     title: 'Welcome to Liminal',
     body: 'Shift your mental state with binaural beats, soundscapes, and guided journeys. Built for focus, calm, and deep sleep.',
     note: null,
   },
   {
-    emoji: '🧠',
+    Icon: IconBrain,
     title: 'How It Works',
     body: 'Choose a frequency preset or dial in your own. Layer in ambient sounds. Set a session length. Hit play — and let your brain do the rest.',
     note: 'Use headphones for the full binaural effect.',
   },
   {
-    emoji: '✨',
+    Icon: IconSparkle,
     title: 'Free & Pro',
     body: 'The core experience is completely free. Upgrade to Pro for unlimited sessions, all soundscapes, Journey Builder, Studio, AI Meditation, Music, and Journal.',
     note: null,
   },
-] as const
+]
 
 export function OnboardingModal({ onDone, onStartProgram }: Props) {
   const [step, setStep] = useState(0)
@@ -54,7 +56,7 @@ export function OnboardingModal({ onDone, onStartProgram }: Props) {
         </div>
 
         <div className="onboarding-step">
-          <div className="onboarding-emoji">{current.emoji}</div>
+          <div className="onboarding-emoji"><current.Icon size={48} /></div>
           <div className="onboarding-title">{current.title}</div>
           <div className="onboarding-body">{current.body}</div>
           {current.note && <div className="onboarding-note">{current.note}</div>}
@@ -73,7 +75,7 @@ export function OnboardingModal({ onDone, onStartProgram }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.5rem' }}>
             {onStartProgram && (
               <button className="soft-button soft-button--accent" onClick={() => { dismiss(); onStartProgram() }}>
-                📅 Start the 7-Day Program
+                <IconCalendar size={16} /> Start the 7-Day Program
               </button>
             )}
             <button className="soft-button soft-button--accent" onClick={dismiss}>

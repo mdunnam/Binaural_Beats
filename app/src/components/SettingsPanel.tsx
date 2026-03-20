@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSubscription } from '../contexts/SubscriptionContext'
 import { NotificationSettings } from './NotificationSettings'
+import { IconCheck, IconSunrise, IconMoon, IconLock } from './Icons'
 
 type SettingsPanelProps = {
   onClose: () => void
@@ -106,7 +107,7 @@ export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
           <div className="section-card">
             {isPro ? (
               <>
-                <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>✅ Pro subscriber</p>
+                <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><IconCheck size={14} /> Pro subscriber</p>
                 <a className="soft-button soft-button--accent" href="#" style={{ display: 'inline-block', textDecoration: 'none' }}
                   onClick={e => { e.preventDefault(); void openBillingPortal() }}>
                   {portalLoading ? 'Opening…' : 'Manage subscription'}
@@ -145,14 +146,14 @@ export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
                   style={{ opacity: theme === 'light' ? 1 : 0.5 }}
                   onClick={() => applyTheme('light')}
                 >
-                  ☀️ Light
+                  <IconSunrise size={14} /> Light
                 </button>
                 <button
                   className="soft-button"
                   style={{ opacity: theme === 'dark' ? 1 : 0.5 }}
                   onClick={() => applyTheme('dark')}
                 >
-                  🌙 Dark
+                  <IconMoon size={14} /> Dark
                 </button>
               </div>
             </div>
@@ -186,7 +187,7 @@ export function SettingsPanel({ onClose, onError }: SettingsPanelProps) {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, color: 'var(--accent, #a78bfa)' }}
                   onClick={() => { window.location.href = '/admin' }}
                 >
-                  🔐 Admin Console
+                  <IconLock size={14} /> Admin Console
                 </button>
               )}
             </div>

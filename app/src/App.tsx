@@ -65,7 +65,6 @@ import type { SessionCard } from './data/sessionLibrary'
 import { AdminConsole } from './components/AdminConsole'
 import { trackFeatureUsage } from './lib/trackFeatureUsage'
 import { SevenDayProgram, loadProgress as load7DayProgress } from './components/SevenDayProgram'
-import { ProgramComplete } from './components/ProgramComplete'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { recordSessionComplete } from './lib/streakSync'
 import { useSculptBridge } from './hooks/useSculptBridge'
@@ -74,6 +73,17 @@ import type { BridgeMapping } from './lib/sculptBridge'
 import { SculptBridgePanel } from './components/SculptBridgePanel'
 import { AuraReader } from './components/AuraReader'
 import type { AuraProfile, AuraQualityResult } from './lib/auraAnalyzer'
+import { SleepMode, buildSleepJourney } from './components/SleepMode'
+import { FocusMode, buildFocusJourney } from './components/FocusMode'
+import { LucidDreamMode, buildLucidJourney } from './components/LucidDreamMode'
+import { RitualMode } from './components/RitualMode'
+import type { RitualIntention } from './components/RitualMode'
+import {
+  IconHome, IconJournal, IconLearn, IconTones, IconSoundscape, IconPad, IconMusic,
+  IconStudio, IconSequencer, IconFocus, IconSparkle, IconCalendar, IconMoon, IconHelp, IconAura,
+  IconHeadphones, IconLock, IconFire, IconRelief, IconMeditate,
+  IconLightning, IconLeaf, IconSunrise, IconBreathe, IconParty, IconMap,
+} from './components/Icons'
 
 // ---------------------------------------------------------------------------
 // Daily Frequency helper
@@ -112,21 +122,42 @@ function computeStreak(entries: { date: string }[]): { streak: number; weekCount
 
 const PRESET_STORAGE_KEY = 'binaural-presets-v1'
 
+const TAB_ICONS: Record<string, React.ReactNode> = {
+  dashboard: <IconHome size={16} />,
+  journal:   <IconJournal size={16} />,
+  education: <IconLearn size={16} />,
+  tones:     <IconTones size={16} />,
+  sound:     <IconSoundscape size={16} />,
+  pad:       <IconPad size={16} />,
+  music:     <IconMusic size={16} />,
+  studio:    <IconStudio size={16} />,
+  sequencer: <IconSequencer size={16} />,
+  focus:     <IconFocus size={16} />,
+  ai:        <IconSparkle size={16} />,
+  program:   <IconCalendar size={16} />,
+  sleep:     <IconMoon size={16} />,
+  help:      <IconHelp size={16} />,
+  aura:      <IconAura size={16} />,
+}
+
 const TABS = [
-  { id: 'dashboard', icon: '🏠', label: 'Home'      },
-  { id: 'journal',   icon: '📓', label: 'Journal'   },
-  { id: 'education', icon: '📖', label: 'Learn'     },
-  { id: 'tones',     icon: '🎵', label: 'Tones'     },
-  { id: 'sound',     icon: '🌊', label: 'Sound'     },
-  { id: 'pad',       icon: '🎹', label: 'Pad'       },
-  { id: 'music',     icon: '🎵', label: 'Music'     },
-  { id: 'studio',    icon: '🎛', label: 'Studio'    },
-  { id: 'sequencer', icon: '🎚', label: 'Sequencer' },
-  { id: 'focus',     icon: '👁', label: 'Focus'     },
-  { id: 'ai',        icon: '✨', label: 'AI Guide'  },
-  { id: 'program',   icon: '📅', label: 'Program'   },
-  { id: 'help',      icon: '❓', label: 'Help'      },
-  { id: 'aura',      icon: '✨', label: 'Aura'      },
+  { id: 'dashboard', label: 'Home'      },
+  { id: 'journal',   label: 'Journal'   },
+  { id: 'education', label: 'Learn'     },
+  { id: 'tones',     label: 'Tones'     },
+  { id: 'sound',     label: 'Sound'     },
+  { id: 'pad',       label: 'Pad'       },
+  { id: 'music',     label: 'Music'     },
+  { id: 'studio',    label: 'Studio'    },
+  { id: 'sequencer', label: 'Sequencer' },
+  { id: 'focus',     label: 'Focus'     },
+  { id: 'ai',        label: 'AI Guide'  },
+  { id: 'program',   label: 'Program'   },
+  { id: 'sleep',     label: 'Sleep'     },
+  { id: 'lucid',    label: 'Lucid'     },
+  { id: 'ritual',   label: 'Ritual'    },
+  { id: 'help',      label: 'Help'      },
+  { id: 'aura',      label: 'Aura'      },
 ]
 
 // ---------------------------------------------------------------------------
@@ -633,7 +664,7 @@ function AppInner() {
 
   // Journey
   const [journey, setJourney] = useState<Journey | null>(null)
-  const [_activeStageIndex, setActiveStageIndex] = useState(-1)
+  const [activeStageIndex, setActiveStageIndex] = useState(-1)
   const activeJourneyRef = useRef<ActiveJourney | null>(null)
 
   // Onboarding
@@ -1113,6 +1144,164 @@ function AppInner() {
     setPanicComplete(false)
     stopSession(true)
   }, [stopSession])
+
+  // ---------------------------------------------------------------------------
+  // Sleep Mode
+  // ---------------------------------------------------------------------------
+  const startSleepSession = useCallback((hours: number) => {
+    const sleepJourney = buildSleepJourney(hours)
+    // Set refs directly — don't wait for useEffect to sync
+    journeyRef.current = sleepJourney
+    setJourney(sleepJourney)
+
+    const newCarrier = 174
+    const newBeat = 14
+    carrierRef.current = newCarrier
+    beatRef.current = newBeat
+    leftFrequencyRef.current = newCarrier
+    rightFrequencyRef.current = newCarrier + newBeat
+    setCarrier(newCarrier)
+    setBeat(newBeat)
+
+    noiseTypeRef.current = 'brown'
+    noiseVolumeRef.current = 0.2
+    setNoiseType('brown')
+    setNoiseVolume(0.2)
+
+    fadeInSecondsRef.current = 60
+    setFadeInSeconds(60)
+    setFadeOutSeconds(120)
+
+    const totalMinutes = hours * 60
+    sessionMinutesRef.current = totalMinutes
+    setSessionMinutes(totalMinutes)
+
+    // Apply rain soundscape — set ref directly too
+    const rainScene = SOUNDSCAPE_SCENES.find(s => s.id === 'rain')
+    if (rainScene) {
+      const gains = { ...DEFAULT_GAINS }
+      Object.entries(rainScene.gains).forEach(([id, val]) => { (gains as Record<string, number>)[id] = val as number })
+      layerGainsRef.current = gains
+      setLayerGains(gains)
+    }
+    setSoundsceneId('rain')
+
+    void toggleAudio()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
+  // Focus Mode
+  // ---------------------------------------------------------------------------
+  const startFocusSession = useCallback((minutes: number) => {
+    const focusJourney = buildFocusJourney(minutes)
+    journeyRef.current = focusJourney
+    setJourney(focusJourney)
+
+    const newCarrier = 200
+    const newBeat = 18
+    carrierRef.current = newCarrier
+    beatRef.current = newBeat
+    leftFrequencyRef.current = newCarrier
+    rightFrequencyRef.current = newCarrier + newBeat
+    setCarrier(newCarrier)
+    setBeat(newBeat)
+
+    noiseTypeRef.current = 'pink'
+    noiseVolumeRef.current = 0.1
+    setNoiseType('pink')
+    setNoiseVolume(0.1)
+
+    fadeInSecondsRef.current = 30
+    setFadeInSeconds(30)
+    setFadeOutSeconds(60)
+
+    sessionMinutesRef.current = minutes
+    setSessionMinutes(minutes)
+
+    void toggleAudio()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
+  // Lucid Dream Mode
+  // ---------------------------------------------------------------------------
+  const startLucidSession = useCallback((hours: number) => {
+    const lucidJourney = buildLucidJourney(hours)
+    journeyRef.current = lucidJourney
+    setJourney(lucidJourney)
+
+    const newCarrier = 432
+    const newBeat = 7
+    carrierRef.current = newCarrier
+    beatRef.current = newBeat
+    leftFrequencyRef.current = newCarrier
+    rightFrequencyRef.current = newCarrier + newBeat
+    setCarrier(newCarrier)
+    setBeat(newBeat)
+
+    noiseTypeRef.current = 'brown'
+    noiseVolumeRef.current = 0.1
+    setNoiseType('brown')
+    setNoiseVolume(0.1)
+
+    fadeInSecondsRef.current = 90
+    setFadeInSeconds(90)
+    setFadeOutSeconds(120)
+
+    const totalMinutes = hours * 60
+    sessionMinutesRef.current = totalMinutes
+    setSessionMinutes(totalMinutes)
+
+    const oceanScene = SOUNDSCAPE_SCENES.find(s => s.id === 'ocean')
+    if (oceanScene) {
+      const gains = { ...DEFAULT_GAINS }
+      Object.entries(oceanScene.gains).forEach(([id, val]) => { (gains as Record<string, number>)[id] = val as number })
+      layerGainsRef.current = gains
+      setLayerGains(gains)
+    }
+    setSoundsceneId('ocean')
+
+    void toggleAudio()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
+  // Ritual Mode
+  // ---------------------------------------------------------------------------
+  const startRitualSession = useCallback((intention: RitualIntention) => {
+    journeyRef.current = null
+    setJourney(null)
+
+    carrierRef.current = intention.carrier
+    beatRef.current = intention.beat
+    leftFrequencyRef.current = intention.carrier
+    rightFrequencyRef.current = intention.carrier + intention.beat
+    setCarrier(intention.carrier)
+    setBeat(intention.beat)
+
+    noiseTypeRef.current = intention.noiseType
+    noiseVolumeRef.current = intention.noiseVolume
+    setNoiseType(intention.noiseType)
+    setNoiseVolume(intention.noiseVolume)
+
+    fadeInSecondsRef.current = 60
+    setFadeInSeconds(60)
+    setFadeOutSeconds(60)
+
+    sessionMinutesRef.current = 120
+    setSessionMinutes(120)
+
+    if (intention.soundsceneId) {
+      const scene = SOUNDSCAPE_SCENES.find(s => s.id === intention.soundsceneId)
+      if (scene) {
+        const gains = { ...DEFAULT_GAINS }
+        Object.entries(scene.gains).forEach(([id, val]) => { (gains as Record<string, number>)[id] = val as number })
+        layerGainsRef.current = gains
+        setLayerGains(gains)
+      }
+      setSoundsceneId(intention.soundsceneId)
+    }
+
+    void toggleAudio()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
   // Toggle session
@@ -1922,7 +2111,7 @@ function AppInner() {
             title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             aria-label="Toggle dark mode"
           >
-            {darkMode ? '☀️' : '🌙'}
+            {darkMode ? <IconSunrise size={16} /> : <IconMoon size={16} />}
           </button>
           {user ? (
             <div className="user-menu-wrap">
@@ -1979,9 +2168,9 @@ function AppInner() {
                     }}
                     aria-current={activeTab === tab.id ? 'page' : undefined}
                   >
-                    <span className="tab-icon">{tab.icon}</span>
+                    <span className="tab-icon">{TAB_ICONS[tab.id]}</span>
                     <span>{tab.label}</span>
-                    {isLocked && <span className="tab-lock-icon">🔒</span>}
+                    {isLocked && <span className="tab-lock-icon"><IconLock size={10} /></span>}
                   </button>
                 )
               })}
@@ -1996,7 +2185,7 @@ function AppInner() {
             <div className="dashboard">
               {/* Hero state card */}
               <div className={`dash-state-card ${isRunning ? 'dash-state-card--active' : ''}`}>
-                <div className="dash-state-icon">{isRunning ? '🎧' : '🧘'}</div>
+                <div className="dash-state-icon">{isRunning ? <IconHeadphones size={32} /> : <IconMeditate size={32} />}</div>
                 <div className="dash-state-label">{isRunning ? 'Session Active' : 'Ready to Begin'}</div>
                 <div className="dash-state-sub">
                   {isRunning
@@ -2061,7 +2250,8 @@ function AppInner() {
                   <div className="dash-card" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div className="dash-streak-row">
                       <span className="dash-streak-badge">
-                        {streak > 0 ? `🔥 ${streak} day streak` : '🔥 Start your streak today'}
+                        <IconFire size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                        {streak > 0 ? `${streak} day streak` : 'Start your streak today'}
                       </span>
                     </div>
                     {weekCount > 0 && <div className="dash-week-count">{weekCount} session{weekCount !== 1 ? 's' : ''} this week</div>}
@@ -2074,7 +2264,7 @@ function AppInner() {
                 const df = getDailyFrequency()
                 return (
                   <div className="dash-daily-freq-card">
-                    <div className="dash-daily-freq-header">{df.emoji} {df.name} <span className="dash-daily-freq-wave">{df.wave}</span></div>
+                    <div className="dash-daily-freq-header">{df.name} <span className="dash-daily-freq-wave">{df.wave}</span></div>
                     <div className="dash-daily-freq-desc">{df.desc}</div>
                     <div className="dash-daily-freq-hz">{df.carrier} Hz carrier · {df.beat} Hz beat</div>
                     <button
@@ -2095,7 +2285,7 @@ function AppInner() {
 
               {/* AI-Guided Meditation Feature Card */}
               <div className="dash-ai-feature-card">
-                <div className="dash-ai-feature-title">✨ AI-Guided Meditation</div>
+                <div className="dash-ai-feature-title"><IconSparkle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />AI-Guided Meditation</div>
                 <div className="dash-ai-feature-sub">Personalized sessions crafted for your state of mind</div>
                 <div className="dash-ai-feature-actions">
                   {!isPro && <span className="pro-badge-inline">PRO</span>}
@@ -2111,7 +2301,7 @@ function AppInner() {
               {/* Quick Relief / Panic */}
               <div className="dash-panic-card">
                 <div className="dash-panic-info">
-                  <div className="dash-panic-title">🆘 Quick Relief</div>
+                  <div className="dash-panic-title"><IconRelief size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Quick Relief</div>
                   <div className="dash-panic-sub">Instant calm · alpha waves · guided breathing</div>
                 </div>
                 <button className="dash-panic-btn" onClick={startPanicMode}>Begin</button>
@@ -2123,12 +2313,12 @@ function AppInner() {
                 const done = prog.completedDays.length
                 return (
                   <div className="dash-7day-card">
-                    <div className="dash-7day-title">📅 7 Days of Liminal</div>
+                    <div className="dash-7day-title"><IconCalendar size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />7 Days of Liminal</div>
                     <div className="dash-7day-progress-bar-wrap">
                       <div className="dash-7day-progress-bar" style={{ width: `${(done / 7) * 100}%` }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="dash-7day-sub">{done === 7 ? 'Complete! 🎉' : `Day ${Math.min(done + 1, 7)} of 7`}</div>
+                      <div className="dash-7day-sub">{done === 7 ? <>Complete! <IconParty size={14} /></> : `Day ${Math.min(done + 1, 7)} of 7`}</div>
                       <button
                         className="soft-button"
                         style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
@@ -2146,7 +2336,7 @@ function AppInner() {
               <div className="dash-quick-grid">
                 {([
                   {
-                    emoji: '🌌', label: 'Cosmic Drift', sub: 'Space · delta · ambient pad',
+                    Icon: IconAura, label: 'Cosmic Drift', sub: 'Space · delta · ambient pad',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 936 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 3 } },
@@ -2155,7 +2345,7 @@ function AppInner() {
                     ],
                   },
                   {
-                    emoji: '⚡', label: 'Thunder Focus', sub: 'Storm · beta · brown noise',
+                    Icon: IconLightning, label: 'Thunder Focus', sub: 'Storm · beta · brown noise',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 396 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 14 } },
@@ -2164,7 +2354,7 @@ function AppInner() {
                     ],
                   },
                   {
-                    emoji: '🏔️', label: 'Cave Theta', sub: '4 layers · theta · full stack',
+                    Icon: IconMoon, label: 'Cave Theta', sub: '4 layers · theta · full stack',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 528 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 6 } },
@@ -2174,7 +2364,7 @@ function AppInner() {
                     ],
                   },
                   {
-                    emoji: '🌊', label: 'Ocean Deep', sub: 'Delta · ocean · brown noise',
+                    Icon: IconSoundscape, label: 'Ocean Deep', sub: 'Delta · ocean · brown noise',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.7, label: 'Carrier', settings: { hz: 174 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.7, label: 'Beat', settings: { hz: 2 } },
@@ -2183,7 +2373,7 @@ function AppInner() {
                     ],
                   },
                   {
-                    emoji: '🌿', label: 'Forest Alpha', sub: 'Alpha · forest · pad synth',
+                    Icon: IconLeaf, label: 'Forest Alpha', sub: 'Alpha · forest · pad synth',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.65, label: 'Carrier', settings: { hz: 639 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.65, label: 'Beat', settings: { hz: 10 } },
@@ -2192,7 +2382,7 @@ function AppInner() {
                     ],
                   },
                   {
-                    emoji: '🎵', label: 'Void Drone', sub: 'Pad only · no nature · pure tone',
+                    Icon: IconTones, label: 'Void Drone', sub: 'Pad only · no nature · pure tone',
                     layers: [
                       { id: 'qs-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: 432 } },
                       { id: 'qs-b', type: 'beat' as const, enabled: true, volume: 0.6, label: 'Beat', settings: { hz: 7 } },
@@ -2200,13 +2390,13 @@ function AppInner() {
                       { id: 'qs-p', type: 'pad' as const, enabled: true, volume: 0.4, label: 'Pad', settings: { waveform: 'sine', reverbMix: 0.9, breatheRate: 4 } },
                     ],
                   },
-                ] as { emoji: string; label: string; sub: string; layers: StudioLayer[] }[]).map(({ emoji, label, sub, layers }) => (
+                ] as { Icon: React.FC<{size?: number}>; label: string; sub: string; layers: StudioLayer[] }[]).map(({ Icon, label, sub, layers }) => (
                   <button key={label} className="dash-quick-card" onClick={() => {
                     if (isRunning) stopSession(false)
                     setStudioQuickStartLayers([...layers])
                     setActiveTab('studio')
                   }}>
-                    <span className="dash-quick-emoji">{emoji}</span>
+                    <span className="dash-quick-emoji"><Icon size={22} /></span>
                     <span className="dash-quick-label">{label}</span>
                     <span className="dash-quick-meta">{sub}</span>
                   </button>
@@ -2216,15 +2406,15 @@ function AppInner() {
               <div className="section-label" style={{ marginTop: '1.25rem' }}>Explore</div>
               <div className="dash-explore-row">
                 {([
-                  { icon: '🎹', title: 'Pad Synth',  sub: 'Design atmospheric textures',         tab: 'pad'       },
-                  { icon: '🎙', title: 'Verify Hz',   sub: 'Is your audio really that frequency?', tab: 'focus'     },
-                  { icon: '🗺', title: 'Studio',      sub: 'Build multi-layer journeys',           tab: 'studio'    },
-                  { icon: '🧘', title: 'Meditate',    sub: 'AI-generated guided sessions',         tab: 'ai'        },
-                  { icon: '📖', title: 'Learn',       sub: 'Science behind the sounds',            tab: 'education' },
-                  { icon: '💨', title: 'Breathe',     sub: 'Guided breath work',                   tab: 'focus'     },
-                ] as { icon: string; title: string; sub: string; tab: string }[]).map(({ icon, title, sub, tab }) => (
+                  { Icon: IconPad,      title: 'Pad Synth',  sub: 'Design atmospheric textures',         tab: 'pad'       },
+                  { Icon: IconFocus,    title: 'Verify Hz',   sub: 'Is your audio really that frequency?', tab: 'focus'     },
+                  { Icon: IconMap,      title: 'Studio',      sub: 'Build multi-layer journeys',           tab: 'studio'    },
+                  { Icon: IconMeditate, title: 'Meditate',    sub: 'AI-generated guided sessions',         tab: 'ai'        },
+                  { Icon: IconLearn,    title: 'Learn',       sub: 'Science behind the sounds',            tab: 'education' },
+                  { Icon: IconBreathe,  title: 'Breathe',     sub: 'Guided breath work',                   tab: 'focus'     },
+                ] as { Icon: React.FC<{ size?: number }>; title: string; sub: string; tab: string }[]).map(({ Icon, title, sub, tab }) => (
                   <button key={title} className="dash-explore-card" onClick={() => setActiveTab(tab as Parameters<typeof setActiveTab>[0])}>
-                    <span className="dash-explore-icon">{icon}</span>
+                    <span className="dash-explore-icon"><Icon size={22} /></span>
                     <span className="dash-explore-title">{title}</span>
                     <span className="dash-explore-sub">{sub}</span>
                   </button>
@@ -2746,25 +2936,32 @@ function AppInner() {
           {/* ──────────────── FOCUS TAB ──────────────── */}
           {activeTab === 'focus' && (
             <div>
-            <VisualTab
-              carrier={carrier}
-              beat={beat}
-              isRunning={isRunning}
-              analyser={masterBusRef.current?.analyser ?? null}
-            />
-            <div className="tab-sections">
-              <div className="section-block">
-                <div className="section-card">
-                  <BreathGuide isRunning={isRunning} />
+              <FocusMode
+                isRunning={isRunning}
+                remainingSeconds={remainingSeconds}
+                activeStageIndex={activeStageIndex}
+                onStart={startFocusSession}
+                onStop={() => stopSession(true)}
+              />
+              <VisualTab
+                carrier={carrier}
+                beat={beat}
+                isRunning={isRunning}
+                analyser={masterBusRef.current?.analyser ?? null}
+              />
+              <div className="tab-sections">
+                <div className="section-block">
+                  <div className="section-card">
+                    <BreathGuide isRunning={isRunning} />
+                  </div>
+                </div>
+                <div className="section-block">
+                  <div className="section-title">Frequency Verifier</div>
+                  <div className="section-card">
+                    <FrequencyVerifier />
+                  </div>
                 </div>
               </div>
-              <div className="section-block">
-                <div className="section-title">Frequency Verifier</div>
-                <div className="section-card">
-                  <FrequencyVerifier />
-                </div>
-              </div>
-            </div>
             </div>
           )}
 
@@ -2918,7 +3115,7 @@ function AppInner() {
                 persistedProfile={auraProfile}
                 persistedQuality={auraQuality}
                 onProfileChange={(p, q) => { setAuraProfile(p); setAuraQuality(q) }}
-                onStartSession={(carrier, beat, _soundscape, label) => {
+                onStartSession={(carrier, beat, _soundscape, _label) => {
                   if (isRunning) stopSession(false)
                   setStudioQuickStartLayers([
                     { id: 'aura-c', type: 'carrier' as const, enabled: true, volume: 0.6, label: 'Carrier', settings: { hz: carrier } },
@@ -3067,6 +3264,37 @@ function AppInner() {
               onSeek={(s) => void handleMusicSeek(s)}
             />
           )}
+
+          {activeTab === 'sleep' && (
+            <SleepMode
+              isRunning={isRunning}
+              remainingSeconds={remainingSeconds}
+              sessionTotalSeconds={sessionTotalSeconds}
+              activeStageIndex={activeStageIndex}
+              onStart={startSleepSession}
+              onStop={() => stopSession(true)}
+            />
+          )}
+
+          {/* ──────────────── LUCID DREAM TAB ──────────────── */}
+          {activeTab === 'lucid' && (
+            <LucidDreamMode
+              isRunning={isRunning}
+              remainingSeconds={remainingSeconds}
+              activeStageIndex={activeStageIndex}
+              onStart={startLucidSession}
+              onStop={() => stopSession(true)}
+            />
+          )}
+
+          {/* ──────────────── RITUAL TAB ──────────────── */}
+          {activeTab === 'ritual' && (
+            <RitualMode
+              isRunning={isRunning}
+              onStart={startRitualSession}
+              onStop={() => stopSession(true)}
+            />
+          )}
         </div>
         </ErrorBoundary>
       </section>
@@ -3140,7 +3368,7 @@ function AppInner() {
 
       {/* ── Pro Toast ── */}
       {proToast && (
-        <div className="pro-toast">Welcome to Pro! 🎉</div>
+        <div className="pro-toast">Welcome to Pro! <IconParty size={14} /></div>
       )}
 
       <p className="footnote">
@@ -3202,7 +3430,7 @@ function JournalModal({
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <h2 className="modal-title">Session Complete 🎧</h2>
+        <h2 className="modal-title">Session Complete <IconHeadphones size={20} /></h2>
         <p className="modal-meta">{entry.presetName} · {entry.durationMinutes} min · {entry.date}</p>
         <label style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
           How did that feel?

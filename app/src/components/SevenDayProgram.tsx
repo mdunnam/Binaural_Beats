@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { ProgramComplete } from './ProgramComplete'
+import type { IconProps } from './Icons'
+import { IconSeedling, IconTarget, IconSoundscape, IconMoon, IconSunrise, IconSparkle, IconOrb, IconCalendar, IconAura, IconParty } from './Icons'
 
 type DayEntry = {
   day: number
   title: string
-  emoji: string
+  Icon: React.FC<IconProps>
   duration: number
   carrier: number
   beat: number
@@ -14,13 +16,13 @@ type DayEntry = {
 }
 
 const SEVEN_DAY_PROGRAM: DayEntry[] = [
-  { day: 1, title: 'Your First Journey',  emoji: '🌱', duration: 10, carrier: 200, beat: 10, wave: 'Alpha', desc: 'Start gentle. Alpha waves ease you into a relaxed, aware state. Perfect for beginners.',      goal: 'Relaxation'     },
-  { day: 2, title: 'Find Your Focus',     emoji: '🎯', duration: 15, carrier: 200, beat: 14, wave: 'Beta',  desc: 'Beta waves sharpen concentration. Try this while working or studying.',                       goal: 'Focus'           },
-  { day: 3, title: 'Deep Dive',           emoji: '🌊', duration: 20, carrier: 200, beat: 6,  wave: 'Theta', desc: 'Theta is the gateway to deep meditation and creativity. Let your mind wander.',               goal: 'Deep Meditation' },
-  { day: 4, title: 'Sleep Prep',          emoji: '🌙', duration: 20, carrier: 200, beat: 2,  wave: 'Delta', desc: 'Delta waves prepare your body for deep, restorative sleep. Listen before bed.',               goal: 'Sleep'           },
-  { day: 5, title: 'Morning Activation',  emoji: '🌅', duration: 15, carrier: 200, beat: 18, wave: 'Beta',  desc: 'Start your day energized. High beta for alertness and motivation.',                           goal: 'Energy'          },
-  { day: 6, title: 'Creative State',      emoji: '✨', duration: 20, carrier: 200, beat: 8,  wave: 'Alpha', desc: 'Low alpha bridges relaxation and awareness — the ideal creative state.',                       goal: 'Creativity'      },
-  { day: 7, title: 'Your Practice',       emoji: '🔮', duration: 25, carrier: 200, beat: 10, wave: 'Alpha', desc: 'You now understand the spectrum. Build your own routine from here.',                           goal: 'Integration'     },
+  { day: 1, title: 'Your First Journey',  Icon: IconSeedling,   duration: 10, carrier: 200, beat: 10, wave: 'Alpha', desc: 'Start gentle. Alpha waves ease you into a relaxed, aware state. Perfect for beginners.',      goal: 'Relaxation'     },
+  { day: 2, title: 'Find Your Focus',     Icon: IconTarget,     duration: 15, carrier: 200, beat: 14, wave: 'Beta',  desc: 'Beta waves sharpen concentration. Try this while working or studying.',                       goal: 'Focus'           },
+  { day: 3, title: 'Deep Dive',           Icon: IconSoundscape, duration: 20, carrier: 200, beat: 6,  wave: 'Theta', desc: 'Theta is the gateway to deep meditation and creativity. Let your mind wander.',               goal: 'Deep Meditation' },
+  { day: 4, title: 'Sleep Prep',          Icon: IconMoon,       duration: 20, carrier: 200, beat: 2,  wave: 'Delta', desc: 'Delta waves prepare your body for deep, restorative sleep. Listen before bed.',               goal: 'Sleep'           },
+  { day: 5, title: 'Morning Activation',  Icon: IconSunrise,    duration: 15, carrier: 200, beat: 18, wave: 'Beta',  desc: 'Start your day energized. High beta for alertness and motivation.',                           goal: 'Energy'          },
+  { day: 6, title: 'Creative State',      Icon: IconSparkle,    duration: 20, carrier: 200, beat: 8,  wave: 'Alpha', desc: 'Low alpha bridges relaxation and awareness — the ideal creative state.',                       goal: 'Creativity'      },
+  { day: 7, title: 'Your Practice',       Icon: IconOrb,        duration: 25, carrier: 200, beat: 10, wave: 'Alpha', desc: 'You now understand the spectrum. Build your own routine from here.',                           goal: 'Integration'     },
 ]
 
 const STORAGE_KEY = 'liminal-7day-progress'
@@ -88,9 +90,9 @@ export function SevenDayProgram({ onStartSession, sessionStartedAt, isPro = fals
   return (
     <div className="seven-day-program">
       <div className="seven-day-header">
-        <div className="section-title">📅 7 Days of Liminal</div>
+        <div className="section-title"><IconCalendar size={16} /> 7 Days of Liminal</div>
         <div className="seven-day-progress-label">
-          {completedCount === 7 ? 'Program complete! 🎉' : `Day ${Math.min(completedCount + 1, 7)} of 7`}
+          {completedCount === 7 ? <>Program complete! <IconParty size={14} /></> : `Day ${Math.min(completedCount + 1, 7)} of 7`}
         </div>
         <div className="seven-day-progress-bar-wrap">
           <div className="seven-day-progress-bar" style={{ width: `${(completedCount / 7) * 100}%` }} />
@@ -105,7 +107,7 @@ export function SevenDayProgram({ onStartSession, sessionStartedAt, isPro = fals
         />
       ) : showCongrats && (
         <div className="seven-day-congrats">
-          <div style={{ fontSize: '3rem' }}>🔮</div>
+          <div style={{ fontSize: '3rem' }}><IconAura size={48} /></div>
           <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>You've Completed the Program!</div>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 320, textAlign: 'center' }}>
             You've explored the full spectrum of brainwave entrainment. Your practice is yours now.
@@ -124,7 +126,7 @@ export function SevenDayProgram({ onStartSession, sessionStartedAt, isPro = fals
           >
             <div className="seven-day-card-header">
               <div className="seven-day-card-title">
-                <span>{entry.emoji}</span>
+                <entry.Icon size={20} />
                 <span>Day {entry.day}: {entry.title}</span>
                 {completed && <span>✅</span>}
               </div>

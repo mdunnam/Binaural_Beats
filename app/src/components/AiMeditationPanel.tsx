@@ -5,6 +5,8 @@ import { saveSession, listSessions, deleteSession, getSessionBlob, migrateFromLo
 import type { SavedSession } from '../ai/savedSessions'
 import type { NoiseType } from '../types'
 import { WaveformPlayer } from './WaveformPlayer'
+import type { IconProps } from './Icons'
+import { IconSparkle, IconJournal, IconSettings, IconTrash, IconWave, IconLeaf, IconOrb } from './Icons'
 
 export type AiMeditationConfig = {
   carrier: number
@@ -38,13 +40,13 @@ const DURATION_OPTIONS = [
   { value: 60, label: '60 min', cost: '~$0.36' },
 ]
 
-const SOUNDSCAPE_OPTIONS: { value: Soundscape; icon: string; label: string }[] = [
-  { value: 'rain',    icon: '🌧',  label: 'Rain'    },
-  { value: 'ocean',   icon: '🌊',  label: 'Ocean'   },
-  { value: 'forest',  icon: '🌲',  label: 'Forest'  },
-  { value: 'space',   icon: '🌌',  label: 'Space'   },
-  { value: 'silence', icon: '◯',   label: 'Silence' },
-  { value: 'auto',    icon: '✨',  label: 'Auto'    },
+const SOUNDSCAPE_OPTIONS: { value: Soundscape; Icon: React.FC<IconProps> | null; label: string }[] = [
+  { value: 'rain',    Icon: IconWave,    label: 'Rain'    },
+  { value: 'ocean',   Icon: IconWave,    label: 'Ocean'   },
+  { value: 'forest',  Icon: IconLeaf,    label: 'Forest'  },
+  { value: 'space',   Icon: IconOrb,     label: 'Space'   },
+  { value: 'silence', Icon: null,        label: 'Silence' },
+  { value: 'auto',    Icon: IconSparkle, label: 'Auto'    },
 ]
 
 // ---------------------------------------------------------------------------
@@ -253,14 +255,14 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>✨ AI Guided Meditation</h2>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><IconSparkle size={18} /> AI Guided Meditation</h2>
           {!isGenerating && step === 'idle' && !showSaved && (
             <button
               className="soft-button"
               style={{ padding: '0.2rem 0.6rem', fontSize: '0.85rem', position: 'relative' }}
               onClick={handleShowSaved}
             >
-              📚 Saved
+              <IconJournal size={14} /> Saved
               {savedCount > 0 && <span className="ai-saved-count-badge">{savedCount}</span>}
             </button>
           )}
@@ -270,7 +272,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
         {!apiKey && (
           <div className="ai-no-key">
             <p>Add your OpenAI API key in Settings to use AI Meditation.</p>
-            <button className="soft-button" onClick={onOpenSettings}>⚙ Open Settings</button>
+            <button className="soft-button" onClick={onOpenSettings}><IconSettings size={14} /> Open Settings</button>
           </div>
         )}
 
@@ -278,7 +280,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
         {apiKey && step === 'idle' && showSaved && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>📚 Saved Meditations</h3>
+              <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><IconJournal size={16} /> Saved Meditations</h3>
               <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => setShowSaved(false)}>← Back</button>
             </div>
             {savedList.length === 0 ? (
@@ -313,7 +315,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
                       <button className="soft-button" style={{ fontSize: '0.85rem' }} onClick={() => void handleTogglePreview(session.id)}>
                         {isExpanded ? '▲ Hide' : '▼ Preview'}
                       </button>
-                      <button className="soft-button" style={{ fontSize: '0.85rem', color: 'var(--danger)' }} onClick={() => handleDeleteSaved(session.id)}>🗑</button>
+                      <button className="soft-button" style={{ fontSize: '0.85rem', color: 'var(--danger)' }} onClick={() => handleDeleteSaved(session.id)}><IconTrash size={14} /></button>
                     </div>
                   </div>
                   )
@@ -365,7 +367,7 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
                     className={`ai-soundscape-btn${soundscape === opt.value ? ' ai-soundscape-btn--active' : ''}`}
                     onClick={() => setSoundscape(opt.value)}
                   >
-                    <span>{opt.icon}</span> {opt.label}
+                    {opt.Icon && <opt.Icon size={14} />} {opt.label}
                   </button>
                 ))}
               </div>
@@ -398,11 +400,11 @@ export function AiMeditationPanel({ onSessionReady, apiKey, onOpenSettings }: Ai
                   <button
                     className={`ai-gender-btn${gender === 'female' ? ' ai-gender-btn--active' : ''}`}
                     onClick={() => handleGenderChange('female')}
-                  >♀ Female</button>
+                  >F Female</button>
                   <button
                     className={`ai-gender-btn${gender === 'male' ? ' ai-gender-btn--active' : ''}`}
                     onClick={() => handleGenderChange('male')}
-                  >♂ Male</button>
+                  >M Male</button>
                 </div>
                 {/* Voice picker */}
                 <div className="ai-voice-grid">

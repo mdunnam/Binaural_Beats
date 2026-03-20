@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { IconMail } from './Icons'
 
 type FaqEntry = {
   id: string
@@ -88,7 +89,7 @@ export function HelpTab() {
         <div className="section-card" style={{ padding: '0.75rem' }}>
           <input
             type="text"
-            placeholder="🔍 Search help articles..."
+            placeholder="Search help articles..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
@@ -207,7 +208,7 @@ export function HelpTab() {
               alignSelf: 'flex-start',
             }}
           >
-            📧 Email Support
+            <IconMail size={15} /> Email Support
           </a>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
             support@theliminal.app — we typically respond within 24 hours.

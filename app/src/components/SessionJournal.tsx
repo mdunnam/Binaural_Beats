@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import type { JournalEntry, MoodRating } from '../types'
+import { MOOD_ICONS, IconFire, IconCalendar, IconClock, IconTag, IconChart, IconPlus, IconTrash, IconSearch, IconJournal, IconSeedling } from './Icons'
 
 interface Props {
   entries: JournalEntry[]
@@ -41,8 +42,6 @@ function formatDate(entry: JournalEntry): string {
   }
 }
 
-const MOOD_EMOJIS = ['😞', '😕', '😐', '🙂', '😄']
-const AVG_MOOD_EMOJIS = ['', '😔', '😐', '🙂', '😊', '😄']
 
 function dayKey(ts: number): string {
   const d = new Date(ts)
@@ -239,7 +238,7 @@ function AddEntryForm({ onAdd, onCancel }: { onAdd: (e: JournalEntry) => void; o
 
   return (
     <div className="journal-entry" style={{ marginBottom: '1.25rem' }}>
-      <div style={{ fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>➕ New Entry</div>
+      <div style={{ fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><IconPlus size={16} /> New Entry</div>
       <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
         Preset / Session Name
         <input
@@ -263,13 +262,13 @@ function AddEntryForm({ onAdd, onCancel }: { onAdd: (e: JournalEntry) => void; o
       </label>
       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Mood</div>
       <div className="journal-mood-row" style={{ marginBottom: '0.5rem' }}>
-        {MOOD_EMOJIS.map((em, i) => (
+        {MOOD_ICONS.map((MoodIcon, i) => (
           <button
             key={i}
             type="button"
             className={`journal-mood-btn${form.mood === (i + 1) ? ' journal-mood-btn--active' : ''}`}
             onClick={() => setForm(f => ({ ...f, mood: (i + 1) as MoodRating }))}
-          >{em}</button>
+          ><MoodIcon size={20} /></button>
         ))}
       </div>
       <textarea
@@ -359,21 +358,21 @@ function EntryCard({
               style={{ padding: '0.2rem 0.5rem', fontSize: '0.9rem' }}
               title="Delete entry"
               onClick={() => setConfirmDelete(true)}
-            >🗑</button>
+            ><IconTrash size={16} /></button>
           )}
         </div>
       </div>
 
       {/* Mood */}
       <div className="journal-mood-row">
-        {MOOD_EMOJIS.map((em, i) => (
+        {MOOD_ICONS.map((MoodIcon, i) => (
           <button
             key={i}
             type="button"
             className={`journal-mood-btn${entry.mood === (i + 1) ? ' journal-mood-btn--active' : ''}`}
             onClick={() => onUpdate(entry.id, { mood: (i + 1) as MoodRating })}
             title={`Mood ${i + 1}`}
-          >{em}</button>
+          ><MoodIcon size={20} /></button>
         ))}
       </div>
 
@@ -427,7 +426,7 @@ export function SessionJournal({ entries, onClose, addEntry, updateEntry, delete
   const avgMoodRaw = moodEntries.length > 0
     ? moodEntries.reduce((acc, e) => acc + (e.mood as number), 0) / moodEntries.length
     : null
-  const avgMoodEmoji = avgMoodRaw != null ? AVG_MOOD_EMOJIS[Math.round(avgMoodRaw)] : null
+  const AvgMoodIcon = avgMoodRaw != null ? MOOD_ICONS[Math.round(avgMoodRaw) - 1] : null
 
   // Most used tag
   const tagCounts: Record<string, number> = {}
@@ -459,29 +458,29 @@ export function SessionJournal({ entries, onClose, addEntry, updateEntry, delete
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal-box" style={{ maxWidth: 600, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 className="modal-title" style={{ margin: 0 }}>📓 Session Journal</h2>
+          <h2 className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><IconJournal size={22} /> Session Journal</h2>
           <button className="soft-button" onClick={onClose}>✕ Close</button>
         </div>
 
         {/* Stats bar */}
         <div className="journal-stats-bar">
           <div className="journal-stat">
-            <strong>🔥 {streak}</strong>day streak
+            <strong><IconFire size={14} /> {streak}</strong>day streak
           </div>
           <div className="journal-stat">
-            <strong>📅 {entries.length}</strong>sessions
+            <strong><IconCalendar size={14} /> {entries.length}</strong>sessions
           </div>
           <div className="journal-stat">
-            <strong>⏱ {totalMinutes}</strong>min
+            <strong><IconClock size={14} /> {totalMinutes}</strong>min
           </div>
-          {avgMoodEmoji != null && (
+          {AvgMoodIcon != null && (
             <div className="journal-stat">
-              <strong>{avgMoodEmoji}</strong>avg mood
+              <strong><AvgMoodIcon size={16} /></strong>avg mood
             </div>
           )}
           {topTag != null && (
             <div className="journal-stat">
-              <strong>🏷 {topTag}</strong>top tag
+              <strong><IconTag size={14} /> {topTag}</strong>top tag
             </div>
           )}
         </div>
@@ -492,13 +491,13 @@ export function SessionJournal({ entries, onClose, addEntry, updateEntry, delete
             className="soft-button"
             onClick={() => setShowTrends(v => !v)}
           >
-            📊 {showTrends ? 'Hide Trends' : 'Trends'}
+            <IconChart size={15} /> {showTrends ? 'Hide Trends' : 'Trends'}
           </button>
           {!showAdd && (
             <button
               className="soft-button journal-add-btn"
               onClick={() => setShowAdd(true)}
-            >➕ Add Entry Manually</button>
+            ><IconPlus size={14} /> Add Entry Manually</button>
           )}
         </div>
 
@@ -516,7 +515,7 @@ export function SessionJournal({ entries, onClose, addEntry, updateEntry, delete
         {/* Search */}
         <input
           className="journal-search"
-          placeholder="🔍 Search by preset, notes, or tags..."
+          placeholder="Search by preset, notes, or tags..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -525,8 +524,8 @@ export function SessionJournal({ entries, onClose, addEntry, updateEntry, delete
         {filtered.length === 0 ? (
           <div className="journal-empty">
             {entries.length === 0
-              ? '🌱 No entries yet. Complete a session or add one manually!'
-              : '🔍 No entries match your search.'}
+              ? <><IconSeedling size={16} /> No entries yet. Complete a session or add one manually!</>
+              : <><IconSearch size={16} /> No entries match your search.</>}
           </div>
         ) : (
           filtered.map(entry => (

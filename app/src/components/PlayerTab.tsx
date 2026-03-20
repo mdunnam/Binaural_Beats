@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IconMoon, IconTarget, IconMeditate, IconLightbulb, IconStar, IconSunrise } from './Icons'
 
 
 type PlayerTabProps = {
@@ -67,12 +68,12 @@ const MAX_HZ = 100
 
 // Quick preset pills
 const QUICK_PILLS = [
-  { emoji: '😴', label: 'Sleep',    desc: 'Deep delta waves for restful sleep',       carrier: 174, beat: 2.0 },
-  { emoji: '🎯', label: 'Focus',    desc: 'Beta focus for work & study',              carrier: 396, beat: 14.0 },
-  { emoji: '🧘', label: 'Meditate', desc: 'Theta stillness for deep meditation',      carrier: 528, beat: 6.0 },
-  { emoji: '💡', label: 'Flow',     desc: 'Alpha-beta blend for creative flow',       carrier: 741, beat: 10.0 },
-  { emoji: '✨', label: 'Lucid',    desc: 'Theta dreaming & vivid imagination',       carrier: 936, beat: 4.0 },
-  { emoji: '🌅', label: 'Rise',     desc: 'Energising beta to start your day',        carrier: 396, beat: 18.0 },
+  { Icon: IconMoon,      label: 'Sleep',    desc: 'Deep delta waves for restful sleep',       carrier: 174, beat: 2.0 },
+  { Icon: IconTarget,    label: 'Focus',    desc: 'Beta focus for work & study',              carrier: 396, beat: 14.0 },
+  { Icon: IconMeditate,  label: 'Meditate', desc: 'Theta stillness for deep meditation',      carrier: 528, beat: 6.0 },
+  { Icon: IconLightbulb, label: 'Flow',     desc: 'Alpha-beta blend for creative flow',       carrier: 741, beat: 10.0 },
+  { Icon: IconStar,      label: 'Lucid',    desc: 'Theta dreaming & vivid imagination',       carrier: 936, beat: 4.0 },
+  { Icon: IconSunrise,   label: 'Rise',     desc: 'Energising beta to start your day',        carrier: 396, beat: 18.0 },
 ]
 
 // ---------------------------------------------------------------------------
@@ -492,7 +493,7 @@ function IntentCards({
           className={`player-intent-card ${activePill === p.label ? 'player-intent-card--active' : ''}`}
           onClick={() => onPill(p)}
         >
-          <span className="player-intent-emoji">{p.emoji}</span>
+          <span className="player-intent-emoji"><p.Icon size={18} /></span>
           <span className="player-intent-label">{p.label}</span>
           <span className="player-intent-desc">{p.desc}</span>
         </button>

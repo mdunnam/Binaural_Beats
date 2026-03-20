@@ -1,5 +1,6 @@
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { useState } from 'react'
+import { IconBell } from './Icons'
 
 export function NotificationSettings() {
   const { permission, supported, requestPermission, scheduleStreakReminder, sendNotification } = usePushNotifications()
@@ -9,7 +10,7 @@ export function NotificationSettings() {
 
   return (
     <div className="notif-settings-card">
-      <div className="notif-settings-title">🔔 Daily Reminders</div>
+      <div className="notif-settings-title"><IconBell size={15} /> Daily Reminders</div>
       <div className="notif-settings-sub">Get a nudge to keep your streak alive</div>
       {permission !== 'granted' ? (
         <button className="soft-button soft-button--accent soft-button--sm" onClick={requestPermission}>

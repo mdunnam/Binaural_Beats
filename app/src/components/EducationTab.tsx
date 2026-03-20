@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IconRelief } from './Icons'
 
 type Expandable = { [key: string]: boolean }
 
@@ -218,7 +219,7 @@ export function EducationTab() {
       <div className="section-block">
         <div className="section-card">
           <button className="edu-expand-btn" onClick={() => toggle('safety')}>
-            <span className="section-title" style={{ margin: 0 }}>⚠️ Safety &amp; Disclaimers</span>
+            <span className="section-title" style={{ margin: 0 }}><IconRelief size={16} /> Safety &amp; Disclaimers</span>
             <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{expanded['safety'] ? '▲' : '▼'}</span>
           </button>
           {expanded['safety'] && (
