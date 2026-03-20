@@ -1090,7 +1090,8 @@ Required to keep users coming back.
 ✅ Done:   Tones tab presets — saves full state (carrier/beat/wobble/filter/iso/tuning/Mood EQ), at bottom of tab
 ✅ Done:   AudioVisualizer strip — 3-zone (level | FFT | oscilloscope), theme-aware, above mini-player
 ✅ Done:   Unified button/tab theming — gradient active/hover, danger CSS vars, no hardcoded colors
-✅ Done:   Canvas backgrounds — all canvas draws clearRect; CSS bg-card/bg-section shows through
+✅ Done:   Stereo width control (mid/side matrix in master bus, 0–200% slider in Tones tab)
+✅ Done:   PWA icons — icon-192.png, icon-512.png, favicon.png generated from logoc_512.png source
 ✅ Done:   theme.css extracted — all CSS color vars in one file
 ✅ Done:   Service worker network-first + build-time cache bust (stamp-sw.mjs)
 
@@ -1116,7 +1117,6 @@ Next:
 →  Hardware integration (HRV/EEG)
 →  Content platform + marketplace
 →  Background playback (Media Session API + Wake Lock)
-→  Daily state tracking with trends / heatmap (journal data exists, needs viz)
 →  Supabase cloud journal sync (optional, for cross-device)
 →  Stripe live mode + real money testing
 →  Admin Console (Phase 1: read-only dashboard; Phase 2: controls + AI usage tracking)

@@ -35,7 +35,7 @@ import { useJournal } from './hooks/useJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
 import type { AiMeditationConfig } from './components/AiMeditationPanel'
 import { ApiKeySettings } from './components/ApiKeySettings'
-import { createMasterBus, setMasterVolume } from './engine/masterBus'
+import { createMasterBus, setMasterVolume, setMasterStereoWidth } from './engine/masterBus'
 import type { MasterBus } from './engine/masterBus'
 import { createIsochronicTone, stopIsochronicTone } from './engine/isochronic'
 import type { IsochronicGraph } from './engine/isochronic'
@@ -489,6 +489,7 @@ function AppInner() {
   const [wobbleTarget, setWobbleTarget] = useState<LfoTarget>('detune')
 
   const [phaseOffset, setPhaseOffset] = useState(0)
+  const [stereoWidth, setStereoWidth] = useState(1.0)
   const [volume, setVolume] = useState(0.2)
   const [binauralVolume, setBinauralVolume] = useState(0.15)
   const [voiceVolume, setVoiceVolume] = useState(0.8)
@@ -1852,6 +1853,12 @@ function AppInner() {
   }, [volume])
 
   useEffect(() => {
+    const bus = masterBusRef.current
+    if (!bus) return
+    setMasterStereoWidth(bus, stereoWidth)
+  }, [stereoWidth])
+
+  useEffect(() => {
     const graph = graphRef.current
     if (!graph) return
     const now = graph.context.currentTime
@@ -2555,6 +2562,11 @@ function AppInner() {
                   <label>Phase Offset ({phaseOffset}°)
                     <small className="control-hint">Applied at session start - restart to hear change</small>
                     <input type="range" min={0} max={360} step={1} value={phaseOffset} onChange={(e) => setPhaseOffset(Number(e.target.value))} />
+                  </label>
+
+                  <label>Stereo Width ({stereoWidth === 0 ? 'Mono' : stereoWidth < 1 ? `Narrow (${Math.round(stereoWidth * 100)}%)` : stereoWidth === 1 ? 'Normal' : `Wide (${Math.round(stereoWidth * 100)}%)`})
+                    <small className="control-hint">Widens or narrows the stereo image on the master output</small>
+                    <input type="range" min={0} max={2} step={0.01} value={stereoWidth} onChange={(e) => setStereoWidth(Number(e.target.value))} />
                   </label>
 
                   <label>Tones Volume ({Math.round(binauralVolume * 100)}%)
