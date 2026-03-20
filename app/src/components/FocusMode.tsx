@@ -53,7 +53,8 @@ export function FocusMode({ isRunning, remainingSeconds, activeStageIndex, onSta
   const [selectedMinutes, setSelectedMinutes] = useState(45)
   const [gammaBoost, setGammaBoost] = useState(false)
 
-  const stage = STAGE_DEFS[Math.max(0, Math.min(activeStageIndex, STAGE_DEFS.length - 1))]
+  const stageIdx = Math.max(0, Math.min(activeStageIndex, STAGE_DEFS.length - 1))
+  const stage = STAGE_DEFS[stageIdx]
 
   return (
     <div className="focus-mode">
@@ -65,114 +66,93 @@ export function FocusMode({ isRunning, remainingSeconds, activeStageIndex, onSta
         <p className="sleep-subtitle">Beta-driven concentration with a structured arc into deep work.</p>
       </div>
 
-      {!isRunning ? (
-        // ── Setup ──────────────────────────────────────────────────────────────
-        <>
-          <div className="sleep-section">
-            <span className="section-label">Session length</span>
-            <div className="sleep-dur-row">
-              {WORK_DURATIONS.map(d => (
-                <button
-                  key={d.minutes}
-                  className={`seg-btn${selectedMinutes === d.minutes ? ' seg-btn--active' : ''}`}
-                  onClick={() => setSelectedMinutes(d.minutes)}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
+      {/* Duration picker — hidden while running */}
+      {!isRunning && (
+        <div className="sleep-section">
+          <span className="section-label">Session length</span>
+          <div className="sleep-dur-row">
+            {WORK_DURATIONS.map(d => (
+              <button
+                key={d.minutes}
+                className={`seg-btn${selectedMinutes === d.minutes ? ' seg-btn--active' : ''}`}
+                onClick={() => setSelectedMinutes(d.minutes)}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
+        </div>
+      )}
 
-          <div className="sleep-section">
-            <span className="section-label">Focus arc</span>
-            <div className="sleep-stage-bar">
-              {STAGE_DEFS.map(s => (
-                <div
-                  key={s.label}
-                  className="sleep-stage-seg"
-                  style={{ flex: s.pct, borderColor: s.color + '88' }}
-                >
-                  <div className="sleep-seg-swatch" style={{ background: s.color }} />
-                  <span className="sleep-seg-name">{s.label}</span>
-                  <span className="sleep-seg-band">{s.band} · {s.beat} Hz</span>
-                  <span className="sleep-seg-dur">{Math.max(1, Math.round(selectedMinutes * s.pct))} min</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="sleep-section sleep-params">
-            <div className="sleep-param"><span>Carrier</span><strong>200 Hz</strong></div>
-            <div className="sleep-param"><span>Noise</span><strong>Pink — light masking</strong></div>
-            <div className="sleep-param"><span>Fade in</span><strong>30 s</strong></div>
-            <div className="sleep-param focus-param-toggle" onClick={() => setGammaBoost(g => !g)}>
-              <span>Gamma burst <span className="focus-param-sub">40 Hz pulse at session start</span></span>
-              <strong className={gammaBoost ? 'focus-param-on' : 'focus-param-off'}>
-                {gammaBoost ? <><IconCheck size={13} /> On</> : 'Off'}
-              </strong>
-            </div>
-          </div>
-
-          <button className="focus-start-btn" onClick={() => onStart(selectedMinutes)}>
-            Begin Focus Session
-          </button>
-
-          <p className="sleep-note">
-            Use headphones for full binaural effect. Pink noise masks distractions automatically.
-          </p>
-        </>
-      ) : (
-        // ── Running ────────────────────────────────────────────────────────────
-        <>
-          <div className="sleep-running">
-            <div className="sleep-stage-name" style={{ color: stage.color }}>
-              {stage.label}
-            </div>
-            <div className="sleep-band-name">{stage.band} · {stage.beat} Hz</div>
-            <div className="sleep-clock">{formatMS(remainingSeconds)}</div>
-            <div className="sleep-clock-sub">remaining</div>
-          </div>
-
-          {/* Stage progress bar */}
-          <div className="sleep-prog-track">
-            {STAGE_DEFS.map((s, i) => (
+      {/* Stage bar — always visible, highlights current stage when running */}
+      <div className="sleep-section">
+        <span className="section-label">Focus arc</span>
+        <div className="sleep-stage-bar">
+          {STAGE_DEFS.map((s, i) => (
+            <div
+              key={s.label}
+              className="sleep-stage-seg"
+              style={{
+                flex: s.pct,
+                borderColor: s.color + '88',
+                opacity: isRunning && i > stageIdx ? 0.35 : 1,
+              }}
+            >
               <div
-                key={s.label}
-                className={`sleep-prog-seg${i === activeStageIndex ? ' sleep-prog-seg--active' : ''}`}
+                className="sleep-seg-swatch"
                 style={{
-                  flex: s.pct,
-                  background: i < activeStageIndex ? s.color + 'cc'
-                    : i === activeStageIndex ? s.color
-                    : s.color + '22',
-                  borderColor: s.color + '88',
+                  background: s.color,
+                  boxShadow: isRunning && i === stageIdx ? `0 0 7px ${s.color}` : 'none',
                 }}
-                title={s.label}
               />
-            ))}
-          </div>
+              <span className="sleep-seg-name">{s.label}</span>
+              <span className="sleep-seg-band">{s.band} · {s.beat} Hz</span>
+              <span className="sleep-seg-dur">
+                {isRunning && i === stageIdx
+                  ? <span style={{ color: s.color, fontWeight: 700 }}>now</span>
+                  : `${Math.max(1, Math.round(selectedMinutes * s.pct))} min`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Stage list */}
-          <div className="sleep-stage-list">
-            {STAGE_DEFS.map((s, i) => (
-              <div key={s.label} className={`sleep-stage-row${i === activeStageIndex ? ' sleep-stage-row--active' : ''}`}>
-                <div
-                  className="sleep-stage-dot"
-                  style={{
-                    background: i < activeStageIndex ? s.color : i === activeStageIndex ? s.color : 'transparent',
-                    borderColor: s.color,
-                  }}
-                />
-                <span className="sleep-stage-row-label">{s.label}</span>
-                <span className="sleep-stage-row-band">{s.band} · {s.beat} Hz</span>
-                {i === activeStageIndex && <span className="sleep-stage-row-now">now</span>}
-              </div>
-            ))}
-          </div>
+      {/* Compact status strip — shown when running */}
+      {isRunning && (
+        <div className="mode-status-strip" style={{ borderColor: stage.color + '55' }}>
+          <span className="mode-status-stage" style={{ color: stage.color }}>{stage.label}</span>
+          <span className="mode-status-band">{stage.band} · {stage.beat} Hz</span>
+          <span className="mode-status-time">{formatMS(remainingSeconds)}</span>
+        </div>
+      )}
 
-          <button className="sleep-stop-btn" onClick={onStop}>
-            End Session
-          </button>
-        </>
+      {/* Params */}
+      <div className="sleep-section sleep-params">
+        <div className="sleep-param"><span>Carrier</span><strong>200 Hz</strong></div>
+        <div className="sleep-param"><span>Noise</span><strong>Pink — light masking</strong></div>
+        <div className="sleep-param"><span>Fade in</span><strong>30 s</strong></div>
+        {!isRunning && (
+          <div className="sleep-param focus-param-toggle" onClick={() => setGammaBoost(g => !g)}>
+            <span>Gamma burst <span className="focus-param-sub">40 Hz pulse at session start</span></span>
+            <strong className={gammaBoost ? 'focus-param-on' : 'focus-param-off'}>
+              {gammaBoost ? <><IconCheck size={13} /> On</> : 'Off'}
+            </strong>
+          </div>
+        )}
+      </div>
+
+      {/* Toggle button */}
+      <button
+        className={isRunning ? 'mode-stop-btn' : 'focus-start-btn'}
+        onClick={isRunning ? onStop : () => onStart(selectedMinutes)}
+      >
+        {isRunning ? 'Stop Session' : 'Begin Focus Session'}
+      </button>
+
+      {!isRunning && (
+        <p className="sleep-note">
+          Use headphones for full binaural effect. Pink noise masks distractions automatically.
+        </p>
       )}
     </div>
   )

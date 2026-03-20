@@ -227,12 +227,17 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
     lastSpawnMap.delete(canvas)
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio
+      const w = canvas.offsetWidth
+      const h = canvas.offsetHeight
+      if (w === 0 || h === 0) return
+      canvas.width = w * window.devicePixelRatio
+      canvas.height = h * window.devicePixelRatio
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
     }
     resize()
-    window.addEventListener('resize', resize)
+    // ResizeObserver fires when canvas becomes visible inside a collapsed section
+    const ro = new ResizeObserver(resize)
+    ro.observe(canvas)
 
     let frame = 0
     const draw = () => {
@@ -257,7 +262,7 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
 
     return () => {
       cancelAnimationFrame(rafRef.current)
-      window.removeEventListener('resize', resize)
+      ro.disconnect()
     }
   }, [mode, colorTheme, carrier, beat, analyser])
 

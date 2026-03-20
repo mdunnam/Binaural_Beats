@@ -6369,6 +6369,36 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 }
 .focus-start-btn:hover { opacity: 0.88; }
 
+/* Shared running status strip (used by Focus, Sleep, Lucid) */
+.mode-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--surface-2);
+  border: 1px solid;
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.mode-status-stage { font-size: 0.9rem; font-weight: 700; }
+.mode-status-band  { font-size: 0.75rem; color: var(--text-muted); }
+.mode-status-time  { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-left: auto; color: var(--text-primary); }
+
+/* Shared stop button (used by all modes when running) */
+.mode-stop-btn {
+  padding: 0.8rem 1.4rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.01em;
+}
+.mode-stop-btn:hover { color: var(--text-primary); border-color: var(--text-primary); }
+
 .focus-param-toggle { cursor: pointer; user-select: none; }
 .focus-param-sub    { font-size: 0.7rem; color: var(--text-muted); margin-left: 0.3rem; }
 .focus-param-on  { color: var(--accent); display: inline-flex; align-items: center; gap: 0.25rem; }

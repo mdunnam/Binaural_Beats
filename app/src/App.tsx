@@ -2945,7 +2945,7 @@ function AppInner() {
               onStartSleep={startSleepSession}
               onStartLucid={startLucidSession}
               onStartRitual={startRitualSession}
-              onStop={() => stopSession(true)}
+              onStop={() => stopSession(false)}
             />
           )}
 
@@ -3359,7 +3359,7 @@ function AppInner() {
       setWobbleRate={setWobbleRate}
       isExpanded={playerExpanded}
       onToggleExpand={() => setPlayerExpanded(v => !v)}
-      onOpenVisual={() => { setActiveTab('focus'); setPlayerExpanded(false) }}
+      onOpenVisual={() => { setActiveTab('modes'); setPlayerExpanded(false) }}
       darkMode={darkMode}
     />
     </main>

@@ -2,8 +2,7 @@ import { useState } from 'react'
 import type { Journey } from '../engine/journeyEngine'
 import { IconMoon } from './Icons'
 
-// ── Stage definitions ────────────────────────────────────────────────────────
-// Colors inlined to avoid circular init order with journeyEngine
+// ── Stage definitions ─────────────────────────────────────────────────────────
 const STAGE_DEFS = [
   { label: 'Settling',   beat: 14, wobbleRate: 0.15, color: '#e8b84b', pct: 0.10, band: 'Beta'  },
   { label: 'Relaxing',   beat: 10, wobbleRate: 0.10, color: '#3e8f72', pct: 0.15, band: 'Alpha' },
@@ -56,7 +55,8 @@ type Props = {
 export function SleepMode({ isRunning, remainingSeconds, activeStageIndex, onStart, onStop }: Props) {
   const [selectedHours, setSelectedHours] = useState(8)
 
-  const stage = STAGE_DEFS[Math.max(0, Math.min(activeStageIndex, STAGE_DEFS.length - 1))]
+  const stageIdx = Math.max(0, Math.min(activeStageIndex, STAGE_DEFS.length - 1))
+  const stage = STAGE_DEFS[stageIdx]
 
   return (
     <div className="sleep-mode">
@@ -68,109 +68,86 @@ export function SleepMode({ isRunning, remainingSeconds, activeStageIndex, onSta
         <p className="sleep-subtitle">A guided descent from waking mind to deep sleep.</p>
       </div>
 
-      {!isRunning ? (
-        // ── Setup ──────────────────────────────────────────────────────────────
-        <>
-          <div className="sleep-section">
-            <span className="section-label">Session length</span>
-            <div className="sleep-dur-row">
-              {DURATIONS.map(d => (
-                <button
-                  key={d.hours}
-                  className={`seg-btn${selectedHours === d.hours ? ' seg-btn--active' : ''}`}
-                  onClick={() => setSelectedHours(d.hours)}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
+      {/* Duration picker — hidden while running */}
+      {!isRunning && (
+        <div className="sleep-section">
+          <span className="section-label">Session length</span>
+          <div className="sleep-dur-row">
+            {DURATIONS.map(d => (
+              <button
+                key={d.hours}
+                className={`seg-btn${selectedHours === d.hours ? ' seg-btn--active' : ''}`}
+                onClick={() => setSelectedHours(d.hours)}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
+        </div>
+      )}
 
-          <div className="sleep-section">
-            <span className="section-label">Descent journey</span>
-            <div className="sleep-stage-bar">
-              {STAGE_DEFS.map(s => (
-                <div
-                  key={s.label}
-                  className="sleep-stage-seg"
-                  style={{ flex: s.pct, borderColor: s.color + '88' }}
-                >
-                  <div className="sleep-seg-swatch" style={{ background: s.color }} />
-                  <span className="sleep-seg-name">{s.label}</span>
-                  <span className="sleep-seg-band">{s.band} · {s.beat} Hz</span>
-                  <span className="sleep-seg-dur">{Math.round(selectedHours * 60 * s.pct)} min</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="sleep-section sleep-params">
-            <div className="sleep-param"><span>Carrier</span><strong>174 Hz — Foundation</strong></div>
-            <div className="sleep-param"><span>Noise</span><strong>Brown</strong></div>
-            <div className="sleep-param"><span>Soundscape</span><strong>Rain</strong></div>
-            <div className="sleep-param"><span>Fade in</span><strong>60 s — ultra-gentle</strong></div>
-          </div>
-
-          <button className="sleep-start-btn" onClick={() => onStart(selectedHours)}>
-            Begin Sleep Session
-          </button>
-
-          <p className="sleep-note">
-            Use headphones for full binaural effect. Screen can turn off — audio continues in the background.
-          </p>
-        </>
-      ) : (
-        // ── Running ────────────────────────────────────────────────────────────
-        <>
-          <div className="sleep-running">
-            <div className="sleep-stage-name" style={{ color: stage.color }}>
-              {stage.label}
-            </div>
-            <div className="sleep-band-name">{stage.band} · {stage.beat} Hz</div>
-            <div className="sleep-clock">{formatHMS(remainingSeconds)}</div>
-            <div className="sleep-clock-sub">remaining</div>
-          </div>
-
-          {/* Stage progress bar */}
-          <div className="sleep-prog-track">
-            {STAGE_DEFS.map((s, i) => (
+      {/* Stage bar — always visible, highlights active stage when running */}
+      <div className="sleep-section">
+        <span className="section-label">Descent journey</span>
+        <div className="sleep-stage-bar">
+          {STAGE_DEFS.map((s, i) => (
+            <div
+              key={s.label}
+              className="sleep-stage-seg"
+              style={{
+                flex: s.pct,
+                borderColor: s.color + '88',
+                opacity: isRunning && i > stageIdx ? 0.35 : 1,
+              }}
+            >
               <div
-                key={s.label}
-                className={`sleep-prog-seg${i === activeStageIndex ? ' sleep-prog-seg--active' : ''}`}
+                className="sleep-seg-swatch"
                 style={{
-                  flex: s.pct,
-                  background: i < activeStageIndex ? s.color + 'cc'
-                    : i === activeStageIndex ? s.color
-                    : s.color + '22',
-                  borderColor: s.color + '88',
+                  background: s.color,
+                  boxShadow: isRunning && i === stageIdx ? `0 0 7px ${s.color}` : 'none',
                 }}
-                title={s.label}
               />
-            ))}
-          </div>
+              <span className="sleep-seg-name">{s.label}</span>
+              <span className="sleep-seg-band">{s.band} · {s.beat} Hz</span>
+              <span className="sleep-seg-dur">
+                {isRunning && i === stageIdx
+                  ? <span style={{ color: s.color, fontWeight: 700 }}>now</span>
+                  : `${Math.round(selectedHours * 60 * s.pct)} min`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Stage list */}
-          <div className="sleep-stage-list">
-            {STAGE_DEFS.map((s, i) => (
-              <div key={s.label} className={`sleep-stage-row${i === activeStageIndex ? ' sleep-stage-row--active' : ''}`}>
-                <div
-                  className="sleep-stage-dot"
-                  style={{
-                    background: i < activeStageIndex ? s.color : i === activeStageIndex ? s.color : 'transparent',
-                    borderColor: s.color,
-                  }}
-                />
-                <span className="sleep-stage-row-label">{s.label}</span>
-                <span className="sleep-stage-row-band">{s.band} · {s.beat} Hz</span>
-                {i === activeStageIndex && <span className="sleep-stage-row-now">now</span>}
-              </div>
-            ))}
-          </div>
+      {/* Compact status strip — shown when running */}
+      {isRunning && (
+        <div className="mode-status-strip" style={{ borderColor: stage.color + '55' }}>
+          <span className="mode-status-stage" style={{ color: stage.color }}>{stage.label}</span>
+          <span className="mode-status-band">{stage.band} · {stage.beat} Hz</span>
+          <span className="mode-status-time">{formatHMS(remainingSeconds)}</span>
+        </div>
+      )}
 
-          <button className="sleep-stop-btn" onClick={onStop}>
-            End Session
-          </button>
-        </>
+      {/* Params */}
+      <div className="sleep-section sleep-params">
+        <div className="sleep-param"><span>Carrier</span><strong>174 Hz — Foundation</strong></div>
+        <div className="sleep-param"><span>Noise</span><strong>Brown</strong></div>
+        <div className="sleep-param"><span>Soundscape</span><strong>Rain</strong></div>
+        <div className="sleep-param"><span>Fade in</span><strong>60 s — ultra-gentle</strong></div>
+      </div>
+
+      {/* Toggle button */}
+      <button
+        className={isRunning ? 'mode-stop-btn' : 'sleep-start-btn'}
+        onClick={isRunning ? onStop : () => onStart(selectedHours)}
+      >
+        {isRunning ? 'Stop Session' : 'Begin Sleep Session'}
+      </button>
+
+      {!isRunning && (
+        <p className="sleep-note">
+          Use headphones for full binaural effect. Screen can turn off — audio continues in the background.
+        </p>
       )}
     </div>
   )

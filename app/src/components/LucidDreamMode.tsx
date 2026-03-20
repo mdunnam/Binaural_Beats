@@ -3,7 +3,6 @@ import type { Journey } from '../engine/journeyEngine'
 import { IconSparkle } from './Icons'
 
 // ── Stage definitions ─────────────────────────────────────────────────────────
-// Aligned to ~90-min natural sleep cycle boundaries
 const STAGE_DEFS = [
   { label: 'Settling',    beat: 7, wobbleRate: 0.12, color: '#5b9bd5', pct: 0.10, band: 'Theta'       },
   { label: 'Drifting',    beat: 5, wobbleRate: 0.08, color: '#7b68ee', pct: 0.15, band: 'Theta'       },
@@ -55,7 +54,8 @@ type Props = {
 export function LucidDreamMode({ isRunning, remainingSeconds, activeStageIndex, onStart, onStop }: Props) {
   const [selectedHours, setSelectedHours] = useState(6)
 
-  const stage = STAGE_DEFS[Math.max(0, Math.min(activeStageIndex, STAGE_DEFS.length - 1))]
+  const stageIdx = Math.max(0, Math.min(activeStageIndex, STAGE_DEFS.length - 1))
+  const stage = STAGE_DEFS[stageIdx]
 
   return (
     <div className="lucid-mode">
@@ -67,113 +67,92 @@ export function LucidDreamMode({ isRunning, remainingSeconds, activeStageIndex, 
         <p className="sleep-subtitle">Theta-tuned cycles aligned to natural 90-minute REM windows.</p>
       </div>
 
-      {!isRunning ? (
-        // ── Setup ──────────────────────────────────────────────────────────────
-        <>
-          <div className="sleep-section">
-            <span className="section-label">Session length</span>
-            <div className="sleep-dur-row">
-              {DURATIONS.map(d => (
-                <button
-                  key={d.hours}
-                  className={`seg-btn${selectedHours === d.hours ? ' seg-btn--active' : ''}`}
-                  onClick={() => setSelectedHours(d.hours)}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
+      {/* Duration picker — hidden while running */}
+      {!isRunning && (
+        <div className="sleep-section">
+          <span className="section-label">Session length</span>
+          <div className="sleep-dur-row">
+            {DURATIONS.map(d => (
+              <button
+                key={d.hours}
+                className={`seg-btn${selectedHours === d.hours ? ' seg-btn--active' : ''}`}
+                onClick={() => setSelectedHours(d.hours)}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
+        </div>
+      )}
 
-          <div className="sleep-section">
-            <span className="section-label">Sleep cycle map</span>
-            <div className="sleep-stage-bar">
-              {STAGE_DEFS.map(s => (
-                <div
-                  key={s.label}
-                  className="sleep-stage-seg"
-                  style={{ flex: s.pct, borderColor: s.color + '88' }}
-                >
-                  <div className="sleep-seg-swatch" style={{ background: s.color }} />
-                  <span className="sleep-seg-name">{s.label}</span>
-                  <span className="sleep-seg-band">{s.band} · {s.beat} Hz</span>
-                  <span className="sleep-seg-dur">{Math.max(5, Math.round(selectedHours * 60 * s.pct))} min</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="sleep-section sleep-params">
-            <div className="sleep-param"><span>Carrier</span><strong>432 Hz — Harmony</strong></div>
-            <div className="sleep-param"><span>Noise</span><strong>Brown — deep sleep masking</strong></div>
-            <div className="sleep-param"><span>Soundscape</span><strong>Ocean</strong></div>
-            <div className="sleep-param"><span>Fade in</span><strong>90 s — ultra-gentle</strong></div>
-          </div>
-
-          <div className="lucid-tip">
-            <strong>Set your intention before sleeping.</strong> REM zones are spaced at natural 90-minute cycle boundaries. Keep a dream journal nearby — write immediately on waking.
-          </div>
-
-          <button className="lucid-start-btn" onClick={() => onStart(selectedHours)}>
-            Begin Lucid Session
-          </button>
-
-          <p className="sleep-note">
-            Use headphones. Screen can turn off — audio continues in the background. Set a gentle alarm 30 minutes before your target wake time.
-          </p>
-        </>
-      ) : (
-        // ── Running ────────────────────────────────────────────────────────────
-        <>
-          <div className="sleep-running">
-            <div className="sleep-stage-name" style={{ color: stage.color }}>
-              {stage.label}
-            </div>
-            <div className="sleep-band-name">{stage.band} · {stage.beat} Hz</div>
-            <div className="sleep-clock">{formatHMS(remainingSeconds)}</div>
-            <div className="sleep-clock-sub">remaining</div>
-          </div>
-
-          {/* Stage progress bar */}
-          <div className="sleep-prog-track">
-            {STAGE_DEFS.map((s, i) => (
+      {/* Stage bar — always visible, highlights active stage when running */}
+      <div className="sleep-section">
+        <span className="section-label">Sleep cycle map</span>
+        <div className="sleep-stage-bar">
+          {STAGE_DEFS.map((s, i) => (
+            <div
+              key={s.label}
+              className="sleep-stage-seg"
+              style={{
+                flex: s.pct,
+                borderColor: s.color + '88',
+                opacity: isRunning && i > stageIdx ? 0.35 : 1,
+              }}
+            >
               <div
-                key={s.label}
-                className={`sleep-prog-seg${i === activeStageIndex ? ' sleep-prog-seg--active' : ''}`}
+                className="sleep-seg-swatch"
                 style={{
-                  flex: s.pct,
-                  background: i < activeStageIndex ? s.color + 'cc'
-                    : i === activeStageIndex ? s.color
-                    : s.color + '22',
-                  borderColor: s.color + '88',
+                  background: s.color,
+                  boxShadow: isRunning && i === stageIdx ? `0 0 7px ${s.color}` : 'none',
                 }}
-                title={s.label}
               />
-            ))}
-          </div>
+              <span className="sleep-seg-name">{s.label}</span>
+              <span className="sleep-seg-band">{s.band} · {s.beat} Hz</span>
+              <span className="sleep-seg-dur">
+                {isRunning && i === stageIdx
+                  ? <span style={{ color: s.color, fontWeight: 700 }}>now</span>
+                  : `${Math.max(5, Math.round(selectedHours * 60 * s.pct))} min`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Stage list */}
-          <div className="sleep-stage-list">
-            {STAGE_DEFS.map((s, i) => (
-              <div key={s.label} className={`sleep-stage-row${i === activeStageIndex ? ' sleep-stage-row--active' : ''}`}>
-                <div
-                  className="sleep-stage-dot"
-                  style={{
-                    background: i < activeStageIndex ? s.color : i === activeStageIndex ? s.color : 'transparent',
-                    borderColor: s.color,
-                  }}
-                />
-                <span className="sleep-stage-row-label">{s.label}</span>
-                <span className="sleep-stage-row-band">{s.band} · {s.beat} Hz</span>
-                {i === activeStageIndex && <span className="sleep-stage-row-now">now</span>}
-              </div>
-            ))}
-          </div>
+      {/* Compact status strip — shown when running */}
+      {isRunning && (
+        <div className="mode-status-strip" style={{ borderColor: stage.color + '55' }}>
+          <span className="mode-status-stage" style={{ color: stage.color }}>{stage.label}</span>
+          <span className="mode-status-band">{stage.band} · {stage.beat} Hz</span>
+          <span className="mode-status-time">{formatHMS(remainingSeconds)}</span>
+        </div>
+      )}
 
-          <button className="sleep-stop-btn" onClick={onStop}>
-            End Session
-          </button>
-        </>
+      {/* Params */}
+      <div className="sleep-section sleep-params">
+        <div className="sleep-param"><span>Carrier</span><strong>432 Hz — Harmony</strong></div>
+        <div className="sleep-param"><span>Noise</span><strong>Brown — deep sleep masking</strong></div>
+        <div className="sleep-param"><span>Soundscape</span><strong>Ocean</strong></div>
+        <div className="sleep-param"><span>Fade in</span><strong>90 s — ultra-gentle</strong></div>
+      </div>
+
+      {!isRunning && (
+        <div className="lucid-tip">
+          <strong>Set your intention before sleeping.</strong> REM zones are spaced at natural 90-minute cycle boundaries. Keep a dream journal nearby — write immediately on waking.
+        </div>
+      )}
+
+      {/* Toggle button */}
+      <button
+        className={isRunning ? 'mode-stop-btn' : 'lucid-start-btn'}
+        onClick={isRunning ? onStop : () => onStart(selectedHours)}
+      >
+        {isRunning ? 'Stop Session' : 'Begin Lucid Session'}
+      </button>
+
+      {!isRunning && (
+        <p className="sleep-note">
+          Use headphones. Screen can turn off — audio continues in the background.
+        </p>
       )}
     </div>
   )
