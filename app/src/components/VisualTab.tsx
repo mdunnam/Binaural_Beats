@@ -211,11 +211,19 @@ function drawSpectrum(
 export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
+  // Keep a live ref to analyser so the animation loop always uses the latest value
+  // without needing to restart the RAF loop on every session start/stop.
+  const analyserRef = useRef<AnalyserNode | null>(analyser)
   const [mode, setMode] = useState<'lissajous' | 'pulse' | 'mandala' | 'spectrum'>('lissajous')
   const [colorTheme, setColorTheme] = useState<'emerald' | 'violet' | 'gold' | 'void'>(() =>
     window.matchMedia('(prefers-color-scheme: dark)').matches ? 'void' : 'emerald'
   )
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Sync analyser ref whenever the prop changes (null ↔ AnalyserNode)
+  useEffect(() => {
+    analyserRef.current = analyser
+  }, [analyser])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -230,9 +238,12 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
       const w = canvas.offsetWidth
       const h = canvas.offsetHeight
       if (w === 0 || h === 0) return
-      canvas.width = w * window.devicePixelRatio
-      canvas.height = h * window.devicePixelRatio
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+      const dpr = window.devicePixelRatio
+      canvas.width = w * dpr
+      canvas.height = h * dpr
+      // Use setTransform instead of scale() to avoid stacking DPR transforms
+      // when ResizeObserver fires multiple times without a dimension change.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
     resize()
     // ResizeObserver fires when canvas becomes visible inside a collapsed section
@@ -245,18 +256,19 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
       frame++
       const w = canvas.offsetWidth
       const h = canvas.offsetHeight
+      const liveAnalyser = analyserRef.current
 
       let amplitude = 0
-      if (analyser) {
-        const data = new Uint8Array(analyser.fftSize)
-        analyser.getByteTimeDomainData(data)
+      if (liveAnalyser) {
+        const data = new Uint8Array(liveAnalyser.fftSize)
+        liveAnalyser.getByteTimeDomainData(data)
         amplitude = data.reduce((sum, v) => sum + Math.abs(v - 128), 0) / data.length / 128
       }
 
       if (mode === 'lissajous') drawLissajous(ctx, w, h, carrier, beat, frame, amplitude, colorTheme)
       else if (mode === 'pulse') drawPulse(ctx, w, h, beat, frame, colorTheme, canvas)
       else if (mode === 'mandala') drawMandala(ctx, w, h, carrier, beat, frame, amplitude, colorTheme)
-      else drawSpectrum(ctx, w, h, analyser, colorTheme)
+      else drawSpectrum(ctx, w, h, liveAnalyser, colorTheme)
     }
     draw()
 
@@ -264,7 +276,7 @@ export function VisualTab({ carrier, beat, isRunning, analyser }: VisualTabProps
       cancelAnimationFrame(rafRef.current)
       ro.disconnect()
     }
-  }, [mode, colorTheme, carrier, beat, analyser])
+  }, [mode, colorTheme, carrier, beat])
 
   return (
     <div className="visual-tab" style={{ position: 'relative' }}>

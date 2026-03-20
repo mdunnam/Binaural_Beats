@@ -691,6 +691,9 @@ function AppInner() {
   const musicPlayerRef = useRef<MusicPlayer | null>(null)
   const musicCtxRef = useRef<AudioContext | null>(null)
   const musicPositionTimerRef = useRef<number | null>(null)
+  // True when the current session started its own soundscape (mode sessions).
+  // stopSession uses this to clean up soundscape on stop.
+  const sessionOwnedSoundscapeRef = useRef(false)
 
   // Stable refs for use in closures
   const sessionMinutesRef = useRef(sessionMinutes)
@@ -1013,6 +1016,16 @@ function AppInner() {
       }
       stopAudioGraph(graph)
       graphRef.current = null
+      // If this session started its own soundscape (mode sessions), stop it too.
+      if (sessionOwnedSoundscapeRef.current) {
+        if (mixerNodesRef.current) {
+          stopSoundscapeMixer(mixerNodesRef.current)
+          mixerNodesRef.current = null
+        }
+        setAmbientRunning(false)
+        setSoundsceneId('off')
+        sessionOwnedSoundscapeRef.current = false
+      }
       // Master bus remains open - shared by soundscape and other sources
       // Stop music player
       if (musicPlayerRef.current) {
@@ -1184,6 +1197,7 @@ function AppInner() {
       setLayerGains(gains)
     }
     setSoundsceneId('rain')
+    sessionOwnedSoundscapeRef.current = true
 
     void toggleAudio()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1258,6 +1272,7 @@ function AppInner() {
       setLayerGains(gains)
     }
     setSoundsceneId('ocean')
+    sessionOwnedSoundscapeRef.current = true
 
     void toggleAudio()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1297,6 +1312,7 @@ function AppInner() {
         setLayerGains(gains)
       }
       setSoundsceneId(intention.soundsceneId)
+      sessionOwnedSoundscapeRef.current = true
     }
 
     void toggleAudio()
@@ -2946,7 +2962,12 @@ function AppInner() {
               onStartSleep={startSleepSession}
               onStartLucid={startLucidSession}
               onStartRitual={startRitualSession}
-              onStop={() => stopSession(false)}
+              onStop={() => {
+                stopSession(false)
+                // Mode sessions start their own soundscape — stop it on manual stop
+                stopSoundscape()
+                setSoundsceneId('off')
+              }}
             />
           )}
 
