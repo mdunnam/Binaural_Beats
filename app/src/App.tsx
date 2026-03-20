@@ -78,6 +78,7 @@ import { FocusMode, buildFocusJourney } from './components/FocusMode'
 import { LucidDreamMode, buildLucidJourney } from './components/LucidDreamMode'
 import { RitualMode } from './components/RitualMode'
 import type { RitualIntention } from './components/RitualMode'
+import { ModesTab } from './components/ModesTab'
 import {
   IconHome, IconJournal, IconLearn, IconTones, IconSoundscape, IconPad, IconMusic,
   IconStudio, IconSequencer, IconFocus, IconSparkle, IconCalendar, IconMoon, IconHelp, IconAura,
@@ -150,12 +151,9 @@ const TABS = [
   { id: 'music',     label: 'Music'     },
   { id: 'studio',    label: 'Studio'    },
   { id: 'sequencer', label: 'Sequencer' },
-  { id: 'focus',     label: 'Focus'     },
+  { id: 'modes',     label: 'Modes'     },
   { id: 'ai',        label: 'AI Guide'  },
   { id: 'program',   label: 'Program'   },
-  { id: 'sleep',     label: 'Sleep'     },
-  { id: 'lucid',    label: 'Lucid'     },
-  { id: 'ritual',   label: 'Ritual'    },
   { id: 'help',      label: 'Help'      },
   { id: 'aura',      label: 'Aura'      },
 ]
@@ -2933,36 +2931,22 @@ function AppInner() {
             </div>
           )}
 
-          {/* ──────────────── FOCUS TAB ──────────────── */}
-          {activeTab === 'focus' && (
-            <div>
-              <FocusMode
-                isRunning={isRunning}
-                remainingSeconds={remainingSeconds}
-                activeStageIndex={activeStageIndex}
-                onStart={startFocusSession}
-                onStop={() => stopSession(true)}
-              />
-              <VisualTab
-                carrier={carrier}
-                beat={beat}
-                isRunning={isRunning}
-                analyser={masterBusRef.current?.analyser ?? null}
-              />
-              <div className="tab-sections">
-                <div className="section-block">
-                  <div className="section-card">
-                    <BreathGuide isRunning={isRunning} />
-                  </div>
-                </div>
-                <div className="section-block">
-                  <div className="section-title">Frequency Verifier</div>
-                  <div className="section-card">
-                    <FrequencyVerifier />
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* ──────────────── MODES TAB ──────────────── */}
+          {activeTab === 'modes' && (
+            <ModesTab
+              isRunning={isRunning}
+              remainingSeconds={remainingSeconds}
+              sessionTotalSeconds={sessionTotalSeconds}
+              activeStageIndex={activeStageIndex}
+              carrier={carrier}
+              beat={beat}
+              analyser={masterBusRef.current?.analyser ?? null}
+              onStartFocus={startFocusSession}
+              onStartSleep={startSleepSession}
+              onStartLucid={startLucidSession}
+              onStartRitual={startRitualSession}
+              onStop={() => stopSession(true)}
+            />
           )}
 
           {/* ──────────────── STUDIO TAB ──────────────── */}
@@ -3265,36 +3249,6 @@ function AppInner() {
             />
           )}
 
-          {activeTab === 'sleep' && (
-            <SleepMode
-              isRunning={isRunning}
-              remainingSeconds={remainingSeconds}
-              sessionTotalSeconds={sessionTotalSeconds}
-              activeStageIndex={activeStageIndex}
-              onStart={startSleepSession}
-              onStop={() => stopSession(true)}
-            />
-          )}
-
-          {/* ──────────────── LUCID DREAM TAB ──────────────── */}
-          {activeTab === 'lucid' && (
-            <LucidDreamMode
-              isRunning={isRunning}
-              remainingSeconds={remainingSeconds}
-              activeStageIndex={activeStageIndex}
-              onStart={startLucidSession}
-              onStop={() => stopSession(true)}
-            />
-          )}
-
-          {/* ──────────────── RITUAL TAB ──────────────── */}
-          {activeTab === 'ritual' && (
-            <RitualMode
-              isRunning={isRunning}
-              onStart={startRitualSession}
-              onStop={() => stopSession(true)}
-            />
-          )}
         </div>
         </ErrorBoundary>
       </section>
