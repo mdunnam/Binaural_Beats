@@ -56,6 +56,33 @@
     "duration": 438,
     "kb": "9661"
   },
+  "train": {
+    "file": "train.mp3",
+    "source": "freesound.org/455045",
+    "author": "ProductionNow",
+    "license": "CC0",
+    "tags": "train, cargo, rattling, rhythmic, rumble, loop",
+    "duration": 51,
+    "kb": "1143"
+  },
+  "storm-heavy": {
+    "file": "storm-heavy.mp3",
+    "source": "freesound.org/811467",
+    "author": "designerschoice",
+    "license": "CC0",
+    "tags": "heavy rain, thunder, storm, rumbling, outdoor",
+    "duration": 355,
+    "kb": "7964"
+  },
+  "meadow": {
+    "file": "meadow.mp3",
+    "source": "freesound.org/810416",
+    "author": "bruno.auzet",
+    "license": "CC0",
+    "tags": "meadow, summer, insects, birds, breeze, france, nature",
+    "duration": 262,
+    "kb": "5909"
+  },
   "cave": {
     "file": "cave.mp4",
     "tags": "stream, river, water, water flow",
