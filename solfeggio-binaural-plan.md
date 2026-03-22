@@ -448,32 +448,34 @@ These features were built during Phase 3 but were not originally planned for thi
 
 ---
 
-### 🔲 Phase 5 — Intelligence Layer (in progress)
+### ✅ Phase 5 — Intelligence Layer (DONE)
 
-#### 5a — AI Frequency Composer ✅ (partial)
-Architecture and parsing logic built early. `journeyComposer.ts` validates and maps LLM-structured JSON to journey configs. Template-based generation works without a live LLM call. Full LLM wiring (user text prompt → GPT/Claude → structured JSON → session launch) is not yet wired end-to-end in the UI.
+#### 5a — AI Frequency Composer ✅
+Full LLM wiring complete. `generateJourney()` in `journeyComposer.ts` sends a structured prompt to GPT-4o-mini and validates/normalises the JSON response into a `Journey`. Wired into `JourneyBuilder.tsx` UI — user enters goal + duration + style, hits Generate, and the journey loads directly into the sequencer.
 
-User describes intent in plain text:
-> "Create a 30-minute creativity meditation with a slow descent"
+#### 5b — Song Import ✅
+File drag-drop + picker in MusicTab. `FileReader → ArrayBuffer → AudioContext.decodeAudioData → AudioBuffer`. Decoded buffer played via `playBuffer()` in `musicPlayer.ts` on a dedicated music bus. Imported track shows in the player with full controls.
 
-System builds:
-- Stage sequence (brainwave journey)
-- Carrier frequency selection
-- Soundscape layer selection
-- LFO parameters
-- Pad synth settings
+#### 5c — Tap Tempo + Auto BPM Detection ✅
+- **Tap Tempo:** tracks last 8 taps, averages intervals → BPM, "Sync to Beat" sets binaural beat to bpm/60 Hz.
+- **Auto BPM Detection:** `bpmDetector.ts` — windowed RMS onset strength + autocorrelation on first 90 s of imported audio, octave-folds result into 70–160 BPM. "Auto-detect" button appears when a track is imported; result feeds the same Sync to Beat flow.
 
-Implementation path:
-1. **First: template system** — map keywords to pre-built journey templates + randomized variation. No AI needed. Ships fast.
-2. **Later: LLM integration** — send prompt to GPT-4/Claude with a structured JSON schema for session parameters. Parse response into session config.
+#### 5d — Hardware Integration ⏭️ (skipped — future)
+Web Bluetooth HRM + EEG (Muse) integration. Deferred.
 
----
+#### 5e — Content Platform ⏭️ (skipped — future)
+Community journey marketplace. Deferred.
 
-#### 5f — AI Guided Meditation (Flagship AI Feature) ✅ (partial)
-
-**What's built:** `AiMeditationPanel.tsx` scaffolded with prompt input UI, API key management (`ApiKeySettings.tsx`), session launch plumbing, and `meditationComposer.ts` / `meditationThemes.ts` for theme-to-config mapping. Voice bus architecture is production-ready (`voiceBus.ts`). `savedSessions.ts` handles AI session persistence.
-
-**Remaining:** live LLM call (GPT/Claude) for script generation, TTS rendering via OpenAI TTS / ElevenLabs, audio chunk assembly + streaming, loading UX, and post-session journal prompt.
+#### 5f — AI Guided Meditation (Flagship AI Feature) ✅
+**Fully complete.** End-to-end pipeline:
+1. User enters prompt + duration/voice/intensity options in `AiMeditationPanel.tsx`
+2. `meditationComposer.ts` calls GPT-4o-mini to generate a guided script (with `[PAUSE Xs]` markers), then streams each chunk through OpenAI `tts-1-hd` at 0.75× speed
+3. Audio chunks concatenated into a single WAV blob via `concatenateAudioBlobs()`
+4. Session config applied (carrier, beat, noise, pad) and voice loaded into `voiceBus.ts` (convolver reverb, 10 s delayed start)
+5. Session starts automatically; voice plays over binaural + soundscape
+6. Sessions saved to IndexedDB via `savedSessions.ts` with full metadata and audio blob
+- API key management via `ApiKeySettings.tsx` (localStorage, never sent except to OpenAI)
+- AI usage tracked per-feature via `trackAiUsage.ts`
 
 ---
 

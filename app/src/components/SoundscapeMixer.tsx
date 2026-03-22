@@ -1,12 +1,15 @@
 import { useRef, useState, useEffect } from 'react'
-import { SOUND_LAYERS, SOUNDSCAPE_SCENES } from '../engine/soundscapeMixer'
-import type { LayerGains, SoundLayerId } from '../engine/soundscapeMixer'
-import { DEFAULT_GAINS } from '../engine/soundscapeMixer'
+import { SOUND_LAYERS, SOUNDSCAPE_SCENES, SPATIAL_PANS } from '../engine/soundscapeMixer'
+import type { LayerGains, LayerPans, SoundLayerId } from '../engine/soundscapeMixer'
+import { DEFAULT_GAINS, DEFAULT_PANS } from '../engine/soundscapeMixer'
 import { IconSparkle } from './Icons'
+
 
 interface SoundscapeMixerProps {
   gains: LayerGains
   onChange: (gains: LayerGains) => void
+  pans?: LayerPans
+  onPansChange?: (pans: LayerPans) => void
   disabled?: boolean
   activeSceneId?: string
   onSceneChange?: (sceneId: string) => void
@@ -16,12 +19,16 @@ interface SoundscapeMixerProps {
 export function SoundscapeMixer({
   gains,
   onChange,
+  pans,
+  onPansChange,
   disabled,
   activeSceneId,
   onSceneChange,
   crossfadeDuration = 3000,
 }: SoundscapeMixerProps) {
   const [isAnimating, setIsAnimating] = useState(false)
+  const [isSpatial, setIsSpatial] = useState(false)
+  const [localPans, setLocalPans] = useState<LayerPans>(pans ?? { ...DEFAULT_PANS })
   // Local gains state for instant slider response — synced from parent on scene changes
   const [localGains, setLocalGains] = useState<LayerGains>(gains)
   const lastSceneRef = useRef<string | undefined>(activeSceneId)
@@ -152,6 +159,27 @@ export function SoundscapeMixer({
     onSceneChange?.('custom')
   }
 
+  const handlePanSlider = (id: SoundLayerId, value: number) => {
+    const newPans = { ...localPans, [id]: value }
+    setLocalPans(newPans)
+    onPansChange?.(newPans)
+    setIsSpatial(false)
+  }
+
+  const toggleSpatial = () => {
+    if (isSpatial) {
+      // Reset all pans to center
+      const flat = { ...DEFAULT_PANS }
+      setLocalPans(flat)
+      onPansChange?.(flat)
+      setIsSpatial(false)
+    } else {
+      setLocalPans({ ...SPATIAL_PANS })
+      onPansChange?.({ ...SPATIAL_PANS })
+      setIsSpatial(true)
+    }
+  }
+
   return (
     <div className="soundscape-mixer">
       <div className="soundscape-scenes">
@@ -175,6 +203,15 @@ export function SoundscapeMixer({
         >
           {isAnimating ? '■ Stop' : <><IconSparkle size={13} /> Animate</>}
         </button>
+        <button
+          type="button"
+          className={`soundscape-scene-btn soundscape-spatial-btn${isSpatial ? ' soundscape-spatial-btn--active' : ''}`}
+          onClick={toggleSpatial}
+          disabled={disabled}
+          title={isSpatial ? 'Reset all layers to center' : 'Apply spatial positioning — each layer placed in 3D stereo field'}
+        >
+          {isSpatial ? '⊙ Spatial' : '⊙ Spatial'}
+        </button>
       </div>
 
       {SOUND_LAYERS.map(layer => (
@@ -192,6 +229,21 @@ export function SoundscapeMixer({
             onChange={e => handleSlider(layer.id, Number(e.target.value))}
           />
           <span className="soundscape-layer-pct">{Math.round(localGains[layer.id] * 100)}%</span>
+          <div className="soundscape-layer-pan-wrap">
+            <span className="soundscape-pan-label">L</span>
+            <input
+              type="range"
+              className="soundscape-layer-pan"
+              min={-1}
+              max={1}
+              step={0.05}
+              value={localPans[layer.id]}
+              disabled={disabled}
+              onChange={e => handlePanSlider(layer.id, Number(e.target.value))}
+              aria-label={`${layer.label} pan`}
+            />
+            <span className="soundscape-pan-label">R</span>
+          </div>
         </div>
       ))}
     </div>

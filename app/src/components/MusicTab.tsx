@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react'
 import type { MusicTrack, MusicEQBands } from '../engine/musicPlayer'
 import { DEFAULT_EQ } from '../engine/musicPlayer'
+import { detectBpm } from '../engine/bpmDetector'
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60)
@@ -11,6 +13,9 @@ function formatEQValue(val: number): string {
   if (val === 0) return '0 dB'
   return `${val > 0 ? '+' : ''}${val.toFixed(1)} dB`
 }
+
+const MAX_TAPS = 8
+const TAP_RESET_MS = 3000  // reset tap history if gap > 3 s
 
 export type MusicTabProps = {
   tracks: MusicTrack[]
@@ -29,6 +34,14 @@ export type MusicTabProps = {
   position: number
   duration: number
   onSeek: (seconds: number) => void
+  // Song Import
+  importedTrack: MusicTrack | null
+  importedBuffer: AudioBuffer | null
+  onImportFile: (file: File) => void
+  onPlayImported: () => void
+  onClearImported: () => void
+  // Tap Tempo
+  onSyncBpm: (bpm: number) => void
 }
 
 export function MusicTab({
@@ -48,14 +61,21 @@ export function MusicTab({
   position,
   duration,
   onSeek,
+  importedTrack,
+  importedBuffer,
+  onImportFile,
+  onPlayImported,
+  onClearImported,
+  onSyncBpm,
 }: MusicTabProps) {
-  const currentTrack = tracks.find(t => t.id === currentTrackId) ?? null
+  const currentTrack = [...tracks, ...(importedTrack ? [importedTrack] : [])].find(t => t.id === currentTrackId) ?? null
 
   const handlePlayPause = () => {
     if (isPlaying) {
       onStop()
     } else if (currentTrack) {
-      onPlay(currentTrack)
+      if (currentTrack.id === 'imported') onPlayImported()
+      else onPlay(currentTrack)
     } else if (tracks.length > 0) {
       onPlay(tracks[0])
     }
@@ -69,8 +89,100 @@ export function MusicTab({
     { key: 'air',      label: 'Air' },
   ]
 
+  // ── Song Import ─────────────────────────────────────────────────────────────
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const file = files[0]
+    if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|flac|aac|m4a|opus)$/i)) return
+    onImportFile(file)
+  }
+
+  // ── Tap Tempo ────────────────────────────────────────────────────────────────
+  const [tapTimes, setTapTimes] = useState<number[]>([])
+  const tapBpm = (() => {
+    if (tapTimes.length < 2) return null
+    const intervals: number[] = []
+    for (let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i] - tapTimes[i - 1])
+    const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length
+    return Math.round(60000 / avgMs)
+  })()
+
+  const handleTap = () => {
+    const now = Date.now()
+    setTapTimes(prev => {
+      const filtered = prev.filter(t => now - t < TAP_RESET_MS)
+      return [...filtered, now].slice(-MAX_TAPS)
+    })
+  }
+
+  const handleTapReset = () => setTapTimes([])
+
+  // ── Auto BPM Detection ───────────────────────────────────────────────────────
+  const [detectedBpm, setDetectedBpm] = useState<number | null>(null)
+  const [detecting, setDetecting] = useState(false)
+
+  const handleAutoDetect = () => {
+    if (!importedBuffer || detecting) return
+    setDetecting(true)
+    setDetectedBpm(null)
+    // Run in a microtask so the loading state renders first
+    setTimeout(() => {
+      const bpm = detectBpm(importedBuffer)
+      setDetectedBpm(bpm)
+      setDetecting(false)
+    }, 0)
+  }
+
+  // Active BPM — prefer tap (more recent user intent) over auto-detected
+  const activeBpm = tapBpm ?? detectedBpm
+
   return (
     <div className="music-tab">
+
+      {/* ── Song Import ─────────────────────────────────────────────────────── */}
+      <div className="music-import-section">
+        <div className="music-import-header">
+          <span className="music-eq-title">Import Track</span>
+          {importedTrack && (
+            <button className="music-eq-reset" onClick={onClearImported}>Clear</button>
+          )}
+        </div>
+        {importedTrack ? (
+          <div className="music-import-loaded">
+            <span className="music-import-loaded-name">♪ {importedTrack.title}</span>
+            <span className="music-import-loaded-dur">{formatDuration(importedTrack.duration)}</span>
+            <button
+              className={`music-ctrl-btn music-ctrl-btn--play music-import-play-btn${currentTrackId === 'imported' && isPlaying ? ' music-ctrl-btn--active' : ''}`}
+              onClick={() => { if (currentTrackId === 'imported' && isPlaying) onStop(); else onPlayImported() }}
+            >
+              {currentTrackId === 'imported' && isPlaying ? '■' : '▶'}
+            </button>
+          </div>
+        ) : (
+          <div
+            className={`music-import-drop${dragOver ? ' music-import-drop--over' : ''}`}
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files) }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <span className="music-import-drop-icon">⊕</span>
+            <span className="music-import-drop-text">Drop audio file or click to browse</span>
+            <span className="music-import-drop-hint">MP3, WAV, OGG, FLAC, AAC</span>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a,.opus"
+          style={{ display: 'none' }}
+          onChange={e => handleFiles(e.target.files)}
+        />
+      </div>
+
       {/* Now Playing */}
       <div className="music-now-playing">
         <div className="music-now-playing-label">Now Playing</div>
@@ -98,7 +210,7 @@ export function MusicTab({
           onChange={e => onSeek(Number(e.target.value))}
           className="music-seek-slider"
           aria-label="Seek"
-          disabled={duration === 0}
+          disabled={duration === 0 || currentTrackId === 'imported'}
         />
         <span className="music-seek-time">{formatDuration(duration)}</span>
       </div>
@@ -164,6 +276,60 @@ export function MusicTab({
             <span className="music-eq-value">{formatEQValue(eq[key])}</span>
           </div>
         ))}
+      </div>
+
+      {/* ── Tap Tempo / Auto BPM ──────────────────────────────────────────────── */}
+      <div className="music-tap-section">
+        <div className="music-eq-header">
+          <span className="music-eq-title">BPM</span>
+          {tapTimes.length > 0 && (
+            <button className="music-eq-reset" onClick={() => { handleTapReset(); setDetectedBpm(null) }}>Reset</button>
+          )}
+        </div>
+        <div className="music-tap-row">
+          <button className="music-tap-btn" onClick={handleTap} aria-label="Tap tempo">
+            Tap
+          </button>
+          {importedBuffer && (
+            <button
+              className={`music-auto-detect-btn${detecting ? ' music-auto-detect-btn--loading' : ''}`}
+              onClick={handleAutoDetect}
+              disabled={detecting}
+              title="Auto-detect BPM from imported track"
+            >
+              {detecting ? 'Detecting…' : 'Auto-detect'}
+            </button>
+          )}
+          <div className="music-tap-bpm">
+            {activeBpm !== null ? (
+              <>
+                <span className="music-tap-bpm-value">{activeBpm}</span>
+                <span className="music-tap-bpm-label">BPM</span>
+                {tapBpm === null && detectedBpm !== null && (
+                  <span className="music-tap-bpm-source"> auto</span>
+                )}
+              </>
+            ) : (
+              <span className="music-tap-bpm-idle">
+                {tapTimes.length === 1 ? 'Keep tapping…' : 'Tap or auto-detect'}
+              </span>
+            )}
+          </div>
+          {activeBpm !== null && (
+            <button
+              className="soft-button music-tap-sync-btn"
+              onClick={() => onSyncBpm(activeBpm)}
+              title="Sync binaural beat frequency to BPM"
+            >
+              Sync to Beat
+            </button>
+          )}
+        </div>
+        {activeBpm !== null && (
+          <p className="music-tap-hint">
+            Beat will be set to {(activeBpm / 60).toFixed(2)} Hz (1 cycle per music beat)
+          </p>
+        )}
       </div>
 
       {/* Track List */}

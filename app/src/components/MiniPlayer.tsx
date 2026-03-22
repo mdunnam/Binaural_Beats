@@ -7,6 +7,8 @@ import { IconWave, IconEye } from './Icons'
 // ---------------------------------------------------------------------------
 interface MiniPlayerProps {
   isRunning: boolean
+  isAnyPlaying: boolean
+  musicPlaying: boolean
   ambientRunning: boolean
   carrier: number
   beat: number
@@ -55,7 +57,7 @@ function formatTimer(seconds: number): string {
 export function MiniPlayer(props: MiniPlayerProps) {
   const {
     isExpanded, onToggleExpand, onOpenVisual,
-    isRunning, ambientRunning, carrier, beat, remainingSeconds, volume, setVolume, onToggle,
+    isRunning, isAnyPlaying, musicPlaying, ambientRunning, carrier, beat, remainingSeconds, volume, setVolume, onToggle,
     sessionTotalSeconds, soundsceneId,
     binauralVolume, setBinauralVolume,
     noiseVolume, setNoiseVolume,
@@ -107,7 +109,7 @@ export function MiniPlayer(props: MiniPlayerProps) {
       {/* Audio visualizer strip — always rendered above controls */}
       <AudioVisualizer
         analyser={analyserNode}
-        isRunning={isRunning}
+        isRunning={isAnyPlaying}
         ambientRunning={ambientRunning}
         beat={beat}
         carrier={carrier}
@@ -117,9 +119,21 @@ export function MiniPlayer(props: MiniPlayerProps) {
       {/* Bar always at bottom */}
       <div className="mini-player-bar">
         <div className="mini-player-info">
-          {ambientRunning && !isRunning && !padStandaloneActive ? (
+          {isRunning ? (
+            <>
+              <span className="mini-player-hz">{carrier.toFixed(0)} Hz</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-hz">{beat.toFixed(1)} Hz</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-state">{brainwaveLabel}</span>
+              <span className="mini-player-sep">·</span>
+              <span className="mini-player-timer">{timerDisplay}</span>
+            </>
+          ) : musicPlaying ? (
+            <span className="mini-player-hz">♪ Music</span>
+          ) : ambientRunning && !padStandaloneActive ? (
             <span className="mini-player-hz"><IconWave size={14} /> Ambient</span>
-          ) : padStandaloneActive && !isRunning ? (
+          ) : padStandaloneActive ? (
             <>
               <span className="mini-player-hz">{padStandaloneHz} Hz</span>
               <span className="mini-player-sep">·</span>
@@ -132,19 +146,17 @@ export function MiniPlayer(props: MiniPlayerProps) {
               <span className="mini-player-hz">{beat.toFixed(1)} Hz</span>
               <span className="mini-player-sep">·</span>
               <span className="mini-player-state">{brainwaveLabel}</span>
-              <span className="mini-player-sep">·</span>
-              <span className="mini-player-timer">{timerDisplay}</span>
             </>
           )}
         </div>
 
         <button
-          className={`mini-player-play-btn${isRunning ? ' mini-player-play-btn--active' : ''}`}
+          className={`mini-player-play-btn${isAnyPlaying ? ' mini-player-play-btn--active' : ''}`}
           onClick={onToggle}
-          title={isRunning ? 'Stop Session' : 'Start Session'}
-          aria-label={isRunning ? 'Stop Session' : 'Start Session'}
+          title={isAnyPlaying ? 'Stop All' : 'Start Session'}
+          aria-label={isAnyPlaying ? 'Stop All' : 'Start Session'}
         >
-          {isRunning ? '■' : '▶'}
+          {isAnyPlaying ? '■' : '▶'}
         </button>
 
         <div className="mini-player-vol-wrap" title="Master Volume">

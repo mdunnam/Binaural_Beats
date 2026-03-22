@@ -5,7 +5,8 @@ export type MasterBus = {
   binauralBus: GainNode    // binaural oscillators connect here
   soundscapeBus: GainNode  // soundscape connects here
   voiceBus: GainNode       // voice connects here
-  musicBus: GainNode       // future music connects here
+  musicBus: GainNode       // music player connects here
+  padBus: GainNode         // pad synth connects here
   analyser: AnalyserNode   // post-limiter analyser for VU meter
   // Mid/side stereo width matrix (between masterGain and limiter)
   widthLL: GainNode  // L_out ← L_in  coefficient: (1+w)/2
@@ -40,6 +41,9 @@ export function createMasterBus(initialVolume: number, existingContext?: AudioCo
   const musicBus = context.createGain()
   musicBus.gain.value = 1
 
+  const padBus = context.createGain()
+  padBus.gain.value = 1
+
   // Mid/side stereo width matrix — inserted between masterGain and limiter.
   // L_out = ((1+w)/2)*L + ((1-w)/2)*R
   // R_out = ((1-w)/2)*L + ((1+w)/2)*R
@@ -57,6 +61,7 @@ export function createMasterBus(initialVolume: number, existingContext?: AudioCo
   soundscapeBus.connect(masterGain)
   voiceBus.connect(masterGain)
   musicBus.connect(masterGain)
+  padBus.connect(masterGain)
   masterGain.connect(splitter)
 
   // Splitter ch0 (L) feeds widthLL and widthLR gain nodes
@@ -81,7 +86,7 @@ export function createMasterBus(initialVolume: number, existingContext?: AudioCo
   // analyser does NOT connect to destination — read-only tap for VU meter
   limiter.connect(context.destination)
 
-  return { context, masterGain, limiter, binauralBus, soundscapeBus, voiceBus, musicBus, analyser, widthLL, widthRL, widthLR, widthRR }
+  return { context, masterGain, limiter, binauralBus, soundscapeBus, voiceBus, musicBus, padBus, analyser, widthLL, widthRL, widthLR, widthRR }
 }
 
 export function setMasterVolume(bus: MasterBus, volume: number): void {

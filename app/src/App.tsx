@@ -28,8 +28,8 @@ import { AutomationEditor } from './components/AutomationEditor'
 import { MoodEQ, defaultMoodSliders, defaultAntiSliders } from './components/MoodEQ'
 import type { MoodSliders, AntiMoodSliders } from './components/MoodEQ'
 import { SoundscapeMixer } from './components/SoundscapeMixer'
-import type { LayerGains, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
-import { DEFAULT_GAINS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain } from './engine/soundscapeMixer'
+import type { LayerGains, LayerPans, SoundscapeMixerNodes, SoundLayerId } from './engine/soundscapeMixer'
+import { DEFAULT_GAINS, DEFAULT_PANS, SOUND_LAYERS, SOUNDSCAPE_SCENES, createSoundscapeMixer, stopSoundscapeMixer, updateLayerGain, updateLayerPan, applyAllPans } from './engine/soundscapeMixer'
 import { SessionJournal } from './components/SessionJournal'
 import { useJournal } from './hooks/useJournal'
 import { AiMeditationPanel } from './components/AiMeditationPanel'
@@ -57,7 +57,7 @@ import { SequencerTab } from './components/SequencerTab'
 import { PadSynth } from './components/PadSynth'
 import type { StudioLayer, StudioScene } from './types'
 import type { MusicPlayer, MusicTrack, MusicEQBands } from './engine/musicPlayer'
-import { MUSIC_TRACKS, createMusicPlayer, playTrack, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
+import { MUSIC_TRACKS, createMusicPlayer, playTrack, playBuffer, stopMusicPlayer, setMusicVolume as setMusicPlayerVolume, setMusicEQ as setMusicEQ_engine, getMusicPosition, seekMusicTo, DEFAULT_EQ } from './engine/musicPlayer'
 import { BreathGuide } from './components/BreathGuide'
 import { FrequencyVerifier } from './components/FrequencyVerifier'
 import { SessionLibrary } from './components/SessionLibrary'
@@ -509,6 +509,7 @@ function AppInner() {
 
   // Soundscape mixer
   const [layerGains, setLayerGains] = useState<LayerGains>({ ...DEFAULT_GAINS })
+  const [layerPans, setLayerPans] = useState<LayerPans>({ ...DEFAULT_PANS })
   const [soundsceneId, setSoundsceneId] = useState<string>('off')
   const mixerNodesRef = useRef<SoundscapeMixerNodes | null>(null)
 
@@ -692,6 +693,12 @@ function AppInner() {
   const musicPlayerRef = useRef<MusicPlayer | null>(null)
   const musicCtxRef = useRef<AudioContext | null>(null)
   const musicPositionTimerRef = useRef<number | null>(null)
+  const [importedBuffer, setImportedBuffer] = useState<AudioBuffer | null>(null)
+  const [importedTrackMeta, setImportedTrackMeta] = useState<MusicTrack | null>(null)
+  // Global transport
+  const [padForceStop, setPadForceStop] = useState(0)
+  // True when an exclusive session (Modes/Sequencer/Studio) owns the transport
+  const isExclusiveSessionRef = useRef(false)
   // True when the current session started its own soundscape (mode sessions).
   // stopSession uses this to clean up soundscape on stop.
   const sessionOwnedSoundscapeRef = useRef(false)
@@ -772,6 +779,7 @@ function AppInner() {
   // Music player helpers
   // ---------------------------------------------------------------------------
   const playMusicTrack = useCallback(async (track: MusicTrack): Promise<void> => {
+    stopExclusiveIfRunning()
     // Determine AudioContext and destination
     let ctx: AudioContext
     let dest: AudioNode
@@ -829,6 +837,15 @@ function AppInner() {
     setMusicPosition(0)
   }, [])
 
+  // Stop everything — music, tones, ambient, pad
+  const stopAll = useCallback((): void => {
+    if (graphRef.current) stopSession(false)
+    stopMusic()
+    stopSoundscape()
+    setPadForceStop(n => n + 1)
+    isExclusiveSessionRef.current = false
+  }, [stopMusic]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const nextTrackRef = useRef<(() => void) | null>(null)
 
   const nextTrack = useCallback((): void => {
@@ -879,6 +896,72 @@ function AppInner() {
       if (musicPlayerRef.current) setMusicPosition(getMusicPosition(musicPlayerRef.current))
     }, 250)
   }
+
+  // ---------------------------------------------------------------------------
+  // Song Import
+  // ---------------------------------------------------------------------------
+  const handleImportFile = useCallback(async (file: File): Promise<void> => {
+    const arrayBuffer = await file.arrayBuffer()
+    let ctx: AudioContext
+    if (masterBusRef.current) {
+      ctx = masterBusRef.current.context
+    } else {
+      if (!musicCtxRef.current || musicCtxRef.current.state === 'closed') {
+        musicCtxRef.current = new AudioContext()
+      }
+      ctx = musicCtxRef.current
+    }
+    if (ctx.state === 'suspended') await ctx.resume()
+    const buffer = await ctx.decodeAudioData(arrayBuffer)
+    setImportedBuffer(buffer)
+    const title = file.name.replace(/\.[^/.]+$/, '')
+    setImportedTrackMeta({ id: 'imported', title, artist: 'Imported', file: '', duration: Math.round(buffer.duration) })
+  }, [])
+
+  const handlePlayImported = useCallback(async (): Promise<void> => {
+    if (!importedBuffer || !importedTrackMeta) return
+    stopExclusiveIfRunning()
+    let ctx: AudioContext
+    let dest: AudioNode
+    if (masterBusRef.current) {
+      ctx = masterBusRef.current.context
+      dest = masterBusRef.current.musicBus
+    } else {
+      if (!musicCtxRef.current || musicCtxRef.current.state === 'closed') {
+        musicCtxRef.current = new AudioContext()
+      }
+      ctx = musicCtxRef.current
+      dest = ctx.destination
+    }
+    if (ctx.state === 'suspended') await ctx.resume()
+    if (!musicPlayerRef.current || musicPlayerRef.current.context !== ctx) {
+      musicPlayerRef.current = await createMusicPlayer(dest, ctx, musicVolume)
+    }
+    const player = musicPlayerRef.current
+    playBuffer(player, importedBuffer, 'imported', () => {
+      setMusicPlaying(false)
+      setMusicTrackId(null)
+    })
+    setMusicTrackId('imported')
+    setMusicPlaying(true)
+    if (musicPositionTimerRef.current !== null) window.clearInterval(musicPositionTimerRef.current)
+    musicPositionTimerRef.current = window.setInterval(() => {
+      if (musicPlayerRef.current) setMusicPosition(getMusicPosition(musicPlayerRef.current))
+    }, 250)
+  }, [importedBuffer, importedTrackMeta, musicVolume])
+
+  const handleClearImported = useCallback((): void => {
+    if (musicTrackId === 'imported') stopMusic()
+    setImportedBuffer(null)
+    setImportedTrackMeta(null)
+  }, [musicTrackId, stopMusic])
+
+  const handleSyncBpm = useCallback((bpm: number): void => {
+    // Map BPM to binaural beat frequency: 1 beat cycle per music beat
+    const hz = Math.min(40, Math.max(0.5, bpm / 60))
+    setBeat(Math.round(hz * 100) / 100)
+    beatRef.current = Math.round(hz * 100) / 100
+  }, [])
 
   // ---------------------------------------------------------------------------
   // Onboarding handlers
@@ -1035,6 +1118,7 @@ function AppInner() {
         setSoundsceneId('off')
         sessionOwnedSoundscapeRef.current = false
       }
+      isExclusiveSessionRef.current = false
       // Master bus remains open - shared by soundscape and other sources
       // Stop music player
       if (musicPlayerRef.current) {
@@ -1167,9 +1251,31 @@ function AppInner() {
   }, [stopSession])
 
   // ---------------------------------------------------------------------------
+  // Transport helpers
+  // ---------------------------------------------------------------------------
+  // Called before an exclusive session (Modes/Sequencer/Studio) takes over:
+  // stops Music and Pad so they don't bleed under the session.
+  // Ambient/soundscape is NOT stopped here — the mode sessions start their own.
+  const stopLayerablesForExclusive = useCallback((): void => {
+    stopMusic()
+    setPadForceStop(n => n + 1)
+    isExclusiveSessionRef.current = true
+  }, [stopMusic])
+
+  // Called when a layerable source (Tones tab, Music, Ambient, Pad) starts:
+  // if an exclusive session is running, stop it first.
+  const stopExclusiveIfRunning = useCallback((): void => {
+    if (!isExclusiveSessionRef.current) return
+    if (graphRef.current) stopSession(false)
+    stopSoundscape()
+    isExclusiveSessionRef.current = false
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
   // Sleep Mode
   // ---------------------------------------------------------------------------
   const startSleepSession = useCallback((hours: number) => {
+    stopLayerablesForExclusive()
     const sleepJourney = buildSleepJourney(hours)
     // Set refs directly — don't wait for useEffect to sync
     journeyRef.current = sleepJourney
@@ -1215,6 +1321,7 @@ function AppInner() {
   // Focus Mode
   // ---------------------------------------------------------------------------
   const startFocusSession = useCallback((minutes: number) => {
+    stopLayerablesForExclusive()
     const focusJourney = buildFocusJourney(minutes)
     journeyRef.current = focusJourney
     setJourney(focusJourney)
@@ -1247,6 +1354,7 @@ function AppInner() {
   // Lucid Dream Mode
   // ---------------------------------------------------------------------------
   const startLucidSession = useCallback((hours: number) => {
+    stopLayerablesForExclusive()
     const lucidJourney = buildLucidJourney(hours)
     journeyRef.current = lucidJourney
     setJourney(lucidJourney)
@@ -1290,6 +1398,7 @@ function AppInner() {
   // Ritual Mode
   // ---------------------------------------------------------------------------
   const startRitualSession = useCallback((intention: RitualIntention) => {
+    stopLayerablesForExclusive()
     journeyRef.current = null
     setJourney(null)
 
@@ -1339,6 +1448,7 @@ function AppInner() {
 
   const toggleAudio = async (): Promise<void> => {
     if (graphRef.current) { stopSession(false); return }
+    stopExclusiveIfRunning()
     if (audioStartingRef.current) return
     audioStartingRef.current = true
     clearSessionTimers()
@@ -1401,6 +1511,7 @@ function AppInner() {
     // 3. Create soundscape player if not already running (shares persistent bus)
     if (!mixerNodesRef.current) {
       const mixerNodes = createSoundscapeMixer(bus.context, bus.soundscapeBus, layerGainsRef.current)
+      applyAllPans(mixerNodes, layerPans)
       mixerNodesRef.current = mixerNodes
     }
 
@@ -1528,6 +1639,7 @@ function AppInner() {
       }
       const bus = await getOrCreateMasterBus()
       const mixer = createSoundscapeMixer(bus.context, bus.soundscapeBus, gains)
+      applyAllPans(mixer, layerPans)
       mixerNodesRef.current = mixer
       setAmbientRunning(true)
     } catch (err) {
@@ -1545,6 +1657,7 @@ function AppInner() {
   // Start ambient with specific gains - bypasses stale closure issue when
   // scene is selected and audio needs to start in the same interaction
   const startAmbientWithGains = async (gains: LayerGains): Promise<void> => {
+    stopExclusiveIfRunning()
     await startSoundscape(gains)
   }
 
@@ -2861,7 +2974,16 @@ function AppInner() {
                 <div className="section-card">
                   <SoundscapeMixer
                     gains={layerGains}
+                    pans={layerPans}
                     activeSceneId={soundsceneId}
+                    onPansChange={(pans) => {
+                      setLayerPans(pans)
+                      if (mixerNodesRef.current) {
+                        Object.entries(pans).forEach(([id, val]) =>
+                          updateLayerPan(mixerNodesRef.current!, id as SoundLayerId, val as number)
+                        )
+                      }
+                    }}
                     onChange={(gains) => {
                       setLayerGains(gains)
                       layerGainsRef.current = gains
@@ -2954,19 +3076,24 @@ function AppInner() {
           )}
 
           {/* ──────────────── PAD SYNTH TAB ──────────────── */}
-          {activeTab === 'pad' && (
+          {/* Keep mounted (display:none) so AudioContext survives tab switches */}
+          <div style={{ display: activeTab === 'pad' ? undefined : 'none' }}>
             <div className="tab-sections">
               <PadSynth
-                onPlay={() => { /* pad manages its own AudioContext */ }}
+                onBeforePlay={() => { stopExclusiveIfRunning() }}
                 onStop={() => { /* no-op: pad manages its own teardown */ }}
                 onStateChange={(playing, hz, chord) => {
                   setPadStandaloneActive(playing)
                   setPadStandaloneHz(hz)
                   setPadStandaloneChord(chord)
                 }}
+                forceStop={padForceStop}
+                sharedContext={masterBusRef.current?.context}
+                sharedDestination={masterBusRef.current?.padBus}
+                carrier={carrier}
               />
             </div>
-          )}
+          </div>
 
           {/* ──────────────── MODES TAB ──────────────── */}
           {activeTab === 'modes' && (
@@ -3011,6 +3138,7 @@ function AppInner() {
               }}
               onOpenUpgrade={() => openUpgradeModal('Sessions > 15 minutes')}
               onPreview={(studioLayers) => {
+                stopLayerablesForExclusive()
                 if (graphRef.current) stopSession(false)
                 // Create AudioContext synchronously inside the user gesture
                 if (prewarmedContextRef.current) { void prewarmedContextRef.current.close() }
@@ -3235,6 +3363,7 @@ function AppInner() {
                 }
               }}
               onStartSequence={(_stages) => {
+                stopLayerablesForExclusive()
                 if (graphRef.current) stopSession(false)
                 if (prewarmedContextRef.current) { void prewarmedContextRef.current.close() }
                 prewarmedContextRef.current = new AudioContext()
@@ -3286,8 +3415,14 @@ function AppInner() {
               eq={musicEQ}
               onSetEQ={setMusicEQ}
               position={musicPosition}
-              duration={MUSIC_TRACKS.find(t => t.id === musicTrackId)?.duration ?? 0}
+              duration={musicTrackId === 'imported' ? (importedTrackMeta?.duration ?? 0) : (MUSIC_TRACKS.find(t => t.id === musicTrackId)?.duration ?? 0)}
               onSeek={(s) => void handleMusicSeek(s)}
+              importedTrack={importedTrackMeta}
+              importedBuffer={importedBuffer}
+              onImportFile={(f) => void handleImportFile(f)}
+              onPlayImported={() => void handlePlayImported()}
+              onClearImported={handleClearImported}
+              onSyncBpm={handleSyncBpm}
             />
           )}
 
@@ -3374,6 +3509,8 @@ function AppInner() {
       {/* ── Persistent Mini Player Bar - inside main for iOS gesture trust ── */}
       <MiniPlayer
         isRunning={isRunning}
+        isAnyPlaying={isRunning || musicPlaying || ambientRunning || padStandaloneActive}
+        musicPlaying={musicPlaying}
         ambientRunning={ambientRunning}
         carrier={carrier}
         beat={beat}
@@ -3395,7 +3532,11 @@ function AppInner() {
       setVoiceReverb={setVoiceReverb}
       analyserNode={masterBusRef.current?.analyser ?? null}
       voiceObjectUrl={pendingAiObjectUrlRef.current}
-      onToggle={() => void toggleAudio()}
+      onToggle={() => {
+        const anyPlaying = isRunning || musicPlaying || ambientRunning || padStandaloneActive
+        if (anyPlaying) stopAll()
+        else void toggleAudio()
+      }}
       setCarrier={setCarrier}
       setBeat={setBeat}
       setWobbleRate={setWobbleRate}

@@ -243,6 +243,42 @@ export function stopMusicPlayer(player: MusicPlayer, fadeTime = 0.3): void {
   }
 }
 
+export function playBuffer(
+  player: MusicPlayer,
+  buffer: AudioBuffer,
+  trackId: string,
+  onEnded?: () => void,
+): void {
+  // Stop existing source
+  if (player.source) {
+    player.source.onended = null
+    try { player.source.stop() } catch { /* ignore */ }
+    try { player.source.disconnect() } catch { /* ignore */ }
+    player.source = null
+  }
+
+  const source = player.context.createBufferSource()
+  source.buffer = buffer
+  source.loop = false
+  source.connect(player.gainNode)
+
+  player.source = source
+  player.currentTrackId = trackId
+  player.audioBuffer = buffer
+  player.startedAt = player.context.currentTime
+  player.offsetAt = 0
+
+  source.onended = () => {
+    if (player.source === source) {
+      player.source = null
+      player.currentTrackId = null
+    }
+    onEnded?.()
+  }
+
+  source.start(0)
+}
+
 export function setMusicVolume(player: MusicPlayer, volume: number): void {
   const now = player.context.currentTime
   player.gainNode.gain.cancelScheduledValues(now)

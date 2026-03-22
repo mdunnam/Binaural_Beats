@@ -1437,6 +1437,15 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
 .soundscape-layer-label { font-size: 0.8rem; color: var(--text-label); width: 3.5rem; flex-shrink: 0; }
 .soundscape-layer-slider { flex: 1; min-width: 0; }
 .soundscape-layer-pct { font-size: 0.75rem; color: var(--text-muted); width: 2.5rem; text-align: right; flex-shrink: 0; }
+.soundscape-layer-pan-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.soundscape-pan-label { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); flex-shrink: 0; line-height: 1; user-select: none; }
+.soundscape-layer-pan { flex: 0 0 4rem; width: 4rem; max-width: 4rem; cursor: pointer; accent-color: var(--accent, #4eb88a); }
+.soundscape-layer-pan::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--border-section, rgba(255,255,255,0.15)); }
+.soundscape-layer-pan::-moz-range-track { height: 3px; border-radius: 2px; background: var(--border-section, rgba(255,255,255,0.15)); }
+.soundscape-layer-pan::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent, #4eb88a); cursor: pointer; margin-top: -4.5px; }
+.soundscape-layer-pan::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent, #4eb88a); cursor: pointer; border: none; }
+.soundscape-spatial-btn { border-color: var(--accent-hover, #3a9e76) !important; color: var(--accent-hover, #3a9e76) !important; }
+.soundscape-spatial-btn--active { background: linear-gradient(90deg, var(--accent-hover, #3a9e76), var(--accent, #4eb88a)) !important; color: #fff !important; border-color: transparent !important; }
 
 @media (max-width: 599px) {
   .soundscape-layer-label { display: none; }
@@ -3264,6 +3273,191 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   white-space: nowrap;
 }
 
+/* ── Music Import ── */
+.music-import-section {
+  background: var(--bg-section, #f5faf7);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.music-import-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.music-import-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 1rem 0.75rem;
+  border: 1.5px dashed var(--border, rgba(78,184,138,0.3));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+
+.music-import-drop:hover,
+.music-import-drop--over {
+  border-color: var(--accent, #4eb88a);
+  background: rgba(78,184,138,0.06);
+}
+
+.music-import-drop-icon {
+  font-size: 1.4rem;
+  color: var(--accent, #4eb88a);
+  line-height: 1;
+}
+
+.music-import-drop-text {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.music-import-drop-hint {
+  font-size: 0.68rem;
+  color: var(--text-muted, #7a9585);
+}
+
+.music-import-loaded {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-card);
+  border-radius: 7px;
+}
+
+.music-import-loaded-name {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-import-loaded-dur {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.music-import-play-btn {
+  flex-shrink: 0;
+  min-width: 36px;
+}
+
+/* ── Tap Tempo ── */
+.music-tap-section {
+  background: var(--bg-section, #f5faf7);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.music-tap-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.music-tap-btn {
+  padding: 0.55rem 1.2rem;
+  background: var(--accent, #4eb88a);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+  transition: opacity 0.1s, transform 0.1s;
+  user-select: none;
+}
+
+.music-tap-btn:active {
+  opacity: 0.75;
+  transform: scale(0.95);
+}
+
+.music-tap-bpm {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  min-width: 80px;
+}
+
+.music-tap-bpm-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent, #4eb88a);
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+}
+
+.music-tap-bpm-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.music-tap-bpm-idle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.music-tap-sync-btn {
+  margin-left: auto;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.8rem;
+  flex-shrink: 0;
+}
+
+.music-tap-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0.4rem 0 0;
+  font-style: italic;
+}
+
+.music-tap-bpm-source {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: 0.15rem;
+}
+
+.music-auto-detect-btn {
+  padding: 0.45rem 0.85rem;
+  background: var(--bg-card, #fff);
+  color: var(--accent, #4eb88a);
+  border: 1.5px solid var(--accent, #4eb88a);
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.music-auto-detect-btn:hover:not(:disabled) {
+  background: var(--accent, #4eb88a);
+  color: #fff;
+}
+
+.music-auto-detect-btn--loading,
+.music-auto-detect-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* ============================================================
    SESSION PLANNER
    ============================================================ */
@@ -4756,6 +4950,61 @@ input[type='range']:not(.player-mood-slider):not(.mini-player-vol-slider) {
   background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   border-color: transparent;
   color: #fff;
+}
+
+/* ── Pad Sound Banks ── */
+.pad-bank-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+
+.pad-bank-btn {
+  padding: 0.55rem 0.5rem;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+
+.pad-bank-btn:hover {
+  border-color: var(--accent);
+  background: rgba(78,184,138,0.08);
+  color: var(--accent);
+}
+
+/* ── Pad Tune button ── */
+.pad-tune-btn {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba(78,184,138,0.12);
+  border: 1px solid var(--accent, #4eb88a);
+  border-radius: 6px;
+  color: var(--accent, #4eb88a);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.pad-tune-btn:hover {
+  background: rgba(78,184,138,0.22);
+}
+
+/* ── Pad Bus Badge ── */
+.pad-bus-badge {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.pad-bus-badge--active {
+  color: var(--accent, #4eb88a);
 }
 
 .pad-play-btn {

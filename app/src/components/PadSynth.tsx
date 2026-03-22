@@ -33,10 +33,75 @@ function makeReverbIR(ctx: AudioContext, duration = 3, decay = 2): AudioBuffer {
   return buf
 }
 
-export function PadSynth({ onPlay, onStop, onStateChange }: {
+// ── Note-frequency helpers ────────────────────────────────────────────────────
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+function nearestNote(freq: number): { note: string; octave: number } {
+  const midi = Math.round(69 + 12 * Math.log2(Math.max(1, freq) / 440))
+  const noteIndex = ((midi % 12) + 12) % 12
+  const octave = Math.max(2, Math.min(5, Math.floor(midi / 12) - 1))
+  return { note: NOTE_NAMES[noteIndex], octave }
+}
+
+// ── Meditation sound banks ────────────────────────────────────────────────────
+type SoundBank = {
+  label: string
+  waveform: OscillatorType
+  rootNote: string
+  octave: number
+  chordMode: string
+  detune: number
+  attack: number
+  decay: number
+  sustain: number
+  release: number
+  filterCutoff: number
+  filterQ: number
+  reverbMix: number
+  masterVolume: number
+}
+
+const SOUND_BANKS: SoundBank[] = [
+  {
+    label: 'Singing Bowl',
+    waveform: 'sine', rootNote: 'C', octave: 5, chordMode: 'Root',
+    detune: 3, attack: 0.05, decay: 0.3, sustain: 0.85, release: 9,
+    filterCutoff: 7000, filterQ: 2.5, reverbMix: 0.82, masterVolume: 0.7,
+  },
+  {
+    label: 'Tibetan Drone',
+    waveform: 'triangle', rootNote: 'G', octave: 2, chordMode: 'Power',
+    detune: 28, attack: 4, decay: 0.5, sustain: 0.88, release: 6,
+    filterCutoff: 1100, filterQ: 1.2, reverbMix: 0.68, masterVolume: 0.65,
+  },
+  {
+    label: 'Crystal Pad',
+    waveform: 'triangle', rootNote: 'A', octave: 5, chordMode: 'Major 7',
+    detune: 12, attack: 3, decay: 0.3, sustain: 0.82, release: 7,
+    filterCutoff: 9000, filterQ: 0.9, reverbMix: 0.88, masterVolume: 0.6,
+  },
+  {
+    label: 'Deep Space',
+    waveform: 'sine', rootNote: 'D', octave: 2, chordMode: 'Minor',
+    detune: 8, attack: 6, decay: 0.8, sustain: 0.92, release: 11,
+    filterCutoff: 700, filterQ: 0.8, reverbMix: 0.92, masterVolume: 0.55,
+  },
+  {
+    label: 'Earth Tone',
+    waveform: 'sawtooth', rootNote: 'F', octave: 2, chordMode: 'Sus4',
+    detune: 16, attack: 3, decay: 0.5, sustain: 0.8, release: 6,
+    filterCutoff: 550, filterQ: 1.6, reverbMix: 0.72, masterVolume: 0.6,
+  },
+]
+
+export function PadSynth({ onPlay, onStop, onStateChange, forceStop, onBeforePlay, sharedContext, sharedDestination, carrier }: {
   onPlay?: () => void
   onStop?: () => void
   onStateChange?: (playing: boolean, hz: number, chord: string) => void
+  forceStop?: number
+  onBeforePlay?: () => void
+  sharedContext?: AudioContext
+  sharedDestination?: AudioNode
+  carrier?: number
 }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [waveform, setWaveform] = useState<OscillatorType>('triangle')
@@ -99,6 +164,7 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
 
   const ctxRef = useRef<AudioContext | null>(null)
   const voiceGainsRef = useRef<GainNode[]>([])
+  const oscillatorsRef = useRef<OscillatorNode[]>([])
   const masterGainRef = useRef<GainNode | null>(null)
   const filterRef = useRef<BiquadFilterNode | null>(null)
   const dryGainRef = useRef<GainNode | null>(null)
@@ -107,11 +173,13 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
   const releaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Ref-based guard so restartIfPlaying doesn't fight React's async state flush
   const isPlayingRef = useRef(false)
+  // True when we own the AudioContext (standalone); false when using master bus context
+  const ownsContextRef = useRef(true)
 
   useEffect(() => {
     return () => {
       if (releaseTimeoutRef.current) clearTimeout(releaseTimeoutRef.current)
-      ctxRef.current?.close()
+      if (ownsContextRef.current) ctxRef.current?.close()
     }
   }, [])
 
@@ -121,12 +189,14 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
     // Clear any pending release timeout from a previous stop
     if (releaseTimeoutRef.current) { clearTimeout(releaseTimeoutRef.current); releaseTimeoutRef.current = null }
 
-    const ctx = new AudioContext()
+    const isShared = !!(sharedContext && sharedDestination && sharedContext.state !== 'closed')
+    const ctx = isShared ? sharedContext! : new AudioContext()
+    ownsContextRef.current = !isShared
     ctxRef.current = ctx
+    if (ctx.state === 'suspended') void ctx.resume()
 
     const masterGain = ctx.createGain()
     masterGain.gain.value = masterVolume
-    masterGainRef.current = masterGain
     masterGainRef.current = masterGain
 
     // Filter
@@ -153,7 +223,7 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
     convolver.connect(wetGain)
     dryGain.connect(masterGain)
     wetGain.connect(masterGain)
-    masterGain.connect(ctx.destination)
+    masterGain.connect(isShared ? sharedDestination! : ctx.destination)
 
     // Chorus: 3 delays with LFO each
     const chorusOutput = ctx.createGain()
@@ -183,6 +253,7 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
 
     const intervals = CHORD_INTERVALS[chordMode]
     const voiceGains: GainNode[] = []
+    const allOscillators: OscillatorNode[] = []
 
     intervals.forEach((semitones) => {
       const baseFreq = NOTE_FREQS[rootNote] * Math.pow(2, (octave - 4) + semitones / 12)
@@ -218,14 +289,16 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
         oscGain.connect(panner)
         panner.connect(voiceGain)
         osc.start()
+        allOscillators.push(osc)
       })
     })
 
     voiceGainsRef.current = voiceGains
+    oscillatorsRef.current = allOscillators
     isPlayingRef.current = true
     setIsPlaying(true)
     onPlay?.()
-  }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume, onPlay])
+  }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain, release, filterCutoff, filterQ, reverbMix, masterVolume, onPlay, sharedContext, sharedDestination])
 
   // Always keep ref pointing at latest startPad
   startPadRef.current = startPad
@@ -236,26 +309,46 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
     onStateChange?.(isPlaying, Math.round(hz), chordMode)
   }, [isPlaying, rootNote, octave, chordMode, onStateChange])
 
-  const stopPad = useCallback(() => {
+  // quickFade=true uses 0.3s fade (stop button); false uses full release envelope
+  const stopPad = useCallback((quickFade = false) => {
     if (!isPlayingRef.current || !ctxRef.current) return
     const ctx = ctxRef.current
     const now = ctx.currentTime
+    const fadeTime = quickFade ? 0.3 : release
 
     voiceGainsRef.current.forEach(g => {
       g.gain.cancelScheduledValues(now)
       g.gain.setValueAtTime(g.gain.value, now)
-      g.gain.linearRampToValueAtTime(0, now + release)
+      g.gain.linearRampToValueAtTime(0, now + fadeTime)
     })
 
+    // Flip state immediately so UI updates now, not after the fade
+    isPlayingRef.current = false
+    setIsPlaying(false)
+
+    const oscs = oscillatorsRef.current
+    const mg = masterGainRef.current
+    const isShared = !ownsContextRef.current
+
     releaseTimeoutRef.current = setTimeout(() => {
-      if (ctx.state !== 'closed') ctx.close().catch(() => {})
+      // Stop and disconnect all oscillators
+      oscs.forEach(osc => { try { osc.stop() } catch { /* already stopped */ } })
+      // Disconnect pad output from master bus if using shared context
+      if (isShared) { try { mg?.disconnect() } catch { /* ignore */ } }
+      // Only close if we own the context
+      if (!isShared && ctx.state !== 'closed') ctx.close().catch(() => {})
       if (ctxRef.current === ctx) { ctxRef.current = null }
       voiceGainsRef.current = []
-      isPlayingRef.current = false
-      setIsPlaying(false)
+      oscillatorsRef.current = []
+      masterGainRef.current = null
       onStop?.()
-    }, (release + 0.5) * 1000)
+    }, (fadeTime + 0.1) * 1000)
   }, [release, onStop])
+
+  // External stop signal from App (global stopAll) — always quick fade
+  useEffect(() => {
+    if (forceStop !== undefined && forceStop > 0 && isPlayingRef.current) stopPad(true)
+  }, [forceStop, stopPad])
 
 
   // Live parameter updates — no restart needed
@@ -281,6 +374,9 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
     })
 
     if (releaseTimeoutRef.current) clearTimeout(releaseTimeoutRef.current)
+    const oscs = oscillatorsRef.current
+    oscs.forEach(osc => { try { osc.stop() } catch { /* ignore */ } })
+    oscillatorsRef.current = []
     ctxRef.current = null
     voiceGainsRef.current = []
     // Flip ref synchronously so startPad won't bail when called
@@ -288,7 +384,7 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
     setIsPlaying(false)
 
     releaseTimeoutRef.current = setTimeout(() => {
-      if (ctx.state !== 'closed') ctx.close().catch(() => {})
+      if (ownsContextRef.current && ctx.state !== 'closed') ctx.close().catch(() => {})
       // startPadRef.current always points to latest startPad (no stale closure)
       startPadRef.current?.()
     }, 80)
@@ -297,10 +393,58 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
   useEffect(() => { restartIfPlaying() }, [waveform, rootNote, octave, chordMode, detune, attack, decay, sustain]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="tab-sections">
-      {/* Root & Chord */}
+
+      {/* ── Sound Banks ─────────────────────────────────────────────────────── */}
       <div className="section-block">
         <div className="section-card">
-          <div className="section-label">Root &amp; Chord</div>
+          <div className="section-label">Sound Banks</div>
+          <div className="pad-bank-grid">
+            {SOUND_BANKS.map(bank => (
+              <button
+                key={bank.label}
+                className="pad-bank-btn"
+                onClick={() => {
+                  setWaveform(bank.waveform)
+                  setRootNote(bank.rootNote)
+                  setOctave(bank.octave)
+                  setChordMode(bank.chordMode)
+                  setDetune(bank.detune)
+                  setAttack(bank.attack)
+                  setDecay(bank.decay)
+                  setSustain(bank.sustain)
+                  setRelease(bank.release)
+                  setFilterCutoff(bank.filterCutoff)
+                  setFilterQ(bank.filterQ)
+                  setReverbMix(bank.reverbMix)
+                  setMasterVolume(bank.masterVolume)
+                }}
+              >
+                {bank.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Root & Chord ─────────────────────────────────────────────────────── */}
+      <div className="section-block">
+        <div className="section-card">
+          <div className="section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Root &amp; Chord</span>
+            {carrier !== undefined && (
+              <button
+                className="pad-tune-btn"
+                onClick={() => {
+                  const { note, octave: oct } = nearestNote(carrier)
+                  setRootNote(note)
+                  setOctave(oct)
+                }}
+                title={`Tune to ${carrier.toFixed(0)} Hz carrier`}
+              >
+                Tune to Session ({carrier.toFixed(0)} Hz)
+              </button>
+            )}
+          </div>
           <div style={{ marginBottom: '0.5rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Note</div>
             <div className="pad-note-grid">
@@ -489,15 +633,20 @@ export function PadSynth({ onPlay, onStop, onStateChange }: {
       {/* Output + Play */}
       <div className="section-block">
         <div className="section-card">
-          <div className="section-label">Output</div>
+          <div className="section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Output</span>
+            <span className={`pad-bus-badge${sharedContext && sharedDestination ? ' pad-bus-badge--active' : ''}`}>
+              {sharedContext && sharedDestination ? '⬤ Master Bus' : '⬤ Standalone'}
+            </span>
+          </div>
           <div>
-            <label className="control-label">Master Volume: <span className="control-value">{Math.round(masterVolume * 100)}%</span></label>
+            <label className="control-label">Volume: <span className="control-value">{Math.round(masterVolume * 100)}%</span></label>
             <input type="range" min={0} max={1} step={0.01} value={masterVolume}
               onChange={e => setMasterVolume(Number(e.target.value))} className="slider" />
           </div>
           <button
             className={`pad-play-btn${isPlaying ? ' pad-play-btn--stop' : ''}`}
-            onClick={isPlaying ? stopPad : startPad}
+            onClick={isPlaying ? () => stopPad(true) : () => { onBeforePlay?.(); startPad() }}
           >
             {isPlaying ? '■ Stop' : '▶ Play Pad'}
           </button>

@@ -6,12 +6,15 @@ import type { LayerGains } from './soundscapeMixer'
 export type SamplePlayerLayer = {
   id: SoundLayerId
   gainNode: GainNode
+  pannerNode: StereoPannerNode
   source: AudioBufferSourceNode | null
   buffer: AudioBuffer | null
   loading: boolean
   useNoise: boolean
   stopTimeoutId: ReturnType<typeof setTimeout> | undefined
   pendingGain: number | null  // latest gain requested while loading
+  loopGen: number             // increment to cancel pending crossfade callbacks
+  crossfadeTimeoutId: ReturnType<typeof setTimeout> | undefined
 }
 
 export type SamplePlayer = {
@@ -31,6 +34,57 @@ const LAYER_GAIN_TRIM: Partial<Record<SoundLayerId, number>> = {
 function toEffectiveLayerGain(id: SoundLayerId, gain: number): number {
   const trim = LAYER_GAIN_TRIM[id] ?? 1
   return Math.max(0, gain) * trim
+}
+
+const XFADE_SEC = 2.5
+
+function scheduleCrossfadeLoop(
+  player: SamplePlayer,
+  layerData: SamplePlayerLayer,
+  buffer: AudioBuffer,
+  gen: number,
+  fadeIn: boolean,
+): void {
+  const ctx = player.context
+  const srcGain = ctx.createGain()
+  srcGain.connect(layerData.gainNode)
+
+  const src = ctx.createBufferSource()
+  src.buffer = buffer
+  src.connect(srcGain)
+
+  if (fadeIn) {
+    srcGain.gain.setValueAtTime(0, ctx.currentTime)
+    srcGain.gain.linearRampToValueAtTime(1, ctx.currentTime + XFADE_SEC)
+  } else {
+    srcGain.gain.value = 1
+  }
+
+  src.start()
+  layerData.source = src
+
+  const scheduleMs = Math.max(50, (buffer.duration - XFADE_SEC) * 1000)
+  layerData.crossfadeTimeoutId = setTimeout(() => {
+    layerData.crossfadeTimeoutId = undefined
+    if (gen !== layerData.loopGen) return
+
+    // Start next iteration before this one ends
+    layerData.loopGen = gen + 1
+    scheduleCrossfadeLoop(player, layerData, buffer, gen + 1, true)
+
+    // Fade out this iteration
+    const now = ctx.currentTime
+    srcGain.gain.cancelScheduledValues(now)
+    srcGain.gain.setValueAtTime(srcGain.gain.value, now)
+    srcGain.gain.linearRampToValueAtTime(0, now + XFADE_SEC)
+
+    // Disconnect after fade completes
+    setTimeout(() => {
+      try { src.stop() } catch { /* ignore */ }
+      try { src.disconnect() } catch { /* ignore */ }
+      try { srcGain.disconnect() } catch { /* ignore */ }
+    }, XFADE_SEC * 1000 + 100)
+  }, scheduleMs)
 }
 
 async function loadLayerBuffer(context: AudioContext, layer: SoundLayer): Promise<AudioBuffer | 'noise'> {
@@ -63,24 +117,16 @@ function startSource(
     layerData.source = null
   }
 
-  let src: AudioBufferSourceNode
-  let alreadyStarted = false
-
   if (layerData.useNoise || !layerData.buffer) {
-    // createNoiseBuffer already calls source.start() internally - do not start again
-    src = createNoiseSourceForLayer(player.context, layer)
-    alreadyStarted = true
-  } else {
-    src = player.context.createBufferSource()
-    src.buffer = layerData.buffer
-    src.loop = true
+    // createNoiseBuffer already calls source.start() internally
+    const src = createNoiseSourceForLayer(player.context, layer)
+    src.connect(layerData.gainNode)
+    layerData.source = src
+    return
   }
 
-  src.connect(layerData.gainNode)
-  if (!alreadyStarted) {
-    src.start()
-  }
-  layerData.source = src
+  // Buffer source: seamless crossfade loop
+  scheduleCrossfadeLoop(player, layerData, layerData.buffer, layerData.loopGen, false)
 }
 
 export function createSamplePlayer(
@@ -95,17 +141,24 @@ export function createSamplePlayer(
   for (const layer of SOUND_LAYERS) {
     const gainNode = context.createGain()
     gainNode.gain.value = 0  // start silent; fade in when gain set
-    gainNode.connect(destination)
+
+    const pannerNode = context.createStereoPanner()
+    pannerNode.pan.value = 0  // center by default
+    gainNode.connect(pannerNode)
+    pannerNode.connect(destination)
 
     const layerData: SamplePlayerLayer = {
       id: layer.id,
       gainNode,
+      pannerNode,
       source: null,
       buffer: null,
       loading: false,
       useNoise: false,
       stopTimeoutId: undefined,
       pendingGain: null,
+      loopGen: 0,
+      crossfadeTimeoutId: undefined,
     }
     layers.set(layer.id, layerData)
 
@@ -140,6 +193,12 @@ export async function setLayerGain(
   }
 
   if (targetGain <= 0) {
+    // Cancel any pending crossfade so no new iteration starts
+    layerData.loopGen++
+    if (layerData.crossfadeTimeoutId !== undefined) {
+      clearTimeout(layerData.crossfadeTimeoutId)
+      layerData.crossfadeTimeoutId = undefined
+    }
     // Fade out then stop source
     layerData.gainNode.gain.cancelScheduledValues(now)
     layerData.gainNode.gain.setValueAtTime(layerData.gainNode.gain.value, now)
@@ -206,11 +265,28 @@ export async function setLayerGain(
 
 export function stopSamplePlayer(player: SamplePlayer): void {
   for (const [, layerData] of player.layers) {
+    // Invalidate any pending crossfade callbacks
+    layerData.loopGen++
+    if (layerData.crossfadeTimeoutId !== undefined) {
+      clearTimeout(layerData.crossfadeTimeoutId)
+      layerData.crossfadeTimeoutId = undefined
+    }
     if (layerData.source) {
       try { layerData.source.stop() } catch { /* ignore */ }
       try { layerData.source.disconnect() } catch { /* ignore */ }
       layerData.source = null
     }
     try { layerData.gainNode.disconnect() } catch { /* ignore */ }
+    try { layerData.pannerNode.disconnect() } catch { /* ignore */ }
   }
+}
+
+/**
+ * Sets the stereo pan position for a layer (-1 = hard left, 0 = center, 1 = hard right).
+ * Applied immediately (no ramp — pan changes are inaudible unless extreme).
+ */
+export function setLayerPan(player: SamplePlayer, id: SoundLayerId, pan: number): void {
+  const layerData = player.layers.get(id)
+  if (!layerData) return
+  layerData.pannerNode.pan.setTargetAtTime(Math.max(-1, Math.min(1, pan)), player.context.currentTime, 0.05)
 }
