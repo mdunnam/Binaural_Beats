@@ -84,13 +84,13 @@
     "kb": "5909"
   },
   "jungle": {
-    "file": "jungle.mp3",
-    "source": "freesound.org/386474",
-    "author": "Skjor1",
+    "file": "jungle.ogg",
+    "source": "freesound.org/450536",
+    "author": "kyles",
     "license": "CC0",
-    "tags": "jungle, night, insects, tropical, Thailand, ambience, crickets",
-    "duration": 292,
-    "kb": "6607"
+    "tags": "jungle, night, insects, tropical, Amazon, crickets, birds, frogs",
+    "duration": 305,
+    "kb": "4644"
   },
   "cave": {
     "file": "cave.mp4",
