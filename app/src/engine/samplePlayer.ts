@@ -91,12 +91,17 @@ async function loadLayerBuffer(context: AudioContext, layer: SoundLayer): Promis
   for (const ext of ['ogg', 'mp3', 'mp4']) {
     try {
       const resp = await fetch(`${import.meta.env.BASE_URL}sounds/${layer.id}.${ext}`)
-      if (resp.ok) {
-        const ab = await resp.arrayBuffer()
-        const buf = await context.decodeAudioData(ab)
-        console.log(`[samplePlayer] loaded ${layer.id}.${ext} — duration=${buf.duration.toFixed(1)}s`)
-        return buf
+      if (!resp.ok) continue
+      // Skip SPA fallback HTML responses (Vercel returns 200 + HTML for unknown paths)
+      const ct = resp.headers.get('content-type') ?? ''
+      if (ct.includes('text/html')) {
+        console.warn(`[samplePlayer] ${layer.id}.${ext} returned HTML (SPA fallback) — skipping`)
+        continue
       }
+      const ab = await resp.arrayBuffer()
+      const buf = await context.decodeAudioData(ab)
+      console.log(`[samplePlayer] loaded ${layer.id}.${ext} — duration=${buf.duration.toFixed(1)}s`)
+      return buf
     } catch (e) {
       console.warn(`[samplePlayer] failed ${layer.id}.${ext}:`, e)
     }
