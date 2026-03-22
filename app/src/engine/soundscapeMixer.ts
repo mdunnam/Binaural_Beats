@@ -1,7 +1,7 @@
 import { createSamplePlayer, setLayerGain as sampleSetLayerGain, setLayerPan as sampleSetLayerPan, stopSamplePlayer } from './samplePlayer'
 import type { SamplePlayer } from './samplePlayer'
 
-export type SoundLayerId = 'rain' | 'thunder' | 'wind' | 'waves' | 'fire' | 'forest' | 'space' | 'cave' | 'stream' | 'birds' | 'cafe' | 'night' | 'fan' | 'bowl' | 'beach' | 'beach-surf' | 'city' | 'underwater' | 'monastery' | 'train' | 'library' | 'storm-heavy' | 'meadow'
+export type SoundLayerId = 'rain' | 'thunder' | 'wind' | 'waves' | 'fire' | 'forest' | 'space' | 'cave' | 'stream' | 'birds' | 'cafe' | 'night' | 'fan' | 'bowl' | 'beach' | 'beach-surf' | 'city' | 'underwater' | 'monastery' | 'train' | 'library' | 'storm-heavy' | 'meadow' | 'jungle'
 
 export type SoundLayer = {
   id: SoundLayerId
@@ -38,6 +38,7 @@ export const SOUND_LAYERS: SoundLayer[] = [
   { id: 'library',     label: 'Library',     emoji: '📚', noiseType: 'pink',  filterType: 'lowpass',  filterFreq: 800,  filterQ: 0.5, defaultGain: 0 },
   { id: 'storm-heavy', label: 'Heavy Storm', emoji: '🌩', noiseType: 'brown', filterType: 'lowpass',  filterFreq: 300,  filterQ: 0.8, defaultGain: 0 },
   { id: 'meadow',      label: 'Meadow',      emoji: '🌿', noiseType: 'pink',  filterType: 'bandpass', filterFreq: 1500, filterQ: 0.6, defaultGain: 0 },
+  { id: 'jungle',      label: 'Jungle',      emoji: '🦜', noiseType: 'pink',  filterType: 'bandpass', filterFreq: 1800, filterQ: 0.7, defaultGain: 0 },
 ]
 
 export type SoundscapeScene = {
@@ -66,6 +67,7 @@ export const SOUNDSCAPE_SCENES: SoundscapeScene[] = [
   { id: 'monastery',  label: 'Monastery',   emoji: '🏯', gains: { monastery: 0.7, bowl: 0.4 } },
   { id: 'focus-train', label: 'Night Train', emoji: '🚂', gains: { train: 0.6, rain: 0.3 } },
   { id: 'meadow',     label: 'Meadow',      emoji: '🌿', gains: { meadow: 0.7, birds: 0.3, wind: 0.1 } },
+  { id: 'jungle',     label: 'Jungle Night', emoji: '🦜', gains: { jungle: 0.85, night: 0.2 } },
 ]
 
 export type LayerGains = Record<SoundLayerId, number>
@@ -74,13 +76,13 @@ export type LayerPans  = Record<SoundLayerId, number>
 export const DEFAULT_GAINS: LayerGains = {
   rain: 0, thunder: 0, wind: 0, waves: 0, fire: 0, forest: 0, space: 0, cave: 0,
   stream: 0, birds: 0, cafe: 0, night: 0, fan: 0, bowl: 0, beach: 0, 'beach-surf': 0, city: 0,
-  underwater: 0, monastery: 0, train: 0, library: 0, 'storm-heavy': 0, meadow: 0,
+  underwater: 0, monastery: 0, train: 0, library: 0, 'storm-heavy': 0, meadow: 0, jungle: 0,
 }
 
 export const DEFAULT_PANS: LayerPans = {
   rain: 0, thunder: 0, wind: 0, waves: 0, fire: 0, forest: 0, space: 0, cave: 0,
   stream: 0, birds: 0, cafe: 0, night: 0, fan: 0, bowl: 0, beach: 0, 'beach-surf': 0, city: 0,
-  underwater: 0, monastery: 0, train: 0, library: 0, 'storm-heavy': 0, meadow: 0,
+  underwater: 0, monastery: 0, train: 0, library: 0, 'storm-heavy': 0, meadow: 0, jungle: 0,
 }
 
 /**
@@ -111,6 +113,7 @@ export const SPATIAL_PANS: LayerPans = {
   library:     -0.2,   // library sounds left
   'storm-heavy':0,     // heavy storm — centered
   meadow:       0.3,   // meadow breeze right
+  jungle:       0,     // jungle — enveloping, centered
 }
 
 // SoundscapeMixerNodes wraps SamplePlayer — same external API

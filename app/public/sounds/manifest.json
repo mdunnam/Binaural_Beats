@@ -83,6 +83,15 @@
     "duration": 262,
     "kb": "5909"
   },
+  "jungle": {
+    "file": "jungle.mp3",
+    "source": "freesound.org/386474",
+    "author": "Skjor1",
+    "license": "CC0",
+    "tags": "jungle, night, insects, tropical, Thailand, ambience, crickets",
+    "duration": 292,
+    "kb": "6607"
+  },
   "cave": {
     "file": "cave.mp4",
     "tags": "stream, river, water, water flow",
