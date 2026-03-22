@@ -182,8 +182,9 @@ src/
     noiseGen.ts                   ← white/pink/brown noise buffers
     isochronic.ts                 ← isochronic pulse engine (amplitude-modulated tone, duty cycle, ramp)
     journeyEngine.ts              ← brainwave state transition scheduler (stage sequencer, cross-stage ramps)
-    soundscapeMixer.ts            ← 22-layer ambient sound system (noise-gen + sample buffers, per-layer gain)
-    samplePlayer.ts               ← sample buffer loader with OGG/MP3 fallback to generated noise
+    soundscapeMixer.ts            ← 23-layer ambient sound system (noise-gen + sample buffers, per-layer gain, spatial pan presets, crossfade loop)
+    samplePlayer.ts               ← sample buffer loader with OGG/MP3 fallback to generated noise; StereoPannerNode per layer, crossfade loop scheduling
+    bpmDetector.ts                ← BPM detection via RMS onset autocorrelation (no external library dependency)
     ambientPlayer.ts              ← standalone ambient-only playback (no binaural session required)
     musicPlayer.ts                ← lofi/ambient music player with 5-band EQ
     voiceBus.ts                   ← TTS / narration bus with convolver reverb
@@ -330,16 +331,19 @@ Stage 4: Deep Theta → 3 Hz beat, 10 min
 - Implementation: `src/data/prebuiltJourneys.ts`, `src/components/JourneyBuilder.tsx`
 
 #### 3d — Soundscape Layers ✅
-22-layer environmental sound system with 17 pre-built scenes:
-- [x] rain, thunder, wind, waves, fire, forest, space, cave, stream, birds, cafe, night, fan, bowl, beach, city, underwater, monastery, train, library, storm-heavy, meadow
+23-layer environmental sound system with 18 pre-built scenes:
+- [x] rain, thunder, wind, waves, fire, forest, space, cave, stream, birds, cafe, night, fan, bowl, beach-calm, city, underwater, monastery, train, library, storm-heavy, meadow, beach-surf
 - [x] Per-layer gain control with smooth fading
 - [x] Noise-based procedural generation with filter shaping
 - [x] Sample loading with OGG/MP3 fallback to generated noise
-- [x] 17 pre-built scenes: off, storm, ocean, forest, fire, space, cave, custom, stream, cafe, night, bowl, beach, underwater, monastery, focus-train, meadow
+- [x] 18 pre-built scenes: off, storm, ocean, forest, fire, space, cave, custom, stream, cafe, night, bowl, beach, underwater, monastery, focus-train, meadow, beach-surf
 - [x] Pending gain tracking while loading (latest slider value used on fade-in)
+- [x] Per-layer stereo pan slider with L/R labels (-1 to +1)
+- [x] Spatial preset — "⊙ Spatial" button applies semantically tuned per-layer pan positions; manual slider change clears spatial mode
+- [x] Crossfade loop playback — all sample-based layers loop via 2.5s overlap crossfade (no hard cuts)
 - Implementation: `src/engine/soundscapeMixer.ts`, `src/engine/samplePlayer.ts`, `src/components/SoundscapeMixer.tsx`
 
-Note: stereo width, spatial pan, and randomness/variation controls are not yet implemented per-layer.
+Note: All CC0 field recordings. Recent replacements: rain (freesound #518863), fire (#484338), train (#455045), storm-heavy (#811467), meadow (#810416), beach-surf (#215574).
 
 #### 3e — Breath Synchronization ✅
 - [x] Visual breathing pulse guide
