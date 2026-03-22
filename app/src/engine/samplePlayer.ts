@@ -93,12 +93,15 @@ async function loadLayerBuffer(context: AudioContext, layer: SoundLayer): Promis
       const resp = await fetch(`${import.meta.env.BASE_URL}sounds/${layer.id}.${ext}`)
       if (resp.ok) {
         const ab = await resp.arrayBuffer()
-        return await context.decodeAudioData(ab)
+        const buf = await context.decodeAudioData(ab)
+        console.log(`[samplePlayer] loaded ${layer.id}.${ext} — duration=${buf.duration.toFixed(1)}s`)
+        return buf
       }
-    } catch {
-      /* try next */
+    } catch (e) {
+      console.warn(`[samplePlayer] failed ${layer.id}.${ext}:`, e)
     }
   }
+  console.warn(`[samplePlayer] ${layer.id} fell back to noise`)
   return 'noise'
 }
 
@@ -252,7 +255,8 @@ export async function setLayerGain(
   }
 
   const finalTarget = toEffectiveLayerGain(id, finalGain)
-  if (finalTarget <= 0) return
+  console.log(`[samplePlayer] ${id} post-load: finalGain=${finalGain} finalTarget=${finalTarget} useNoise=${layerData.useNoise}`)
+  if (finalTarget <= 0) { console.warn(`[samplePlayer] ${id} skipped start — finalTarget=0`); return }
 
   startSource(player, layerData, layer)
 
